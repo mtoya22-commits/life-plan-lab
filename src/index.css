@@ -624,6 +624,185 @@ body {
   min-height: 48px;
 }
 
+/* =========================================================================
+   STEP3: 結果ダッシュボード（概要常時表示 + 詳細は Bottom Sheet / 折りたたみ）
+   ========================================================================= */
+
+/* コンパクトな詳細カード */
+.detail-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px 18px;
+}
+.detail-card__title {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.detail-card__value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-top: 2px;
+}
+.detail-card__caption {
+  margin: 6px 0 0;
+}
+.detail-card__more {
+  margin-top: 10px;
+  display: inline-block;
+}
+
+/* 主な節目の要約内リンク */
+.timeline .link-btn {
+  margin-top: 10px;
+}
+.timeline__year {
+  min-width: 48px;
+  font-size: 0.8rem;
+}
+
+/* コンパクトなバーチャート */
+.asset-chart__bars--compact {
+  height: 72px;
+  gap: 2px;
+}
+
+/* 折りたたみ（試算条件・ヒント） */
+.collapsible {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 4px 18px;
+}
+.collapsible > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 14px 0;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.collapsible > summary::-webkit-details-marker {
+  display: none;
+}
+.collapsible > summary::after {
+  content: '▾';
+  color: var(--muted);
+  transition: transform 0.15s ease;
+}
+.collapsible[open] > summary::after {
+  transform: rotate(180deg);
+}
+.collapsible__body {
+  padding-bottom: 14px;
+}
+/* 折りたたみ内のカードは二重枠にしない */
+.collapsible__body .assumptions,
+.collapsible__body .suggestions {
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+/* 年次テーブル（シート内） */
+.yearly-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  margin-top: 14px;
+}
+.yearly-table__caption {
+  text-align: left;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.yearly-table th,
+.yearly-table td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+/* Bottom Sheet */
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.sheet__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 20, 20, 0.28); /* 暗くしすぎない */
+}
+.sheet__panel {
+  position: relative;
+  width: 100%;
+  max-width: 720px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-radius: 18px 18px 0 0;
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.12);
+  animation: sheet-up 0.22s ease;
+}
+@keyframes sheet-up {
+  from {
+    transform: translateY(14px);
+    opacity: 0.6;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.sheet__header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 48px;
+  border-bottom: 1px solid var(--border);
+}
+.sheet__handle {
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border);
+}
+.sheet__title {
+  font-weight: 700;
+}
+.sheet__close {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.sheet__body {
+  padding: 16px 18px calc(20px + env(safe-area-inset-bottom));
+  overflow-y: auto;
+}
+
 @media (max-width: 480px) {
   .hero__metrics {
     grid-template-columns: 1fr;
