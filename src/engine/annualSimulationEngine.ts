@@ -106,6 +106,20 @@ export function runSimulation(input: SimulationInput): SimulationResult {
 
     const tax = 0; // 簡略化（手取りベース）
 
+    // ---- デバッグ用内訳の事前計算 ----
+    const lifeEventIncome = sumLifeEventInflows(input, age);
+    const lifeEventExpense = sumLifeEventCosts(input, age) * inflationFactor;
+    const retirementIncome = age === fireStartAge ? input.income.retirementLumpSum.value : 0;
+    const isOwn = input.housing.type.value !== 'rent';
+    const payoffAge =
+      input.housing.remainingYears.value > 0
+        ? startAge + input.housing.remainingYears.value
+        : input.housing.monthlyPayment.value > 0
+          ? Infinity
+          : startAge;
+    const homeMaintenanceCost = isOwn && age >= payoffAge ? housing : 0;
+    const cashBeforeNet = cash;
+
     // 2) 年間収支を現金資産へ
     const net = incomeTotal - expenseTotal - tax;
     cash += net;
@@ -119,10 +133,14 @@ export function runSimulation(input: SimulationInput): SimulationResult {
     }
 
     // 4) 現金がマイナスなら投資資産から取り崩す
+    let withdrawalFromInvestment = 0;
     if (cash < 0) {
+      withdrawalFromInvestment = -cash;
       invest += cash;
       cash = 0;
     }
+    const deficit = Math.max(0, -net);
+    const withdrawalFromCash = Math.min(deficit, Math.max(0, cashBeforeNet));
 
     const endAssets = cash + invest;
 
@@ -136,6 +154,17 @@ export function runSimulation(input: SimulationInput): SimulationResult {
       tax,
       endAssets,
       events: eventsForAge(age, fireStartAge, input, baseEvents, endAssets, startAssets),
+      debug: {
+        cashAssets: cash,
+        investmentAssets: invest,
+        homeMaintenanceCost,
+        lifeEventIncome,
+        lifeEventExpense,
+        retirementIncome,
+        annualNetCashflow: net,
+        withdrawalFromCash,
+        withdrawalFromInvestment,
+      },
     });
   }
 

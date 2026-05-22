@@ -241,6 +241,21 @@ export interface YearRow {
   tax: number;
   endAssets: number;
   events: LifeEventMarker[];
+  /** 原因分析用の年次内訳（任意・UI非依存）。 */
+  debug?: YearDebug;
+}
+
+/** 年次シミュレーションのデバッグ内訳。 */
+export interface YearDebug {
+  cashAssets: number;
+  investmentAssets: number;
+  homeMaintenanceCost: number;
+  lifeEventIncome: number;
+  lifeEventExpense: number;
+  retirementIncome: number; // 退職金の一時収入
+  annualNetCashflow: number;
+  withdrawalFromCash: number;
+  withdrawalFromInvestment: number;
 }
 
 export interface Indicators {
