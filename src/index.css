@@ -41,7 +41,8 @@ body {
 .app {
   max-width: 720px;
   margin: 0 auto;
-  padding: 24px 18px 64px;
+  /* ステータスバー/ノッチに詰まらないよう上部に safe-area を確保 */
+  padding: calc(24px + env(safe-area-inset-top)) 18px 64px;
 }
 
 .screen {

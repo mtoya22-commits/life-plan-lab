@@ -61,6 +61,8 @@ const livingOptions: ThoroughChoice[] = [
   { value: 'away', label: '一人暮らし' },
 ];
 
+// 質問順: 基本 → 収入 → 毎月固定費 → 毎年変動費 → 家族 → 住宅 → FIRE → 投資 → 老後 → 一時イベント。
+// 毎月→毎年→一時 の順にし、同じ支出を二重入力しにくくする。
 export const THOROUGH_PAGES: ThoroughPage[] = [
   // ── 基本情報 ──
   {
@@ -94,38 +96,33 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
       {
         path: 'basic.takeHomeIncome',
         label: '手取り年収',
-        help: '実際に生活に使える年間収入が分かる場合のみ入力してください。分からなければスキップできます。',
+        help: '実際に生活に使える年間収入が分かる場合のみ。未入力なら世帯年収から推定します。',
         kind: 'number',
         unit: '万円',
         min: 0,
         allowSkip: true,
       },
       { path: 'basic.currentAssets', label: '現在資産', kind: 'number', unit: '万円', min: 0, placeholder: '例：1200' },
-      {
-        path: 'basic.cashRatio',
-        label: '現金比率',
-        help: '資産のうち、預金や現金で持っている割合です。分からなければスキップできます。',
-        kind: 'number',
-        unit: '%',
-        min: 0,
-        max: 100,
-        allowSkip: true,
-        allowRecommended: true,
-        recommendedValue: 30,
-        recommendedLabel: 'おすすめ（30%）',
-      },
     ],
   },
 
   // ── 収入 ──
   {
-    pageId: 'income-1',
+    pageId: 'income',
     stepId: 'detailed-income',
     title: '収入',
-    purpose: '収入の内訳と見通しです。すべて任意です。',
+    purpose: '収入の内訳と退職予定です。すべて任意です。',
     kind: 'fields',
     questions: [
-      { path: 'income.selfIncome', label: '本人収入', help: '世帯年収の内訳が分かる場合のみ。', kind: 'number', unit: '万円', min: 0, allowSkip: true },
+      {
+        path: 'income.selfIncome',
+        label: '本人収入',
+        help: '世帯年収の内訳が分かる場合のみ。本人・配偶者を入力すると手取りをより正確に推定します。',
+        kind: 'number',
+        unit: '万円',
+        min: 0,
+        allowSkip: true,
+      },
       { path: 'income.spouseIncome', label: '配偶者収入', kind: 'number', unit: '万円', min: 0, allowSkip: true },
       {
         path: 'income.raiseRate',
@@ -140,18 +137,10 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
         recommendedValue: 0.5,
         recommendedLabel: 'おすすめ（0.5%）',
       },
-    ],
-  },
-  {
-    pageId: 'income-2',
-    stepId: 'detailed-income',
-    title: '収入（退職）',
-    purpose: '退職に関する見通しです。',
-    kind: 'fields',
-    questions: [
       {
         path: 'income.retirementAge',
         label: '退職予定年齢',
+        help: 'この年齢以降は通常の労働収入を0とします（FIRE開始がある場合はそちらを優先）。',
         kind: 'number',
         unit: '歳',
         min: 45,
@@ -161,33 +150,21 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
         recommendedValue: 65,
         recommendedLabel: 'おすすめ（65歳）',
       },
-      {
-        path: 'income.retirementLumpSum',
-        label: '退職金見込み',
-        help: '分からなければスキップできます。未入力なら0円として試算し、結果に明示します。',
-        kind: 'number',
-        unit: '万円',
-        min: 0,
-        allowSkip: true,
-        allowRecommended: true,
-        recommendedValue: 0,
-        recommendedLabel: '0円にする',
-      },
     ],
   },
 
-  // ── 支出 ──
+  // ── 毎月の固定費 ──
   {
-    pageId: 'expense-1',
+    pageId: 'expense-monthly',
     stepId: 'detailed-expense',
-    title: '支出',
-    purpose: '毎月の生活費を確認します。',
+    title: '毎月の固定費',
+    purpose: '毎月かかる生活費です。',
     kind: 'fields',
     questions: [
       {
         path: 'expense.monthlyLiving',
         label: '毎月生活費',
-        help: '食費・通信費・日用品・光熱費など、毎月の生活費です。投資額は含めなくて構いません。',
+        help: '食費・日用品・光熱費・通信費などの毎月の生活費です。住居費・教育費・投資額・保険料は別で入力するため含めません。',
         kind: 'number',
         unit: '万円',
         min: 0,
@@ -195,9 +172,9 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
         allowSkip: true,
       },
       {
-        path: 'expense.annualSpecial',
-        label: '年間特別費',
-        help: '旅行、家電、帰省、車検など毎月ではない支出です。ざっくりで大丈夫です。',
+        path: 'expense.insuranceCost',
+        label: '保険料（年間）',
+        help: '生命保険・医療保険などの年間保険料です。毎月生活費に含めた場合は入力不要です。',
         kind: 'number',
         unit: '万円',
         min: 0,
@@ -205,16 +182,42 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
       },
     ],
   },
+
+  // ── 毎年の変動費 ──
   {
-    pageId: 'expense-2',
+    pageId: 'expense-annual',
     stepId: 'detailed-expense',
-    title: '支出（その他）',
-    purpose: 'その他の支出です。すべて任意です。',
+    title: '毎年の変動費',
+    purpose: '毎月ではない年間の支出です。重複しないよう、別項目は除いてください。',
     kind: 'fields',
     questions: [
-      { path: 'expense.carCost', label: '車関連費', help: '年間の維持費の目安です。', kind: 'number', unit: '万円', min: 0, allowSkip: true },
-      { path: 'expense.travelCost', label: '旅行費', kind: 'number', unit: '万円', min: 0, allowSkip: true },
-      { path: 'expense.insuranceCost', label: '保険料', kind: 'number', unit: '万円', min: 0, allowSkip: true },
+      {
+        path: 'expense.annualSpecial',
+        label: '年間特別費',
+        help: '家電・帰省・冠婚葬祭・臨時出費など、毎月ではない支出です。旅行費・車関連費・車購入・リフォームを別で入力する場合は含めません。',
+        kind: 'number',
+        unit: '万円',
+        min: 0,
+        allowSkip: true,
+      },
+      {
+        path: 'expense.travelCost',
+        label: '旅行費（年間）',
+        help: '年間の旅行・レジャー費です。年間特別費に含めた場合は入力不要です。',
+        kind: 'number',
+        unit: '万円',
+        min: 0,
+        allowSkip: true,
+      },
+      {
+        path: 'expense.carCost',
+        label: '車関連費（年間維持費）',
+        help: '車検・保険・税金・ガソリンなどの毎年の維持費です。車本体の購入費はライフイベントで入力してください。',
+        kind: 'number',
+        unit: '万円',
+        min: 0,
+        allowSkip: true,
+      },
     ],
   },
 
@@ -248,6 +251,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
       {
         path: 'housing.rent',
         label: '毎月の家賃',
+        help: '毎月生活費とは別に、住居費として計算します。',
         kind: 'number',
         unit: '万円',
         min: 0,
@@ -267,7 +271,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
       {
         path: 'housing.monthlyPayment',
         label: '毎月返済額',
-        help: '毎月の引き落とし額です。ボーナス払いがある場合は年間額に均しても構いません。',
+        help: '毎月のローン返済額です。ボーナス払いも含めて月額に均してください。住居費はこれを優先して計算します。',
         kind: 'number',
         unit: '万円',
         min: 0,
@@ -331,7 +335,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
     pageId: 'housing-4',
     stepId: 'detailed-housing',
     title: '住宅ローン（返済方式）',
-    purpose: '返済方式とボーナス払いです。',
+    purpose: '返済方式です。',
     kind: 'fields',
     showIf: hasLoan,
     questions: [
@@ -347,15 +351,12 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
       },
       {
         path: 'housing.bonusAnnual',
-        label: 'ボーナス払い（年間）',
-        help: 'ボーナス払いの年間合計です。なければ0円で構いません。',
+        label: 'ボーナス払い（参考・年間）',
+        help: '（参考）現在は毎月返済額に均して計算するため、ボーナス払いも毎月返済額に含めてください。ここは記録用です。',
         kind: 'number',
         unit: '万円',
         min: 0,
         allowSkip: true,
-        allowRecommended: true,
-        recommendedValue: 0,
-        recommendedLabel: '0円にする',
       },
     ],
   },
@@ -391,7 +392,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
       {
         path: 'fire.postFireLiving',
         label: 'FIRE後生活費',
-        help: '未入力なら現在生活費の90%をおすすめ値として使います。',
+        help: 'FIRE開始〜65歳ごろの生活費です（65歳以降は老後生活費を使います）。未入力なら現在生活費の90%で概算します。',
         kind: 'number',
         unit: '万円',
         min: 0,
@@ -428,17 +429,25 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
 
   // ── 投資 ──
   {
-    pageId: 'investment',
+    pageId: 'investment-1',
     stepId: 'detailed-investment',
     title: '投資',
     purpose: '資産の増え方の前提です。',
     kind: 'fields',
     questions: [
-      { path: 'investment.monthlyInvestment', label: '毎月投資額', kind: 'number', unit: '万円', min: 0, allowSkip: true },
+      {
+        path: 'investment.monthlyInvestment',
+        label: '毎月投資額',
+        help: '毎月の新規積立額です。現金から投資へ振り替える額として扱い、収支に二重加算しません。',
+        kind: 'number',
+        unit: '万円',
+        min: 0,
+        allowSkip: true,
+      },
       {
         path: 'investment.returnRate',
         label: '想定利回り（名目）',
-        help: '資産にそのまま適用する名目利回りです。',
+        help: '投資資産にのみ適用する名目利回りです。',
         kind: 'number',
         unit: '%',
         min: 0,
@@ -448,6 +457,15 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
         recommendedValue: 5,
         recommendedLabel: 'おすすめ（5%）',
       },
+    ],
+  },
+  {
+    pageId: 'investment-2',
+    stepId: 'detailed-investment',
+    title: '投資（インフレ・現金）',
+    purpose: 'インフレと資産の持ち方です。',
+    kind: 'fields',
+    questions: [
       {
         path: 'investment.inflationRate',
         label: 'インフレ率',
@@ -460,6 +478,19 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
         allowRecommended: true,
         recommendedValue: 2,
         recommendedLabel: 'おすすめ（2%）',
+      },
+      {
+        path: 'basic.cashRatio',
+        label: '現金比率',
+        help: '資産のうち預金・現金で持つ割合です。利回りは投資資産にのみかかります。未入力なら20%を仮定します。',
+        kind: 'number',
+        unit: '%',
+        min: 0,
+        max: 100,
+        allowSkip: true,
+        allowRecommended: true,
+        recommendedValue: 30,
+        recommendedLabel: 'おすすめ（30%）',
       },
       {
         path: 'investment.crashScenario',
@@ -480,8 +511,8 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
     questions: [
       {
         path: 'retirement.pension',
-        label: '年金見込み',
-        help: 'ねんきんネットの将来見込額（年額）を参考にしてください。分からなければスキップできます。',
+        label: '年金見込み（年額）',
+        help: 'ねんきんネットの将来見込額（年額）を参考にしてください。65歳以降の収入に反映します。未入力なら0円で試算し結果に明示します。',
         kind: 'number',
         unit: '万円',
         min: 0,
@@ -490,7 +521,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
       {
         path: 'retirement.retirementLiving',
         label: '老後生活費',
-        help: '未入力なら現在生活費の85%をおすすめ値として使います。',
+        help: '65歳以降の年間生活費です（FIRE後生活費とは別。65歳以降はこちらを使います）。未入力なら現在生活費の85%で概算します。',
         kind: 'number',
         unit: '万円',
         min: 0,
@@ -501,24 +532,27 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
   {
     pageId: 'retirement-2',
     stepId: 'detailed-retirement',
-    title: '老後（備え）',
-    purpose: '医療・介護などの備えです。',
+    title: '老後（備え・退職金）',
+    purpose: '医療・介護の備えと退職金です。',
     kind: 'fields',
     questions: [
       {
         path: 'retirement.medicalCareReserve',
         label: '医療介護予備費',
-        help: '75歳以降に追加の備えを織り込むかどうかです。',
+        help: '75歳以降に追加の備え（75歳〜年30万、85歳〜年60万）を織り込むかどうかです。',
         kind: 'toggle',
       },
       {
         path: 'income.retirementLumpSum',
         label: '退職金見込み',
-        help: '収入ステップと同じ項目です。ここでも調整できます。',
+        help: '退職金の見込みです。退職／FIRE開始の年に一時収入として反映します。未入力なら0円で試算します。',
         kind: 'number',
         unit: '万円',
         min: 0,
         allowSkip: true,
+        allowRecommended: true,
+        recommendedValue: 0,
+        recommendedLabel: '0円にする',
       },
     ],
   },
@@ -528,7 +562,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
     pageId: 'events',
     stepId: 'detailed-events',
     title: 'ライフイベント',
-    purpose: '大きな出費・収入の予定です。すべて任意です。',
+    purpose: '大きな出費・収入の予定です（一時的なもの）。維持費など毎年の費用は前のステップで入力してください。',
     kind: 'events',
   },
 ];

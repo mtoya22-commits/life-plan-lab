@@ -74,7 +74,22 @@ export function judge(indicators: Indicators): Score {
     scoreMortgageBurden(indicators.mortgageBurden),
   ];
   const total = byIndicator.reduce((s, i) => s + i.points, 0);
-  return { byIndicator, total, band: bandForTotal(total) };
+  return { byIndicator, total, band: capBandByLongevity(bandForTotal(total), indicators.assetLongevityAge) };
+}
+
+const BAND_ORDER: ScoreBand[] = ['tough', 'needs_adjust', 'realistic', 'stable'];
+
+/**
+ * 資産寿命が短い場合は、FIRE準備率（4%ルール）が高くても総合判定を「安定」と断定しない。
+ * 年次シミュレーションの資産寿命を優先する。
+ */
+function capBandByLongevity(band: ScoreBand, longevityAge: number | null): ScoreBand {
+  if (longevityAge === null) return band; // 95歳まで枯渇しない
+  let cap: ScoreBand;
+  if (longevityAge < 75) cap = 'tough';
+  else if (longevityAge < 90) cap = 'needs_adjust';
+  else cap = 'realistic'; // 95歳前に枯渇するなら最良でも「おおむね現実的」止まり
+  return BAND_ORDER[Math.min(BAND_ORDER.indexOf(band), BAND_ORDER.indexOf(cap))];
 }
 
 /**

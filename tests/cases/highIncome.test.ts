@@ -30,6 +30,23 @@ describe('verification case: high income, side-FIRE at 55', () => {
   const result = runSimulation(input);
   const at = (age: number) => result.rows.find((r) => r.age === age)!;
 
+  it('maps the high-income sample to the expected input values', () => {
+    expect(input.basic.age.value).toBe(38);
+    expect(input.basic.householdIncome.value).toBe(1200);
+    expect(input.basic.currentAssets.value).toBe(3200);
+    expect(input.children.map((c) => c.currentAge.value)).toEqual([4, 2]);
+    expect(input.housing.type.value).toBe('own');
+    expect(input.expense.monthlyLiving.value).toBe(35);
+    expect(input.housing.monthlyPayment.value).toBe(11); // 毎月住居費→ローン返済
+    expect(input.housing.remainingYears.value).toBe(30); // 完済は68歳
+    expect(input.fire.type.value).toBe('side');
+    expect(input.fire.targetAge.value).toBe(55);
+    expect(input.fire.postFireIncome.value).toBe(20 * 12); // 月20万→年240
+    expect(input.fire.postFireLiving.value).toBe(30 * 12); // 月30万→年360
+    expect(input.investment.returnRate.value).toBe(5);
+    expect(input.investment.inflationRate.value).toBe(2);
+  });
+
   it('does NOT use gross income directly (uses take-home)', () => {
     // 額面1200をそのまま労働収入にしていない（手取り≒78%）
     expect(input.basic.takeHomeIncome.value).toBeLessThan(1200);
