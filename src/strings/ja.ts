@@ -77,10 +77,14 @@ export const ja = {
   },
   editLinks: {
     basic: '基本情報を修正',
+    income: '収入を修正',
+    expense: '支出を修正',
     family: '家族・教育を修正',
     housing: '住まいを修正',
     fire: 'FIRE条件を修正',
     investment: '投資条件を修正',
+    retirement: '老後を修正',
+    events: 'ライフイベントを修正',
   },
   band: {
     stable: '安定',

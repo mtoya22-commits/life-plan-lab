@@ -21,6 +21,7 @@ import type {
   SimulationInput,
   SimulationResult,
   StepId,
+  ThoroughStepId,
 } from '../schema/types';
 
 // =============================================================================
@@ -146,12 +147,62 @@ interface InputState {
 
   // 結果からの再調整 / 深掘り
   editCategory: (stepId: StepId) => void;
+  editThoroughStep: (stepId: ThoroughStepId) => void;
   backToResult: () => void;
   deepenToThorough: () => void;
 
   // 開発用
   loadSample: () => void;
+  loadThoroughSample: (toResult: boolean) => void;
 }
+
+// 開発用: しっかり診断のサンプル値（source は recommended_value 扱い）。
+const SAMPLE_THOROUGH_FIELDS: [string, string | number | boolean][] = [
+  ['basic.age', 40],
+  ['basic.spouseAge', 40],
+  ['basic.householdIncome', 900],
+  ['basic.takeHomeIncome', 700],
+  ['basic.currentAssets', 1500],
+  ['basic.cashRatio', 30],
+  ['income.selfIncome', 550],
+  ['income.spouseIncome', 350],
+  ['income.raiseRate', 1],
+  ['income.retirementAge', 65],
+  ['income.retirementLumpSum', 1000],
+  ['expense.monthlyLiving', 28],
+  ['expense.annualSpecial', 50],
+  ['expense.carCost', 20],
+  ['expense.travelCost', 20],
+  ['expense.insuranceCost', 15],
+  ['investment.monthlyInvestment', 8],
+  ['investment.returnRate', 5],
+  ['investment.inflationRate', 2],
+  ['investment.crashScenario', false],
+  ['fire.type', 'side'],
+  ['fire.targetAge', 55],
+  ['fire.postFireLiving', 250],
+  ['fire.postFireIncome', 120],
+  ['fire.workUntilAge', 65],
+  ['housing.type', 'own'],
+  ['housing.monthlyPayment', 12],
+  ['housing.balance', 2500],
+  ['housing.remainingYears', 25],
+  ['housing.rate', 1],
+  ['housing.rateType', 'variable'],
+  ['housing.fixedEndAge', 50],
+  ['housing.repayMethod', 'equal_payment'],
+  ['housing.bonusAnnual', 0],
+  ['retirement.pension', 180],
+  ['retirement.retirementLiving', 240],
+  ['retirement.medicalCareReserve', true],
+  ['children.0.currentAge', 12],
+  ['children.0.highSchool', 'public'],
+  ['children.0.university', 'humanities'],
+  ['children.1.currentAge', 8],
+  ['children.1.highSchool', 'private'],
+  ['children.1.university', 'science'],
+  ['children.1.uniLiving', 'away'],
+];
 
 const SAMPLE_ANSWERS: Record<RoughFieldId, string | number> = {
   age: 38,
@@ -341,6 +392,13 @@ export const useInputStore = create<InputState>((set, get) => ({
       set({ phase: 'input', roughPage: pageIndexByStepId(stepId), cameFromResult: true });
     }
   },
+  editThoroughStep: (stepId) => {
+    const ti = get().thoroughInput;
+    if (!ti) return;
+    const pages = visibleThoroughPages(ti);
+    const page = pages.find((p) => p.stepId === stepId) ?? pages[0];
+    set({ phase: 'input', thoroughPageId: page.pageId, cameFromResult: true });
+  },
   backToResult: () => set({ phase: 'result', cameFromResult: false }),
   deepenToThorough: () => {
     const src = get().input;
@@ -358,6 +416,26 @@ export const useInputStore = create<InputState>((set, get) => ({
     const input = buildFullInputFromRough(draft);
     const result = runSimulation(input);
     set({ mode: 'rough', roughDraft: draft, input, result, phase: 'result', cameFromResult: false, resumePrompt: false });
+  },
+
+  loadThoroughSample: (toResult) => {
+    let ti = freshThoroughInput();
+    ti.children = [makeDetailedChild(), makeDetailedChild()];
+    for (const [path, value] of SAMPLE_THOROUGH_FIELDS) {
+      const f = getFieldByPath(ti, path);
+      if (f) ti = setFieldByPath(ti, path, withResolved(f, value, 'recommended_value'));
+    }
+    set({
+      mode: 'thorough',
+      thoroughInput: ti,
+      thoroughPageId: firstThoroughPageId(ti),
+      phase: 'input',
+      cameFromResult: false,
+      resumePrompt: false,
+      roughDraft: emptyRoughDraft(),
+      roughPage: 0,
+    });
+    if (toResult) get().submitThorough();
   },
 }));
 

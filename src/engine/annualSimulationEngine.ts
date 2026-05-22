@@ -10,7 +10,7 @@ import { totalEducationCost } from './educationCostEngine';
 import { annualHousingCost, mortgageEvents } from './mortgageEngine';
 import { fireAchievementRate, postFireIncomeForAge } from './fireEngine';
 import { buildSuggestions, judge } from './judgmentEngine';
-import { MEDICAL_CARE_RESERVE, RETURN_MODEL_NOTE, SIM, TAX_SIMPLIFIED_NOTE } from './constants';
+import { CAPTURE_NOTE, MEDICAL_CARE_RESERVE, RETURN_MODEL_NOTE, SIM, TAX_SIMPLIFIED_NOTE } from './constants';
 
 // =============================================================================
 // 年次シミュレーション オーケストレーター（純粋関数・React非依存）
@@ -96,7 +96,10 @@ export function runSimulation(input: SimulationInput): SimulationResult {
     score,
     assumptions: collectAssumptions(input),
     flags: collectFlags(input),
-    notes: [TAX_SIMPLIFIED_NOTE, RETURN_MODEL_NOTE],
+    notes:
+      input.meta.mode === 'thorough'
+        ? [TAX_SIMPLIFIED_NOTE, RETURN_MODEL_NOTE, CAPTURE_NOTE]
+        : [TAX_SIMPLIFIED_NOTE, RETURN_MODEL_NOTE],
     suggestions,
   };
 }

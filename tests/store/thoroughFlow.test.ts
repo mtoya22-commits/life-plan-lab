@@ -81,6 +81,30 @@ describe('thorough flow store', () => {
     expect(store().thoroughPageId).toBe('fire-1');
   });
 
+  it('dev thorough sample reaches the result screen (recommended_value source)', () => {
+    store().loadThoroughSample(true);
+    expect(store().mode).toBe('thorough');
+    expect(store().phase).toBe('result');
+    expect(store().result!.rows.at(-1)?.age).toBe(95);
+    expect(store().input!.basic.age.source).toBe('recommended_value');
+    expect(store().input!.children).toHaveLength(2);
+  });
+
+  it('dev thorough sample can start at the input flow', () => {
+    store().loadThoroughSample(false);
+    expect(store().mode).toBe('thorough');
+    expect(store().phase).toBe('input');
+    expect(store().thoroughInput!.fire.type.value).toBe('side');
+  });
+
+  it('editThoroughStep returns to a detailed category from the result', () => {
+    store().loadThoroughSample(true);
+    store().editThoroughStep('detailed-retirement');
+    expect(store().phase).toBe('input');
+    expect(store().cameFromResult).toBe(true);
+    expect(store().thoroughPageId).toBe('retirement-1');
+  });
+
   it('hides loan pages when not an owner', () => {
     store().setMode('thorough'); // default housing.type = rent
     store().setThoroughValue('housing.type', 'rent');

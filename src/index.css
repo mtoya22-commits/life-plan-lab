@@ -870,9 +870,14 @@ body {
 }
 
 /* 開発用サンプル導線 */
+.dev-links {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+}
 .dev-sample {
   align-self: flex-start;
-  margin-top: 4px;
   opacity: 0.7;
 }
 

@@ -53,4 +53,16 @@ describe('thorough steps definition', () => {
     const input = createDefaultInput('thorough');
     expect(firstThoroughPageId(input)).toBe('basic-1');
   });
+
+  it('shows FIRE-after income only for side FIRE', () => {
+    const page = THOROUGH_PAGES.find((p) => p.pageId === 'fire-2')!;
+    const q = page.questions!.find((x) => x.path === 'fire.postFireIncome')!;
+    const input = createDefaultInput('thorough');
+
+    input.fire.type.value = 'full';
+    expect(q.showIf!(input)).toBe(false);
+
+    input.fire.type.value = 'side';
+    expect(q.showIf!(input)).toBe(true);
+  });
 });

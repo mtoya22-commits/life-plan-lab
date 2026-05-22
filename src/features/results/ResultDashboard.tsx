@@ -2,7 +2,7 @@ import { lazy, Suspense, useState } from 'react';
 import { useInputStore } from '../../store/inputStore';
 import { ja } from '../../strings/ja';
 import { formatMan } from '../../lib/format';
-import type { SimulationInput, StepId } from '../../schema/types';
+import type { SimulationInput, StepId, ThoroughStepId } from '../../schema/types';
 import { BottomSheet } from '../../components/BottomSheet';
 import { Hero } from './Hero';
 import { ResultSummary } from './ResultSummary';
@@ -156,7 +156,7 @@ function mortgageCard(input: SimulationInput): { value: string; caption: string 
   return { value: '未設定', caption: 'しっかり診断で住宅ローンを詳しく設定できます。' };
 }
 
-const EDIT_TARGETS: { stepId: StepId; label: string }[] = [
+const ROUGH_EDIT_TARGETS: { stepId: StepId; label: string }[] = [
   { stepId: 'basic', label: ja.editLinks.basic },
   { stepId: 'family', label: ja.editLinks.family },
   { stepId: 'housing', label: ja.editLinks.housing },
@@ -164,18 +164,40 @@ const EDIT_TARGETS: { stepId: StepId; label: string }[] = [
   { stepId: 'investment', label: ja.editLinks.investment },
 ];
 
+const THOROUGH_EDIT_TARGETS: { stepId: ThoroughStepId; label: string }[] = [
+  { stepId: 'detailed-basic', label: ja.editLinks.basic },
+  { stepId: 'detailed-income', label: ja.editLinks.income },
+  { stepId: 'detailed-expense', label: ja.editLinks.expense },
+  { stepId: 'detailed-family', label: ja.editLinks.family },
+  { stepId: 'detailed-housing', label: ja.editLinks.housing },
+  { stepId: 'detailed-fire', label: ja.editLinks.fire },
+  { stepId: 'detailed-investment', label: ja.editLinks.investment },
+  { stepId: 'detailed-retirement', label: ja.editLinks.retirement },
+  { stepId: 'detailed-events', label: ja.editLinks.events },
+];
+
 function EditLinks() {
+  const mode = useInputStore((s) => s.mode);
   const editCategory = useInputStore((s) => s.editCategory);
+  const editThoroughStep = useInputStore((s) => s.editThoroughStep);
+  const isThorough = mode === 'thorough';
+
   return (
     <div className="edit-links">
       <div className="edit-links__title">{ja.result.editHeading}</div>
       <p className="muted">{ja.result.editLead}</p>
       <div className="edit-links__grid">
-        {EDIT_TARGETS.map((t) => (
-          <button key={t.stepId} className="btn edit-link" onClick={() => editCategory(t.stepId)}>
-            {t.label}
-          </button>
-        ))}
+        {isThorough
+          ? THOROUGH_EDIT_TARGETS.map((t) => (
+              <button key={t.stepId} className="btn edit-link" onClick={() => editThoroughStep(t.stepId)}>
+                {t.label}
+              </button>
+            ))
+          : ROUGH_EDIT_TARGETS.map((t) => (
+              <button key={t.stepId} className="btn edit-link" onClick={() => editCategory(t.stepId)}>
+                {t.label}
+              </button>
+            ))}
       </div>
     </div>
   );

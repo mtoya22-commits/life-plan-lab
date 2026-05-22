@@ -59,6 +59,28 @@ describe('render smoke (jsdom)', () => {
     expect(container.textContent).not.toContain('お子さま1');
   });
 
+  it('shows FIRE-after income only for side FIRE', () => {
+    store().setMode('thorough');
+    store().setThoroughValue('fire.type', 'full');
+    store().setThoroughPage('fire-2');
+    const full = render(<App />);
+    expect(full.container.textContent).not.toContain('FIRE後収入');
+    cleanup();
+
+    store().setThoroughValue('fire.type', 'side');
+    const side = render(<App />);
+    expect(side.container.textContent).toContain('FIRE後収入');
+  });
+
+  it('thorough result shows all detailed edit categories', () => {
+    store().loadThoroughSample(true);
+    const { container } = render(<App />);
+    expect(container.textContent).toContain('条件を変えてみる');
+    expect(container.textContent).toContain('収入を修正');
+    expect(container.textContent).toContain('老後を修正');
+    expect(container.textContent).toContain('ライフイベントを修正');
+  });
+
   it('result dashboard shows conclusions up-front and keeps details collapsed', () => {
     fillAll();
     store().submitRough();

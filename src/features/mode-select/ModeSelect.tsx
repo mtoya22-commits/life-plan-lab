@@ -5,6 +5,7 @@ import { ja } from '../../strings/ja';
 export function ModeSelect() {
   const setMode = useInputStore((s) => s.setMode);
   const loadSample = useInputStore((s) => s.loadSample);
+  const loadThoroughSample = useInputStore((s) => s.loadThoroughSample);
 
   return (
     <section className="screen mode-select">
@@ -23,11 +24,19 @@ export function ModeSelect() {
         </button>
       </div>
 
-      {/* 開発用: 9問を手入力せずに結果画面/Bottom Sheetを確認する導線（本番では非表示）。 */}
+      {/* 開発用: 手入力せずに画面遷移・結果反映を確認する導線（本番では非表示）。 */}
       {import.meta.env.DEV && (
-        <button className="link-btn dev-sample" onClick={loadSample}>
-          サンプルで結果を見る（開発用）
-        </button>
+        <div className="dev-links">
+          <button className="link-btn dev-sample" onClick={loadSample}>
+            サンプルで結果を見る（開発用）
+          </button>
+          <button className="link-btn dev-sample" onClick={() => loadThoroughSample(false)}>
+            しっかり診断をサンプル入力で開始（開発用）
+          </button>
+          <button className="link-btn dev-sample" onClick={() => loadThoroughSample(true)}>
+            しっかり診断サンプルで結果を見る（開発用）
+          </button>
+        </div>
       )}
     </section>
   );
