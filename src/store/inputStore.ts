@@ -1,16 +1,27 @@
 import { create } from 'zustand';
 import { buildFullInputFromRough } from '../schema/normalize';
 import { runSimulation } from '../engine/annualSimulationEngine';
-import { ALL_ROUGH_QUESTIONS, ROUGH_PAGES } from '../schema/roughQuestions';
-import type { Mode, RoughCell, RoughDraft, RoughFieldId, SimulationInput, SimulationResult } from '../schema/types';
+import { ALL_ROUGH_QUESTIONS, ROUGH_PAGES, pageIndexByStepId } from '../schema/roughQuestions';
+import type {
+  Mode,
+  RoughCell,
+  RoughDraft,
+  RoughFieldId,
+  SimulationInput,
+  SimulationResult,
+  StepId,
+} from '../schema/types';
 
 // =============================================================================
 // 入力ストア（zustand）
 // 画面はここを読むだけ。計算は純粋関数 runSimulation を呼ぶ。
-// ざっくり診断の入力は roughDraft（セルごとに value と source を保持）で管理する。
+// ステップ遷移と計算ロジックは分離し、入力状態(roughDraft)はグローバルに保持する。
+// 入力途中は localStorage に自動保存し、再訪時に「続きから再開」できる。
 // =============================================================================
 
 export type Phase = 'mode' | 'input' | 'result';
+
+const STORAGE_KEY = 'fire-lifeplan-lab.v2.session.v1';
 
 function emptyRoughDraft(): RoughDraft {
   const draft = {} as RoughDraft;
@@ -22,6 +33,53 @@ function emptyRoughDraft(): RoughDraft {
 
 const recommendedById = new Map(ALL_ROUGH_QUESTIONS.map((q) => [q.id, q.recommendedValue]));
 
+// ---- 自動保存（localStorage） ---------------------------------------------
+
+interface SavedSession {
+  mode: Mode | null;
+  roughPage: number;
+  roughDraft: RoughDraft;
+  phase: Phase;
+}
+
+function loadSession(): SavedSession | null {
+  try {
+    if (typeof localStorage === 'undefined') return null;
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as SavedSession) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveSession(s: SavedSession): void {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+  } catch {
+    /* 保存できなくても致命的ではない */
+  }
+}
+
+function clearSession(): void {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    /* noop */
+  }
+}
+
+function draftHasProgress(draft: RoughDraft): boolean {
+  return Object.values(draft).some((c) => c.source !== 'default_value');
+}
+
+const saved = loadSession();
+const canResume =
+  !!saved && draftHasProgress(saved.roughDraft) && (saved.phase === 'input' || saved.phase === 'result');
+
+// ---- ストア本体 ------------------------------------------------------------
+
 interface InputState {
   phase: Phase;
   mode: Mode | null;
@@ -29,6 +87,10 @@ interface InputState {
   roughDraft: RoughDraft;
   input: SimulationInput | null;
   result: SimulationResult | null;
+  /** 再訪時の「続きから再開しますか？」オーバーレイを出すか。 */
+  resumePrompt: boolean;
+  /** 結果画面から特定カテゴリを編集中か（編集後は結果へ戻る）。 */
+  cameFromResult: boolean;
 
   setMode: (mode: Mode) => void;
   reset: () => void;
@@ -41,6 +103,15 @@ interface InputState {
   nextRoughPage: () => void;
   prevRoughPage: () => void;
   submitRough: () => void;
+
+  // 再開
+  resumeSaved: () => void;
+  startFresh: () => void;
+
+  // 結果からの再調整 / 深掘り
+  editCategory: (stepId: StepId) => void;
+  backToResult: () => void;
+  deepenToThorough: () => void;
 }
 
 function setCell(state: InputState, id: RoughFieldId, cell: RoughCell): Partial<InputState> {
@@ -48,21 +119,35 @@ function setCell(state: InputState, id: RoughFieldId, cell: RoughCell): Partial<
 }
 
 export const useInputStore = create<InputState>((set, get) => ({
-  phase: 'mode',
-  mode: null,
-  roughPage: 0,
-  roughDraft: emptyRoughDraft(),
+  phase: canResume ? saved!.phase : 'mode',
+  mode: canResume ? saved!.mode : null,
+  roughPage: canResume ? saved!.roughPage : 0,
+  roughDraft: canResume ? saved!.roughDraft : emptyRoughDraft(),
   input: null,
   result: null,
+  resumePrompt: canResume,
+  cameFromResult: false,
 
-  setMode: (mode) => set({ mode, phase: 'input', roughPage: 0, roughDraft: emptyRoughDraft() }),
-  reset: () => set({ phase: 'mode', mode: null, roughPage: 0, roughDraft: emptyRoughDraft(), input: null, result: null }),
+  setMode: (mode) =>
+    set({ mode, phase: 'input', roughPage: 0, roughDraft: emptyRoughDraft(), cameFromResult: false, resumePrompt: false }),
+
+  reset: () => {
+    clearSession();
+    set({
+      phase: 'mode',
+      mode: null,
+      roughPage: 0,
+      roughDraft: emptyRoughDraft(),
+      input: null,
+      result: null,
+      cameFromResult: false,
+      resumePrompt: false,
+    });
+  },
 
   setRoughValue: (id, value) => {
     const empty = value === '' || value === null;
-    const cell: RoughCell = empty
-      ? { value: null, source: 'default_value' }
-      : { value, source: 'user_input' };
+    const cell: RoughCell = empty ? { value: null, source: 'default_value' } : { value, source: 'user_input' };
     set((s) => setCell(s, id, cell));
   },
 
@@ -90,6 +175,41 @@ export const useInputStore = create<InputState>((set, get) => ({
   submitRough: () => {
     const input = buildFullInputFromRough(get().roughDraft);
     const result = runSimulation(input);
-    set({ input, result, phase: 'result' });
+    set({ input, result, phase: 'result', cameFromResult: false });
   },
+
+  resumeSaved: () => {
+    if (get().phase === 'result') get().submitRough(); // 復元したドラフトから結果を再計算
+    set({ resumePrompt: false });
+  },
+
+  startFresh: () => {
+    clearSession();
+    set({
+      phase: 'mode',
+      mode: null,
+      roughPage: 0,
+      roughDraft: emptyRoughDraft(),
+      input: null,
+      result: null,
+      cameFromResult: false,
+      resumePrompt: false,
+    });
+  },
+
+  editCategory: (stepId) => set({ phase: 'input', roughPage: pageIndexByStepId(stepId), cameFromResult: true }),
+
+  backToResult: () => set({ phase: 'result', cameFromResult: false }),
+
+  deepenToThorough: () => set({ mode: 'thorough', phase: 'input', cameFromResult: false }),
 }));
+
+// 入力状態が変わるたびに自動保存する（次回の「続きから再開」用）。
+useInputStore.subscribe((state) => {
+  saveSession({
+    mode: state.mode,
+    roughPage: state.roughPage,
+    roughDraft: state.roughDraft,
+    phase: state.phase,
+  });
+});

@@ -267,7 +267,7 @@ body {
   top: 24px;
   left: 0;
   z-index: 10;
-  width: 240px;
+  width: min(240px, 78vw);
   padding: 10px 12px;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -447,8 +447,188 @@ body {
   font-size: 0.9rem;
 }
 
+/* =========================================================================
+   STEP2.5: 離脱防止UX（目的説明 / 進捗ETA / 下部固定ナビ / 要約 / 修正導線 / 再開）
+   ========================================================================= */
+
+/* 進捗ヘッダ */
+.progress-header__label {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.progress-header__name {
+  font-weight: 600;
+  color: var(--text);
+}
+.progress-header__eta {
+  color: var(--muted);
+}
+
+/* ステップ見出し + 目的説明 */
+.step-head {
+  margin-bottom: 2px;
+}
+.step-purpose {
+  margin: 2px 0 0;
+  font-size: 0.88rem;
+}
+.edit-header {
+  font-size: 0.85rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* 未回答時のソフトな案内（赤字エラーにしない） */
+.field-hint {
+  margin: 10px 0 0;
+  font-size: 0.82rem;
+  color: var(--band-needs);
+}
+
+/* 下部固定ナビ（スマホ操作の主導線） */
+.bottom-nav-spacer {
+  height: 8px;
+}
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--border);
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+}
+.bottom-nav__inner {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.bottom-nav__inner .btn {
+  min-height: 48px;
+}
+.bottom-nav__center {
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+.bottom-nav__hint {
+  max-width: 720px;
+  margin: 8px auto 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.8rem;
+}
+.link-btn {
+  appearance: none;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 0.82rem;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 6px 4px;
+}
+/* 固定ナビと本文が重ならないよう、入力画面では下部に余白を確保 */
+.step-layout {
+  padding-bottom: 96px;
+}
+
+/* 結果: 今回のポイント */
+.summary {
+  background: var(--accent-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+.summary__title {
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.summary__list {
+  margin: 0;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.summary__item {
+  line-height: 1.6;
+}
+
+/* 結果: 条件修正導線 */
+.edit-links,
+.deepen {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+}
+.edit-links__title,
+.deepen__title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.edit-links__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 12px;
+}
+.edit-link {
+  text-align: center;
+}
+.deepen .btn {
+  margin-top: 12px;
+  width: 100%;
+}
+
+/* 再開オーバーレイ */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(40, 40, 40, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.overlay__card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  max-width: 420px;
+  width: 100%;
+}
+.overlay__title {
+  font-size: 1.15rem;
+  margin: 0 0 8px;
+}
+.overlay__actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 18px;
+}
+.overlay__actions .btn {
+  flex: 1;
+  min-height: 48px;
+}
+
 @media (max-width: 480px) {
   .hero__metrics {
+    grid-template-columns: 1fr;
+  }
+  .edit-links__grid {
     grid-template-columns: 1fr;
   }
 }

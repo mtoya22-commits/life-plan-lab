@@ -1,9 +1,10 @@
-import type { RoughFieldId } from './types';
+import type { RoughFieldId, StepId } from './types';
 
 // =============================================================================
 // ざっくり診断の質問定義（宣言的・ドメイン設定）。
-// 1ページ1〜3項目。各質問に Help / Skip / Recommended の有無と、おすすめ値を持たせる。
-// UI(RoughFlow) と 写像(roughMapping) の双方がここを参照する。
+// 1ページ＝1カテゴリ（stepId）。1ページ1〜3項目で、スマホで軽く感じる粒度に保つ。
+// 各ページに目的説明(purpose)を持たせ、なぜ聞くのかを短く伝える。
+// UI(RoughFlow) と 写像(roughMapping) と 結果画面の修正導線が、ここを参照する。
 // =============================================================================
 
 export interface ChoiceOption {
@@ -31,13 +32,19 @@ export interface RoughQuestion {
 }
 
 export interface RoughPage {
+  /** カテゴリ識別子。結果画面の「修正」導線と対応する。 */
+  id: StepId;
   title: string;
+  /** なぜ聞くのかの短い説明（長文禁止）。 */
+  purpose: string;
   questions: RoughQuestion[];
 }
 
 export const ROUGH_PAGES: RoughPage[] = [
   {
+    id: 'basic',
     title: 'あなたについて',
+    purpose: '現在地を確認するための情報です。',
     questions: [
       {
         id: 'age',
@@ -52,7 +59,7 @@ export const ROUGH_PAGES: RoughPage[] = [
       {
         id: 'householdIncome',
         label: '世帯年収（ざっくり）',
-        help: '源泉徴収票の「支払金額」が目安です。共働きの場合は合算してください。分からなければスキップできます。',
+        help: '源泉徴収票の「支払金額」が目安です。共働きは合算してください。',
         kind: 'number',
         unit: '万円',
         placeholder: '例：850',
@@ -62,7 +69,7 @@ export const ROUGH_PAGES: RoughPage[] = [
       {
         id: 'currentAssets',
         label: '今の資産（ざっくり）',
-        help: '預貯金・投資などの合計のおおよそで構いません。分からなければスキップできます。',
+        help: '預貯金・投資などの合計のおおよそで構いません。',
         kind: 'number',
         unit: '万円',
         placeholder: '例：1200',
@@ -72,7 +79,9 @@ export const ROUGH_PAGES: RoughPage[] = [
     ],
   },
   {
+    id: 'family',
     title: 'お子さま・教育',
+    purpose: '教育費が大きくなる時期を概算します。',
     questions: [
       {
         id: 'childrenCount',
@@ -103,7 +112,9 @@ export const ROUGH_PAGES: RoughPage[] = [
     ],
   },
   {
+    id: 'housing',
     title: '住まい',
+    purpose: '住宅費とFIRE時期の重なりを確認します。',
     questions: [
       {
         id: 'housing',
@@ -119,12 +130,14 @@ export const ROUGH_PAGES: RoughPage[] = [
     ],
   },
   {
+    id: 'fire',
     title: 'これからの働き方',
+    purpose: '仕事を減らした後の暮らし方を確認します。',
     questions: [
       {
         id: 'workStyle',
         label: '将来の働き方',
-        help: '完全に仕事を辞めたいか、少し働き続けたいか、まだ決めていないかを選んでください。',
+        help: '完全に辞めたいか、少し働き続けたいか、まだ決めていないかを選んでください。',
         kind: 'choice',
         options: [
           { value: 'full_retire', label: '完全リタイアしたい' },
@@ -135,7 +148,7 @@ export const ROUGH_PAGES: RoughPage[] = [
       {
         id: 'reduceWorkAge',
         label: '仕事を減らしたい年齢',
-        help: 'フルタイムをセーブしたい年齢の目安です。迷ったらおすすめ値（55歳）が使えます。',
+        help: 'フルタイムをセーブしたい年齢の目安です。迷ったらおすすめ値が使えます。',
         kind: 'number',
         unit: '歳',
         placeholder: '例：55',
@@ -149,12 +162,14 @@ export const ROUGH_PAGES: RoughPage[] = [
     ],
   },
   {
+    id: 'investment',
     title: '投資のスタイル',
+    purpose: '資産の増え方を概算します。',
     questions: [
       {
         id: 'investmentStyle',
         label: '投資のスタイル',
-        help: '安定重視ほど想定利回りは控えめ、成長重視ほど高めで試算します。迷ったらバランス型がおすすめです。',
+        help: '安定重視ほど利回りは控えめ、成長重視ほど高めで試算します。迷ったらバランス型がおすすめです。',
         kind: 'choice',
         options: [
           { value: 'stable', label: '安定重視' },
@@ -172,3 +187,12 @@ export const ROUGH_PAGES: RoughPage[] = [
 
 /** 全質問のフラット一覧。 */
 export const ALL_ROUGH_QUESTIONS: RoughQuestion[] = ROUGH_PAGES.flatMap((p) => p.questions);
+
+/** ページ順の stepId 一覧。 */
+export const STEP_ORDER: StepId[] = ROUGH_PAGES.map((p) => p.id);
+
+/** stepId からページ番号を引く（見つからなければ0）。 */
+export function pageIndexByStepId(stepId: StepId): number {
+  const i = ROUGH_PAGES.findIndex((p) => p.id === stepId);
+  return i < 0 ? 0 : i;
+}

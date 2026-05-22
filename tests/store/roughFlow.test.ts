@@ -28,16 +28,7 @@ describe('rough flow store wiring', () => {
   });
 
   it('navigates pages and produces a result on submit', () => {
-    store().setMode('rough');
-    store().setRoughValue('age', 38);
-    store().setRoughValue('householdIncome', 850);
-    store().setRoughValue('currentAssets', 1200);
-    store().setRoughValue('childrenCount', '2');
-    store().setRoughValue('educationPolicy', 'public');
-    store().setRoughValue('housing', 'own');
-    store().setRoughValue('workStyle', 'work_a_little');
-    store().setRoughValue('reduceWorkAge', 55);
-    store().setRoughValue('investmentStyle', 'balanced');
+    fillAll();
 
     // 最終ページまで進める（最後の nextRoughPage が submit になる）
     for (let i = 0; i < ROUGH_PAGES.length; i++) store().nextRoughPage();
@@ -46,4 +37,46 @@ describe('rough flow store wiring', () => {
     expect(store().result).not.toBeNull();
     expect(store().result!.rows.at(-1)?.age).toBe(95);
   });
+
+  it('editCategory jumps to the right page in edit mode and recomputes', () => {
+    fillAll();
+    store().submitRough();
+    expect(store().phase).toBe('result');
+
+    store().editCategory('fire');
+    expect(store().phase).toBe('input');
+    expect(store().cameFromResult).toBe(true);
+    expect(store().roughPage).toBe(3); // basic, family, housing, fire -> index 3
+
+    // 条件を変えて再計算
+    store().setRoughValue('reduceWorkAge', 60);
+    store().submitRough();
+    expect(store().phase).toBe('result');
+    expect(store().cameFromResult).toBe(false);
+  });
+
+  it('deepenToThorough carries state over to thorough mode without restarting', () => {
+    fillAll();
+    store().submitRough();
+    const draftBefore = store().roughDraft;
+
+    store().deepenToThorough();
+    expect(store().mode).toBe('thorough');
+    expect(store().phase).toBe('input');
+    expect(store().input).not.toBeNull(); // ざっくりの結果が引き継がれている
+    expect(store().roughDraft).toEqual(draftBefore); // 入力は維持
+  });
 });
+
+function fillAll() {
+  store().setMode('rough');
+  store().setRoughValue('age', 38);
+  store().setRoughValue('householdIncome', 850);
+  store().setRoughValue('currentAssets', 1200);
+  store().setRoughValue('childrenCount', '2');
+  store().setRoughValue('educationPolicy', 'public');
+  store().setRoughValue('housing', 'own');
+  store().setRoughValue('workStyle', 'work_a_little');
+  store().setRoughValue('reduceWorkAge', 55);
+  store().setRoughValue('investmentStyle', 'balanced');
+}

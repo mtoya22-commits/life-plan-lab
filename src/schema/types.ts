@@ -28,6 +28,10 @@ export interface Field<T> {
 // ---- 列挙系 ----------------------------------------------------------------
 
 export type Mode = 'rough' | 'thorough';
+
+/** 入力ステップ（カテゴリ）の識別子。結果画面から特定カテゴリへ戻るために使う。 */
+export type StepId = 'basic' | 'family' | 'housing' | 'fire' | 'investment';
+
 export type EducationPolicy = 'public' | 'some_private' | 'education_focused' | 'undecided';
 export type HousingType = 'own' | 'rent' | 'considering';
 export type WorkStyle = 'full_retire' | 'work_a_little' | 'undecided';

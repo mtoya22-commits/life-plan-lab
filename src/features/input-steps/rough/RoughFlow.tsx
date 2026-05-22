@@ -1,15 +1,17 @@
+import { useState } from 'react';
 import { useInputStore } from '../../../store/inputStore';
 import { ja } from '../../../strings/ja';
 import { ROUGH_PAGES, type RoughQuestion } from '../../../schema/roughQuestions';
 import type { RoughCell } from '../../../schema/types';
 import { ProgressHeader } from '../ProgressHeader';
 import { QuestionCard } from '../QuestionCard';
-import { HelpTooltip } from '../HelpTooltip';
 
 // =============================================================================
 // ざっくり診断のステップフロー本体。
-// 1ページ1〜3項目 / 次へ・戻る / 進捗 / Recommended・Skip・Help / source管理。
-// 最後のページで submitRough() → buildFullInput → 結果ダッシュボードへ。
+// 思想: アンケートではなく「人生設計を調整する道具」。止めない・煽らない・スマホで軽い。
+// - 各ステップに目的説明 / 進捗 + あと何問・何分 / 下部固定ナビ
+// - 未回答ガードはソフト（おすすめ・スキップ・このまま進む の逃げ道を必ず提示）
+// - 結果画面からの「カテゴリ修正」(cameFromResult) では再計算ボタンを主導線にする
 // =============================================================================
 
 function isComplete(cell: RoughCell): boolean {
@@ -18,11 +20,22 @@ function isComplete(cell: RoughCell): boolean {
   return false;
 }
 
+function countFromDraft(cell: RoughCell): number {
+  if (cell.source !== 'user_input' || cell.value === null) return 0;
+  const n = typeof cell.value === 'string' ? parseInt(cell.value, 10) : cell.value;
+  return Number.isFinite(n) ? n : 0;
+}
+
 export function RoughFlow() {
   const roughPage = useInputStore((s) => s.roughPage);
   const draft = useInputStore((s) => s.roughDraft);
+  const cameFromResult = useInputStore((s) => s.cameFromResult);
   const nextRoughPage = useInputStore((s) => s.nextRoughPage);
   const prevRoughPage = useInputStore((s) => s.prevRoughPage);
+  const submitRough = useInputStore((s) => s.submitRough);
+  const backToResult = useInputStore((s) => s.backToResult);
+
+  const [attempted, setAttempted] = useState(false);
 
   const page = ROUGH_PAGES[roughPage];
   const childrenCount = countFromDraft(draft.childrenCount);
@@ -30,31 +43,95 @@ export function RoughFlow() {
   const pageComplete = visible.every((q) => isComplete(draft[q.id]));
   const isLast = roughPage === ROUGH_PAGES.length - 1;
 
+  // あと何問・あと何分（おおよそ）
+  const laterQuestions = ROUGH_PAGES.slice(roughPage + 1).reduce(
+    (n, p) => n + p.questions.filter((q) => (q.showIf ? q.showIf(childrenCount) : true)).length,
+    0,
+  );
+  const remainingQuestions = laterQuestions + visible.filter((q) => !isComplete(draft[q.id])).length;
+  const etaText = remainingQuestions <= 0 ? 'まもなく完了' : `残り約${remainingQuestions}問・あと約1分`;
+
+  const advance = () => {
+    setAttempted(false);
+    nextRoughPage();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleNext = () => {
+    if (pageComplete) {
+      advance();
+    } else {
+      setAttempted(true);
+      const firstIncomplete = visible.find((q) => !isComplete(draft[q.id]));
+      if (firstIncomplete) {
+        document.getElementById(`q-${firstIncomplete.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  };
+
   return (
     <section className="screen step-layout">
-      <ProgressHeader current={roughPage + 1} total={ROUGH_PAGES.length} />
-      <h2 className="section-heading">{page.title}</h2>
+      {cameFromResult ? (
+        <header className="edit-header">編集中：{page.title}</header>
+      ) : (
+        <ProgressHeader label="ざっくり診断" current={roughPage + 1} total={ROUGH_PAGES.length} etaText={etaText} />
+      )}
+
+      <div className="step-head">
+        <h2 className="section-heading">{page.title}</h2>
+        <p className="step-purpose muted">{page.purpose}</p>
+      </div>
 
       {visible.map((q) => (
-        <RoughQuestionView key={q.id} q={q} cell={draft[q.id]} />
+        <div id={`q-${q.id}`} key={q.id}>
+          <RoughQuestionView q={q} cell={draft[q.id]} showHint={attempted && !isComplete(draft[q.id])} />
+        </div>
       ))}
 
-      <div className="step-actions">
-        <button className="btn" onClick={prevRoughPage}>
-          {roughPage === 0 ? 'モード選択へ' : ja.common.back}
-        </button>
-        <div className="step-actions__right">
-          {!pageComplete && <span className="muted step-hint">未回答の項目があります</span>}
-          <button className="btn btn--primary" onClick={nextRoughPage} disabled={!pageComplete}>
-            {isLast ? ja.common.seeResult : ja.common.next}
-          </button>
+      {/* 下部余白（固定ナビと本文が重ならないように） */}
+      <div className="bottom-nav-spacer" />
+
+      <nav className="bottom-nav">
+        <div className="bottom-nav__inner">
+          {cameFromResult ? (
+            <>
+              <button className="btn" onClick={backToResult}>
+                {ja.nav.backToResult}
+              </button>
+              <span className="bottom-nav__center muted">編集中</span>
+              <button className="btn btn--primary" onClick={submitRough}>
+                {ja.nav.recompute}
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="btn" onClick={prevRoughPage}>
+                {roughPage === 0 ? ja.nav.toModeSelect : ja.common.back}
+              </button>
+              <span className="bottom-nav__center muted">
+                {roughPage + 1} / {ROUGH_PAGES.length}
+              </span>
+              <button className="btn btn--primary" onClick={handleNext}>
+                {isLast ? ja.common.seeResult : ja.common.next}
+              </button>
+            </>
+          )}
         </div>
-      </div>
+
+        {!cameFromResult && attempted && !pageComplete && (
+          <div className="bottom-nav__hint">
+            <span className="muted">{ja.nav.incompleteHint}</span>
+            <button className="link-btn" onClick={advance}>
+              {ja.nav.proceedAnyway}
+            </button>
+          </div>
+        )}
+      </nav>
     </section>
   );
 }
 
-function RoughQuestionView({ q, cell }: { q: RoughQuestion; cell: RoughCell }) {
+function RoughQuestionView({ q, cell, showHint }: { q: RoughQuestion; cell: RoughCell; showHint: boolean }) {
   const setRoughValue = useInputStore((s) => s.setRoughValue);
   const useRoughRecommended = useInputStore((s) => s.useRoughRecommended);
   const skipRough = useInputStore((s) => s.skipRough);
@@ -118,20 +195,14 @@ function RoughQuestionView({ q, cell }: { q: RoughQuestion; cell: RoughCell }) {
         </div>
       )}
 
-      {cell.source === 'skipped' && <p className="field-status muted">未入力のまま、標準値で試算します。</p>}
-      {cell.source === 'recommended_value' && <p className="field-status muted">おすすめ値を使用します。</p>}
+      {cell.source === 'skipped' && <p className="field-status muted">{ja.field.skipped}</p>}
+      {cell.source === 'recommended_value' && <p className="field-status muted">{ja.field.recommended}</p>}
 
-      {q.id === 'childrenCount' && <ChildrenHelpText />}
+      {showHint && (
+        <p className="field-hint">{q.kind === 'number' ? ja.field.hintNumber : ja.field.hintChoice}</p>
+      )}
+
+      {q.id === 'childrenCount' && <p className="field-status muted">{ja.field.childrenAgeNote}</p>}
     </QuestionCard>
   );
-}
-
-function ChildrenHelpText() {
-  return <p className="field-status muted">お子さまの年齢は、ざっくり診断では仮の値で試算します（結果画面に明示します）。</p>;
-}
-
-function countFromDraft(cell: RoughCell): number {
-  if (cell.source !== 'user_input' || cell.value === null) return 0;
-  const n = typeof cell.value === 'string' ? parseInt(cell.value, 10) : cell.value;
-  return Number.isFinite(n) ? n : 0;
 }
