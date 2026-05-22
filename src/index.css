@@ -876,6 +876,31 @@ body {
   opacity: 0.7;
 }
 
+/* しっかり診断：子どもカード / ライフイベント */
+.child-card > summary {
+  font-weight: 600;
+}
+.child-card .question-card {
+  border: none;
+  box-shadow: none;
+  padding: 8px 0;
+}
+.event-fields {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.event-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+}
+.event-field .field-number {
+  max-width: 160px;
+}
+
 @media (max-width: 480px) {
   .hero__metrics {
     grid-template-columns: 1fr;

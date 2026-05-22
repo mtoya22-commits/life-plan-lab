@@ -66,6 +66,7 @@ export function createDefaultInput(mode: Mode): SimulationInput {
       rateType: field('variable', 'default_value', '金利タイプ', '標準値（変動）で試算しています。'),
       fixedEndAge: field(0, 'skipped', '固定終了年齢', '未入力です。', '歳'),
       repayMethod: field('equal_payment', 'default_value', '返済方式', '標準値（元利均等）で試算しています。'),
+      bonusAnnual: field(0, 'skipped', 'ボーナス払い', '未入力のため0円で試算しています。', '万円'),
     },
 
     retirement: {

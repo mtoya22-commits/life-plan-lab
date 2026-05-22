@@ -1,0 +1,569 @@
+import { field } from './field';
+import type { ChildInput, SimulationInput, StepId, ThoroughStepId } from './types';
+
+// =============================================================================
+// しっかり診断のステップ定義（宣言的）。
+// 1ページ＝原則1〜3項目。各質問は SimulationInput 内の Field をドットパスで指す。
+// 計算ロジックは別、ここは入力UIの構造のみ（buildFullInput に自然合流）。
+// =============================================================================
+
+export interface ThoroughChoice {
+  value: string;
+  label: string;
+}
+
+export interface ThoroughQuestion {
+  /** SimulationInput 内の Field へのドットパス（例: 'basic.age'）。 */
+  path: string;
+  label: string;
+  help?: string;
+  kind: 'number' | 'choice' | 'toggle';
+  unit?: string;
+  placeholder?: string;
+  options?: ThoroughChoice[];
+  min?: number;
+  max?: number;
+  allowSkip?: boolean;
+  allowRecommended?: boolean;
+  recommendedValue?: string | number | boolean;
+  recommendedLabel?: string;
+  /** この質問を表示する条件。 */
+  showIf?: (input: SimulationInput) => boolean;
+}
+
+export interface ThoroughPage {
+  pageId: string;
+  stepId: ThoroughStepId;
+  title: string;
+  purpose: string;
+  /** 'fields' は questions を描画。family/events は専用UI。 */
+  kind: 'fields' | 'family' | 'events';
+  questions?: ThoroughQuestion[];
+  /** このページを表示する条件（住宅ローン詳細・サイドFIRE等）。 */
+  showIf?: (input: SimulationInput) => boolean;
+}
+
+const hasLoan = (i: SimulationInput) => i.housing.type.value !== 'rent';
+const isRent = (i: SimulationInput) => i.housing.type.value === 'rent';
+const isSide = (i: SimulationInput) => i.fire.type.value === 'side';
+
+const schoolOptions: ThoroughChoice[] = [
+  { value: 'public', label: '公立' },
+  { value: 'private', label: '私立' },
+];
+const uniOptions: ThoroughChoice[] = [
+  { value: 'none', label: 'なし' },
+  { value: 'humanities', label: '文系' },
+  { value: 'science', label: '理系' },
+];
+const livingOptions: ThoroughChoice[] = [
+  { value: 'home', label: '自宅' },
+  { value: 'away', label: '一人暮らし' },
+];
+
+export const THOROUGH_PAGES: ThoroughPage[] = [
+  // ── 基本情報 ──
+  {
+    pageId: 'basic-1',
+    stepId: 'detailed-basic',
+    title: '基本情報',
+    purpose: '現在地を詳しく確認します。',
+    kind: 'fields',
+    questions: [
+      { path: 'basic.age', label: '本人年齢', kind: 'number', unit: '歳', min: 18, max: 80, placeholder: '例：38' },
+      {
+        path: 'basic.spouseAge',
+        label: '配偶者年齢',
+        help: '配偶者がいる場合のみ。分からなければスキップできます。',
+        kind: 'number',
+        unit: '歳',
+        min: 18,
+        max: 90,
+        allowSkip: true,
+      },
+      { path: 'basic.householdIncome', label: '世帯年収', kind: 'number', unit: '万円', min: 0, placeholder: '例：850' },
+    ],
+  },
+  {
+    pageId: 'basic-2',
+    stepId: 'detailed-basic',
+    title: '基本情報（資産）',
+    purpose: '手取りと資産の状況を確認します。',
+    kind: 'fields',
+    questions: [
+      {
+        path: 'basic.takeHomeIncome',
+        label: '手取り年収',
+        help: '実際に生活に使える年間収入が分かる場合のみ入力してください。分からなければスキップできます。',
+        kind: 'number',
+        unit: '万円',
+        min: 0,
+        allowSkip: true,
+      },
+      { path: 'basic.currentAssets', label: '現在資産', kind: 'number', unit: '万円', min: 0, placeholder: '例：1200' },
+      {
+        path: 'basic.cashRatio',
+        label: '現金比率',
+        help: '資産のうち、預金や現金で持っている割合です。分からなければスキップできます。',
+        kind: 'number',
+        unit: '%',
+        min: 0,
+        max: 100,
+        allowSkip: true,
+        allowRecommended: true,
+        recommendedValue: 30,
+        recommendedLabel: 'おすすめ（30%）',
+      },
+    ],
+  },
+
+  // ── 収入 ──
+  {
+    pageId: 'income-1',
+    stepId: 'detailed-income',
+    title: '収入',
+    purpose: '収入の内訳と見通しです。すべて任意です。',
+    kind: 'fields',
+    questions: [
+      { path: 'income.selfIncome', label: '本人収入', help: '世帯年収の内訳が分かる場合のみ。', kind: 'number', unit: '万円', min: 0, allowSkip: true },
+      { path: 'income.spouseIncome', label: '配偶者収入', kind: 'number', unit: '万円', min: 0, allowSkip: true },
+      {
+        path: 'income.raiseRate',
+        label: '昇給率',
+        help: '毎年の収入の伸びの目安です。迷ったら控えめがおすすめです。',
+        kind: 'number',
+        unit: '%',
+        min: 0,
+        max: 10,
+        allowSkip: true,
+        allowRecommended: true,
+        recommendedValue: 0.5,
+        recommendedLabel: 'おすすめ（0.5%）',
+      },
+    ],
+  },
+  {
+    pageId: 'income-2',
+    stepId: 'detailed-income',
+    title: '収入（退職）',
+    purpose: '退職に関する見通しです。',
+    kind: 'fields',
+    questions: [
+      {
+        path: 'income.retirementAge',
+        label: '退職予定年齢',
+        kind: 'number',
+        unit: '歳',
+        min: 45,
+        max: 80,
+        allowSkip: true,
+        allowRecommended: true,
+        recommendedValue: 65,
+        recommendedLabel: 'おすすめ（65歳）',
+      },
+      {
+        path: 'income.retirementLumpSum',
+        label: '退職金見込み',
+        help: '分からなければスキップできます。未入力なら0円として試算し、結果に明示します。',
+        kind: 'number',
+        unit: '万円',
+        min: 0,
+        allowSkip: true,
+        allowRecommended: true,
+        recommendedValue: 0,
+        recommendedLabel: '0円にする',
+      },
+    ],
+  },
+
+  // ── 支出 ──
+  {
+    pageId: 'expense-1',
+    stepId: 'detailed-expense',
+    title: '支出',
+    purpose: '毎月の生活費を確認します。',
+    kind: 'fields',
+    questions: [
+      {
+        path: 'expense.monthlyLiving',
+        label: '毎月生活費',
+        help: '食費・通信費・日用品・光熱費など、毎月の生活費です。投資額は含めなくて構いません。',
+        kind: 'number',
+        unit: '万円',
+        min: 0,
+        placeholder: '例：25',
+        allowSkip: true,
+      },
+      {
+        path: 'expense.annualSpecial',
+        label: '年間特別費',
+        help: '旅行、家電、帰省、車検など毎月ではない支出です。ざっくりで大丈夫です。',
+        kind: 'number',
+        unit: '万円',
+        min: 0,
+        allowSkip: true,
+      },
+    ],
+  },
+  {
+    pageId: 'expense-2',
+    stepId: 'detailed-expense',
+    title: '支出（その他）',
+    purpose: 'その他の支出です。すべて任意です。',
+    kind: 'fields',
+    questions: [
+      { path: 'expense.carCost', label: '車関連費', help: '年間の維持費の目安です。', kind: 'number', unit: '万円', min: 0, allowSkip: true },
+      { path: 'expense.travelCost', label: '旅行費', kind: 'number', unit: '万円', min: 0, allowSkip: true },
+      { path: 'expense.insuranceCost', label: '保険料', kind: 'number', unit: '万円', min: 0, allowSkip: true },
+    ],
+  },
+
+  // ── 子ども・教育（専用UI） ──
+  {
+    pageId: 'family',
+    stepId: 'detailed-family',
+    title: 'お子さま・教育',
+    purpose: '教育費の見通しを詳しくします。',
+    kind: 'family',
+  },
+
+  // ── 住まい・住宅ローン ──
+  {
+    pageId: 'housing-1',
+    stepId: 'detailed-housing',
+    title: '住まい',
+    purpose: '住まいの状況です。',
+    kind: 'fields',
+    questions: [
+      {
+        path: 'housing.type',
+        label: 'お住まい',
+        kind: 'choice',
+        options: [
+          { value: 'own', label: '持ち家' },
+          { value: 'rent', label: '賃貸' },
+          { value: 'considering', label: '購入検討中' },
+        ],
+      },
+      {
+        path: 'housing.rent',
+        label: '毎月の家賃',
+        kind: 'number',
+        unit: '万円',
+        min: 0,
+        allowSkip: true,
+        showIf: isRent,
+      },
+    ],
+  },
+  {
+    pageId: 'housing-2',
+    stepId: 'detailed-housing',
+    title: '住宅ローン',
+    purpose: 'ローンの状況です。分かる範囲で大丈夫です。',
+    kind: 'fields',
+    showIf: hasLoan,
+    questions: [
+      {
+        path: 'housing.monthlyPayment',
+        label: '毎月返済額',
+        help: '毎月の引き落とし額です。ボーナス払いがある場合は年間額に均しても構いません。',
+        kind: 'number',
+        unit: '万円',
+        min: 0,
+        allowSkip: true,
+      },
+      {
+        path: 'housing.balance',
+        label: 'ローン残高',
+        help: '銀行アプリ、返済予定表、残高証明書などで確認できます。',
+        kind: 'number',
+        unit: '万円',
+        min: 0,
+        allowSkip: true,
+      },
+      { path: 'housing.remainingYears', label: '残年数', kind: 'number', unit: '年', min: 0, max: 50, allowSkip: true },
+    ],
+  },
+  {
+    pageId: 'housing-3',
+    stepId: 'detailed-housing',
+    title: '住宅ローン（金利）',
+    purpose: '金利の条件です。',
+    kind: 'fields',
+    showIf: hasLoan,
+    questions: [
+      {
+        path: 'housing.rate',
+        label: '金利',
+        kind: 'number',
+        unit: '%',
+        min: 0,
+        max: 10,
+        allowSkip: true,
+        allowRecommended: true,
+        recommendedValue: 1.0,
+        recommendedLabel: 'おすすめ（1.0%）',
+      },
+      {
+        path: 'housing.rateType',
+        label: '固定 / 変動',
+        kind: 'choice',
+        options: [
+          { value: 'fixed', label: '固定' },
+          { value: 'variable', label: '変動' },
+        ],
+        allowSkip: true,
+      },
+      {
+        path: 'housing.fixedEndAge',
+        label: '固定終了年齢',
+        help: '固定金利が終わる年齢です。タイムラインに反映します。',
+        kind: 'number',
+        unit: '歳',
+        min: 30,
+        max: 90,
+        allowSkip: true,
+      },
+    ],
+  },
+  {
+    pageId: 'housing-4',
+    stepId: 'detailed-housing',
+    title: '住宅ローン（返済方式）',
+    purpose: '返済方式とボーナス払いです。',
+    kind: 'fields',
+    showIf: hasLoan,
+    questions: [
+      {
+        path: 'housing.repayMethod',
+        label: '返済方式',
+        kind: 'choice',
+        options: [
+          { value: 'equal_payment', label: '元利均等' },
+          { value: 'equal_principal', label: '元金均等' },
+        ],
+        allowSkip: true,
+      },
+      {
+        path: 'housing.bonusAnnual',
+        label: 'ボーナス払い（年間）',
+        help: 'ボーナス払いの年間合計です。なければ0円で構いません。',
+        kind: 'number',
+        unit: '万円',
+        min: 0,
+        allowSkip: true,
+        allowRecommended: true,
+        recommendedValue: 0,
+        recommendedLabel: '0円にする',
+      },
+    ],
+  },
+
+  // ── FIRE条件 ──
+  {
+    pageId: 'fire-1',
+    stepId: 'detailed-fire',
+    title: 'FIRE条件',
+    purpose: 'いつ・どう働き方を変えるかです。',
+    kind: 'fields',
+    questions: [
+      {
+        path: 'fire.type',
+        label: '完全FIRE / サイドFIRE',
+        help: '完全FIREはFIRE後の労働収入が0、サイドFIREは少し働き続けます。',
+        kind: 'choice',
+        options: [
+          { value: 'full', label: '完全FIRE' },
+          { value: 'side', label: 'サイドFIRE' },
+        ],
+      },
+      { path: 'fire.targetAge', label: 'FIRE希望年齢', kind: 'number', unit: '歳', min: 35, max: 75, allowSkip: true },
+    ],
+  },
+  {
+    pageId: 'fire-2',
+    stepId: 'detailed-fire',
+    title: 'FIRE後の暮らし',
+    purpose: 'FIRE後の生活費と収入です。',
+    kind: 'fields',
+    questions: [
+      {
+        path: 'fire.postFireLiving',
+        label: 'FIRE後生活費',
+        help: '未入力なら現在生活費の90%をおすすめ値として使います。',
+        kind: 'number',
+        unit: '万円',
+        min: 0,
+        allowSkip: true,
+      },
+      {
+        path: 'fire.postFireIncome',
+        label: 'FIRE後収入',
+        help: 'サイドFIREで少し働く場合の年間収入です。',
+        kind: 'number',
+        unit: '万円',
+        min: 0,
+        allowSkip: true,
+        allowRecommended: true,
+        recommendedValue: 100,
+        recommendedLabel: 'おすすめ（100万円）',
+        showIf: isSide,
+      },
+      {
+        path: 'fire.workUntilAge',
+        label: '何歳まで働くか',
+        kind: 'number',
+        unit: '歳',
+        min: 40,
+        max: 80,
+        allowSkip: true,
+        allowRecommended: true,
+        recommendedValue: 65,
+        recommendedLabel: 'おすすめ（65歳）',
+        showIf: isSide,
+      },
+    ],
+  },
+
+  // ── 投資 ──
+  {
+    pageId: 'investment',
+    stepId: 'detailed-investment',
+    title: '投資',
+    purpose: '資産の増え方の前提です。',
+    kind: 'fields',
+    questions: [
+      { path: 'investment.monthlyInvestment', label: '毎月投資額', kind: 'number', unit: '万円', min: 0, allowSkip: true },
+      {
+        path: 'investment.returnRate',
+        label: '想定利回り（名目）',
+        help: '資産にそのまま適用する名目利回りです。',
+        kind: 'number',
+        unit: '%',
+        min: 0,
+        max: 15,
+        allowSkip: true,
+        allowRecommended: true,
+        recommendedValue: 5,
+        recommendedLabel: 'おすすめ（5%）',
+      },
+      {
+        path: 'investment.inflationRate',
+        label: 'インフレ率',
+        help: '生活費・教育費などの支出の毎年の増加率として扱います。',
+        kind: 'number',
+        unit: '%',
+        min: 0,
+        max: 10,
+        allowSkip: true,
+        allowRecommended: true,
+        recommendedValue: 2,
+        recommendedLabel: 'おすすめ（2%）',
+      },
+      {
+        path: 'investment.crashScenario',
+        label: '暴落シナリオ',
+        help: '将来の暴落を織り込むかどうかです。',
+        kind: 'toggle',
+      },
+    ],
+  },
+
+  // ── 老後 ──
+  {
+    pageId: 'retirement-1',
+    stepId: 'detailed-retirement',
+    title: '老後',
+    purpose: '年金と老後の生活費です。',
+    kind: 'fields',
+    questions: [
+      {
+        path: 'retirement.pension',
+        label: '年金見込み',
+        help: 'ねんきんネットの将来見込額（年額）を参考にしてください。分からなければスキップできます。',
+        kind: 'number',
+        unit: '万円',
+        min: 0,
+        allowSkip: true,
+      },
+      {
+        path: 'retirement.retirementLiving',
+        label: '老後生活費',
+        help: '未入力なら現在生活費の85%をおすすめ値として使います。',
+        kind: 'number',
+        unit: '万円',
+        min: 0,
+        allowSkip: true,
+      },
+    ],
+  },
+  {
+    pageId: 'retirement-2',
+    stepId: 'detailed-retirement',
+    title: '老後（備え）',
+    purpose: '医療・介護などの備えです。',
+    kind: 'fields',
+    questions: [
+      {
+        path: 'retirement.medicalCareReserve',
+        label: '医療介護予備費',
+        help: '75歳以降に追加の備えを織り込むかどうかです。',
+        kind: 'toggle',
+      },
+      {
+        path: 'income.retirementLumpSum',
+        label: '退職金見込み',
+        help: '収入ステップと同じ項目です。ここでも調整できます。',
+        kind: 'number',
+        unit: '万円',
+        min: 0,
+        allowSkip: true,
+      },
+    ],
+  },
+
+  // ── ライフイベント（専用UI） ──
+  {
+    pageId: 'events',
+    stepId: 'detailed-events',
+    title: 'ライフイベント',
+    purpose: '大きな出費・収入の予定です。すべて任意です。',
+    kind: 'events',
+  },
+];
+
+/** thoroughInput の状態で表示すべきページだけを返す。 */
+export function visibleThoroughPages(input: SimulationInput): ThoroughPage[] {
+  return THOROUGH_PAGES.filter((p) => !p.showIf || p.showIf(input));
+}
+
+/** 最初に表示するページID。 */
+export function firstThoroughPageId(input: SimulationInput): string {
+  return visibleThoroughPages(input)[0]?.pageId ?? THOROUGH_PAGES[0].pageId;
+}
+
+/** ざっくり診断の結果カテゴリ → しっかり診断のステップ への対応。 */
+export const ROUGH_TO_DETAILED: Record<StepId, ThoroughStepId> = {
+  basic: 'detailed-basic',
+  family: 'detailed-family',
+  housing: 'detailed-housing',
+  fire: 'detailed-fire',
+  investment: 'detailed-investment',
+};
+
+/** しっかり診断で新規追加する子どもの初期値。 */
+export function makeDetailedChild(): ChildInput {
+  return {
+    currentAge: field(10, 'default_value', '子の年齢', '未入力のため仮の年齢で試算しています。', '歳'),
+    ageAssumed: true,
+    middleSchool: field('public', 'default_value', '中学', '公立で概算しています。'),
+    highSchool: field('public', 'default_value', '高校', '公立で概算しています。'),
+    university: field('humanities', 'default_value', '大学', '文系で概算しています。'),
+    uniLiving: field('home', 'default_value', '大学時の住まい', '自宅通学で概算しています。'),
+  };
+}
+
+export const CHILD_SCHOOL_OPTIONS = schoolOptions;
+export const CHILD_UNI_OPTIONS = uniOptions;
+export const CHILD_LIVING_OPTIONS = livingOptions;

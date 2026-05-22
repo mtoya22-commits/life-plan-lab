@@ -38,6 +38,27 @@ describe('render smoke (jsdom)', () => {
     expect(container.querySelector('.bottom-nav')).not.toBeNull();
   });
 
+  it('thorough flow renders the first detailed step with help/skip and bottom nav', () => {
+    store().setMode('thorough');
+    const { container } = render(<App />);
+    expect(container.textContent).toContain('しっかり診断');
+    expect(container.textContent).toContain('本人年齢');
+    expect(container.textContent).toContain('配偶者年齢');
+    expect(container.textContent).toContain('世帯年収');
+    expect(container.textContent).toContain('スキップ'); // 任意項目のスキップ
+    expect(container.querySelector('.help')).not.toBeNull(); // Help（？）
+    expect(container.querySelector('.bottom-nav')).not.toBeNull();
+  });
+
+  it('thorough family step hides per-child cards when there are 0 children', () => {
+    store().setMode('thorough');
+    store().setThoroughChildrenCount(0);
+    store().setThoroughPage('family');
+    const { container } = render(<App />);
+    expect(container.textContent).toContain('お子さまの人数');
+    expect(container.textContent).not.toContain('お子さま1');
+  });
+
   it('result dashboard shows conclusions up-front and keeps details collapsed', () => {
     fillAll();
     store().submitRough();

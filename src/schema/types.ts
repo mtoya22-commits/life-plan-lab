@@ -32,6 +32,18 @@ export type Mode = 'rough' | 'thorough';
 /** 入力ステップ（カテゴリ）の識別子。結果画面から特定カテゴリへ戻るために使う。 */
 export type StepId = 'basic' | 'family' | 'housing' | 'fire' | 'investment';
 
+/** しっかり診断のステップ（カテゴリ）識別子。 */
+export type ThoroughStepId =
+  | 'detailed-basic'
+  | 'detailed-income'
+  | 'detailed-expense'
+  | 'detailed-family'
+  | 'detailed-housing'
+  | 'detailed-fire'
+  | 'detailed-investment'
+  | 'detailed-retirement'
+  | 'detailed-events';
+
 export type EducationPolicy = 'public' | 'some_private' | 'education_focused' | 'undecided';
 export type HousingType = 'own' | 'rent' | 'considering';
 export type WorkStyle = 'full_retire' | 'work_a_little' | 'undecided';
@@ -107,6 +119,7 @@ export interface HousingGroup {
   rateType: Field<RateType>;
   fixedEndAge: Field<number>; // 固定終了時の年齢（タイムライン用）
   repayMethod: Field<RepayMethod>;
+  bonusAnnual: Field<number>; // ボーナス払いの年間額（万円）。捕捉のみ、精密計算は次STEP
 }
 
 export interface RetirementGroup {
