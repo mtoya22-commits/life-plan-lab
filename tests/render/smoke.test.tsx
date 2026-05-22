@@ -52,6 +52,19 @@ describe('render smoke (jsdom)', () => {
     expect(container.textContent).toContain('資産推移');
     expect(container.textContent).toContain('今回の試算条件を見る');
     expect(container.textContent).toContain('税制は簡略化');
+    // 通常表示にコンパクトな資産推移グラフ（Recharts コンテナ）がある
+    expect(container.querySelector('.asset-rc')).not.toBeNull();
+  });
+
+  it('opens the expanded asset chart in a bottom sheet', () => {
+    fillAll();
+    store().submitRough();
+    render(<App />);
+    fireEvent.click(screen.getByText(/グラフを拡大/));
+    const sheet = document.querySelector('.sheet');
+    expect(sheet).not.toBeNull();
+    expect(sheet?.querySelector('.asset-rc')).not.toBeNull();
+    expect(sheet?.textContent).toContain('縦軸：資産');
   });
 
   it('opens a bottom sheet when a detail link is tapped', () => {

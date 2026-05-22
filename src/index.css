@@ -707,6 +707,70 @@ body {
   padding: 0;
 }
 
+/* 資産推移グラフ（Recharts） */
+.asset-rc {
+  width: 100%;
+}
+.asset-rc--compact {
+  margin-top: 4px;
+}
+.asset-rc .recharts-surface {
+  overflow: visible;
+}
+.chart-axis-note {
+  margin: 0 0 6px;
+  font-size: 0.75rem;
+}
+.rc-tooltip {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 8px 10px;
+  font-size: 0.8rem;
+}
+.rc-tooltip__head {
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.rc-tooltip__event {
+  color: var(--accent);
+  font-size: 0.75rem;
+}
+.chart-markers {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+.chart-markers__item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 0.8rem;
+}
+.chart-markers__age {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* タイムライン詳細（説明つき） */
+.timeline__item--detail {
+  display: block;
+  margin-bottom: 12px;
+}
+.timeline__row {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+}
+.timeline__desc {
+  margin: 2px 0 0 60px;
+  font-size: 0.8rem;
+}
+
 /* 年次テーブル（シート内） */
 .yearly-table {
   width: 100%;

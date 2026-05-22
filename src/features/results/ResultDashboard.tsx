@@ -8,7 +8,8 @@ import { Hero } from './Hero';
 import { ResultSummary } from './ResultSummary';
 import { DetailCard } from './DetailCard';
 import { AssetChartMini, AssetChartFull } from './AssetChart';
-import { buildTimelineSummary, TimelineSummary, TimelineFull } from './Timeline';
+import { TimelineSummary, TimelineFull } from './Timeline';
+import { buildLifeEvents, summaryEvents } from './lifeEvents';
 import { EducationDetail } from './EducationDetail';
 import { MortgageDetail } from './MortgageDetail';
 import { AssumptionSummary } from './AssumptionSummary';
@@ -28,7 +29,9 @@ export function ResultDashboard() {
 
   if (!result || !input) return null;
 
-  const timelineItems = buildTimelineSummary(result, input);
+  // タイムラインとグラフのマーカーは同じイベントデータを参照する。
+  const events = buildLifeEvents(result, input);
+  const timelineItems = summaryEvents(events);
   const hasChildren = input.children.length > 0;
   const peakAge = result.indicators.eduPeakResilience.peakAge;
   const mortgage = mortgageCard(input);
@@ -58,7 +61,7 @@ export function ResultDashboard() {
         onOpen={() => setSheet('chart')}
         openLabel={ja.result.assetExpand}
       >
-        <AssetChartMini rows={result.rows} />
+        <AssetChartMini rows={result.rows} events={events} />
       </DetailCard>
 
       {hasChildren && (
@@ -111,10 +114,10 @@ export function ResultDashboard() {
 
       {/* 詳細シート */}
       <BottomSheet open={sheet === 'timeline'} onClose={() => setSheet(null)} title={ja.result.timelineDetailHeading}>
-        <TimelineFull rows={result.rows} />
+        <TimelineFull events={events} />
       </BottomSheet>
       <BottomSheet open={sheet === 'chart'} onClose={() => setSheet(null)} title={ja.result.assetSheetHeading}>
-        <AssetChartFull rows={result.rows} />
+        <AssetChartFull rows={result.rows} events={events} />
       </BottomSheet>
       <BottomSheet open={sheet === 'education'} onClose={() => setSheet(null)} title={ja.result.educationSheetHeading}>
         <EducationDetail result={result} />
