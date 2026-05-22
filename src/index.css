@@ -310,6 +310,11 @@ body {
   gap: 14px;
   margin-top: 16px;
 }
+.hero__shortfall {
+  margin: 12px 0 0;
+  font-size: 0.85rem;
+  color: var(--band-needs);
+}
 .metric__label {
   font-size: 0.8rem;
   color: var(--muted);
@@ -789,6 +794,13 @@ body {
   padding: 6px 8px;
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
+  vertical-align: top;
+}
+/* イベント列は折り返し可（右端で切れないように） */
+.yearly-table__event {
+  white-space: normal;
+  word-break: break-word;
+  min-width: 7em;
 }
 
 /* Bottom Sheet */

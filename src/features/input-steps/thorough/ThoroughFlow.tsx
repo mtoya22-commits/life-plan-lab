@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useInputStore } from '../../../store/inputStore';
 import { ja } from '../../../strings/ja';
 import { visibleThoroughPages } from '../../../schema/thoroughSteps';
@@ -22,6 +23,11 @@ export function ThoroughFlow() {
   const submitThorough = useInputStore((s) => s.submitThorough);
   const backToResult = useInputStore((s) => s.backToResult);
 
+  // ステップが変わったら質問画面の先頭へスクロール。
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [thoroughPageId, cameFromResult]);
+
   if (!thoroughInput) return null;
 
   const pages = visibleThoroughPages(thoroughInput);
@@ -34,8 +40,7 @@ export function ThoroughFlow() {
     remaining <= 0 ? 'まもなく完了' : `残り${remaining}ステップ・あと約${Math.max(1, Math.ceil(remaining * 0.6))}分`;
 
   const advance = () => {
-    nextThoroughPage();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    nextThoroughPage(); // スクロールは thoroughPageId 変更を検知する useEffect が担当
   };
 
   return (

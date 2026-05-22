@@ -12,10 +12,16 @@ export function Hero({ result }: { result: SimulationResult }) {
         <span className="hero__score">（{score.total} / 15）</span>
       </div>
       <div className="hero__metrics">
-        <Metric label="FIRE達成率" value={formatPct(indicators.fireAchievementRate)} />
         <Metric label="資産寿命" value={formatAge(indicators.assetLongevityAge)} />
         <Metric label="95歳時点の残資産" value={formatMan(indicators.assetsAt95)} />
+        <Metric label="FIRE準備率（目安）" value={formatPct(indicators.fireAchievementRate)} />
       </div>
+      {indicators.cumulativeShortfall > 0 && (
+        <p className="hero__shortfall muted">
+          {indicators.assetLongevityAge}歳ごろに資産が尽きる見込み・95歳時点の累計不足額：約
+          {formatMan(indicators.cumulativeShortfall)}
+        </p>
+      )}
     </div>
   );
 }

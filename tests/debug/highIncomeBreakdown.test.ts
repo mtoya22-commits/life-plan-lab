@@ -39,7 +39,8 @@ describe('debug: high income breakdown', () => {
       return [
         `age=${row.age}`,
         `year=${row.year}`,
-        `total=${r(row.endAssets)}`,
+        `display=${r(d.displayTotalAssets)}`,
+        `shortfall=${r(d.cumulativeShortfall)}`,
         `cash=${r(d.cashAssets)}`,
         `invest=${r(d.investmentAssets)}`,
         `invReturn=${r(row.investmentReturn)}`,
@@ -57,6 +58,8 @@ describe('debug: high income breakdown', () => {
         `incTot=${r(row.income.total)}`,
         `expTot=${r(row.expense.total)}`,
         `net=${r(d.annualNetCashflow)}`,
+        `newInv=${r(d.newInvestmentAmount)}`,
+        `transfer=${r(d.actualInvestmentTransfer)}`,
         `wCash=${r(d.withdrawalFromCash)}`,
         `wInv=${r(d.withdrawalFromInvestment)}`,
       ].join('  ');

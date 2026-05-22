@@ -1,5 +1,6 @@
 import type { SimulationInput, SimulationResult } from '../../schema/types';
 import { ja } from '../../strings/ja';
+import { formatMan } from '../../lib/format';
 import { buildLifeEvents } from './lifeEvents';
 
 // 結果画面の最初に出す「今回のポイント」要約カード。
@@ -39,10 +40,12 @@ function buildHighlights(result: SimulationResult, input: SimulationInput): stri
   const payoff = events.find((e) => e.type === 'mortgage');
   const fireStartAge = input.fire.type.value === 'none' ? input.income.retirementAge.value : input.fire.targetAge.value;
 
-  if (payoff && payoff.age > fireStartAge) {
+  if (depletion) {
+    const shortfall = result.indicators.cumulativeShortfall;
+    const tail = shortfall > 0 ? `（95歳時点の累計不足額：約${formatMan(shortfall)}）` : '';
+    out.push(`資産は${depletion.age}歳ごろに尽きる見込みです${tail}。条件調整で改善できる可能性があります。`);
+  } else if (payoff && payoff.age > fireStartAge) {
     out.push('住宅ローンはFIRE後も残る見込みです。ゆとりをみておくと良さそうです。');
-  } else if (depletion) {
-    out.push(`資産は${depletion.age}歳ごろから注意が必要です。条件調整で改善できる可能性があります。`);
   } else {
     out.push('今回の条件では、95歳ごろまで資産が持つ見込みです。');
   }

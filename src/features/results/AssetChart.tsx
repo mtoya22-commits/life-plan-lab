@@ -228,7 +228,7 @@ function YearlyTable({ rows, eventsByAge }: { rows: YearRow[]; eventsByAge: Map<
             <td>{r.age}歳</td>
             <td>{r.year}</td>
             <td>{formatMan(r.endAssets)}</td>
-            <td>{eventsByAge.get(r.age)?.join('・') ?? ''}</td>
+            <td className="yearly-table__event">{eventsByAge.get(r.age)?.join('・') ?? ''}</td>
           </tr>
         ))}
       </tbody>

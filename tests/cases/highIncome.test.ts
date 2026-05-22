@@ -65,8 +65,11 @@ describe('verification case: high income, side-FIRE at 55', () => {
     expect(at(60).expense.living).toBeGreaterThan(at(40).expense.living);
   });
 
-  it('produces a finite, in-range result (not an absurd value)', () => {
+  it('produces a finite, in-range result (no negative compounding)', () => {
     expect(Number.isFinite(result.indicators.assetsAt95)).toBe(true);
+    expect(result.indicators.assetsAt95).toBeGreaterThanOrEqual(0); // 表示資産はマイナスにしない
+    expect(result.rows.every((r) => r.endAssets >= 0 && r.investmentReturn >= 0)).toBe(true);
+    expect(result.indicators.cumulativeShortfall).toBeGreaterThan(0); // 不足分は別管理
     expect(result.score.total).toBeGreaterThanOrEqual(0);
     expect(result.score.total).toBeLessThanOrEqual(15);
   });

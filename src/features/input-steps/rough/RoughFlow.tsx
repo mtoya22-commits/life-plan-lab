@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useInputStore } from '../../../store/inputStore';
 import { ja } from '../../../strings/ja';
 import { ROUGH_PAGES, type RoughQuestion } from '../../../schema/roughQuestions';
@@ -31,6 +31,11 @@ export function RoughFlow() {
 
   const [attempted, setAttempted] = useState(false);
 
+  // ステップが変わったら質問画面の先頭へスクロール（前ステップの位置を引き継がない）。
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [roughPage, cameFromResult]);
+
   const page = ROUGH_PAGES[roughPage];
   const visible = page.questions.filter((q) => (q.showIf ? q.showIf(draft) : true));
   const pageComplete = visible.every((q) => isComplete(draft[q.id]));
@@ -46,8 +51,7 @@ export function RoughFlow() {
 
   const advance = () => {
     setAttempted(false);
-    nextRoughPage();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    nextRoughPage(); // スクロールは roughPage 変更を検知する useEffect が担当
   };
 
   const handleNext = () => {
@@ -140,7 +144,12 @@ function RoughQuestionView({ q, cell, showHint }: { q: RoughQuestion; cell: Roug
             placeholder={q.placeholder}
             min={q.min}
             max={q.max}
-            value={cell.source === 'user_input' && cell.value !== null ? String(cell.value) : ''}
+            // おすすめ値も表示し、自由に編集・削除できる（空欄で未入力に戻る）。
+            value={
+              (cell.source === 'user_input' || cell.source === 'recommended_value') && cell.value !== null
+                ? String(cell.value)
+                : ''
+            }
             onChange={(e) => setRoughValue(q.id, e.target.value === '' ? '' : Number(e.target.value))}
           />
           {q.unit && <span className="field-number__unit">{q.unit}</span>}
@@ -148,7 +157,9 @@ function RoughQuestionView({ q, cell, showHint }: { q: RoughQuestion; cell: Roug
       ) : (
         <div className="choice-group">
           {q.options?.map((opt) => {
-            const selected = cell.source === 'user_input' && String(cell.value) === opt.value;
+            const selected =
+              (cell.source === 'user_input' || cell.source === 'recommended_value') &&
+              String(cell.value) === opt.value;
             return (
               <button
                 key={opt.value}

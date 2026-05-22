@@ -47,6 +47,9 @@ import {
 //   配偶者年齢 / NISA・iDeCo・各種控除 / 暴落シナリオ / 夫婦別の退職年齢・年金
 // 重要: 毎月投資額は二重加算しない（現金資産→投資資産の振替であり、総資産は年間収支で増減）。
 //       資産は現金資産と投資資産に分け、利回りは投資資産にのみ適用する。
+// 運用順序（保守的）: 利回りは「年初の投資資産」にのみ適用し、その年の新規投入は翌年から運用する。
+// 枯渇の扱い: 現金・投資資産はマイナスにしない。取り崩せない不足分は cumulativeShortfall に蓄積し、
+//       マイナス残高に負の利回りをかけない（負の複利を発生させない）。表示資産は0でクランプ。
 // =============================================================================
 
 export function runSimulation(input: SimulationInput): SimulationResult {
@@ -72,44 +75,48 @@ export function runSimulation(input: SimulationInput): SimulationResult {
   const rows: YearRow[] = [];
   const baseEvents = mortgageEvents(input.housing, startAge);
 
+  let cumulativeShortfall = 0;
+
   for (let age = startAge; age <= SIM.endAge; age++) {
     const offset = age - startAge;
     const startAssets = cash + invest;
     const inflationFactor = Math.pow(1 + inflation, offset); // 支出側の増加率
 
-    // 1) 投資資産にのみ利回りを適用
-    const investmentReturn = invest * returnRate;
+    // 1) 投資資産にのみ利回りを適用（運用順序: 年初投資資産のみ＝保守的。
+    //    その年の新規投入は翌年から運用。マイナス残高には利回りをかけない）
+    const investmentBeforeReturn = invest;
+    const investmentReturn = Math.max(0, invest) * returnRate;
     invest += investmentReturn;
+    const investmentAfterReturn = invest;
 
     // ---- 収入（手取りベース。現役期は昇給を反映。FIRE後は労働収入0）----
     const working = age < fireStartAge && age < retirementAge;
     const labor = working ? householdTakeHome * Math.pow(1 + raiseRate, offset) : 0;
     const postFire = postFireIncomeForAge(input.fire, age);
     const pension = age >= SIM.pensionStartAge ? input.retirement.pension.value : 0;
-    const other =
-      sumLifeEventInflows(input, age) + (age === fireStartAge ? input.income.retirementLumpSum.value : 0);
+    const lifeEventIncome = sumLifeEventInflows(input, age);
+    const retirementIncome = age === fireStartAge ? input.income.retirementLumpSum.value : 0;
+    const other = lifeEventIncome + retirementIncome;
     const incomeTotal = labor + postFire + pension + other;
 
     // ---- 支出（住宅費以外はインフレを適用）----
     const living = livingCostForAge(input, age, fireStartAge) * inflationFactor;
     const education = totalEducationCost(input.children, offset) * inflationFactor;
     const housing = annualHousingCost(input.housing, age, startAge); // ローン/維持費は名目
+    const lifeEventExpense = sumLifeEventCosts(input, age) * inflationFactor;
     const special =
       (input.expense.annualSpecial.value +
         input.expense.carCost.value +
         input.expense.travelCost.value +
-        input.expense.insuranceCost.value +
-        sumLifeEventCosts(input, age)) *
-      inflationFactor;
+        input.expense.insuranceCost.value) *
+        inflationFactor +
+      lifeEventExpense;
     const retirementExtra = medicalCareExtra(input, age) * inflationFactor;
     const expenseTotal = living + education + housing + special + retirementExtra;
 
     const tax = 0; // 簡略化（手取りベース）
 
-    // ---- デバッグ用内訳の事前計算 ----
-    const lifeEventIncome = sumLifeEventInflows(input, age);
-    const lifeEventExpense = sumLifeEventCosts(input, age) * inflationFactor;
-    const retirementIncome = age === fireStartAge ? input.income.retirementLumpSum.value : 0;
+    // 完済後維持費（デバッグ内訳用）
     const isOwn = input.housing.type.value !== 'rent';
     const payoffAge =
       input.housing.remainingYears.value > 0
@@ -118,31 +125,46 @@ export function runSimulation(input: SimulationInput): SimulationResult {
           ? Infinity
           : startAge;
     const homeMaintenanceCost = isOwn && age >= payoffAge ? housing : 0;
-    const cashBeforeNet = cash;
 
     // 2) 年間収支を現金資産へ
+    const cashBeforeNet = cash;
     const net = incomeTotal - expenseTotal - tax;
     cash += net;
+    const cashBeforeInvestmentTransfer = cash;
 
-    // 3) 現役期のみ、毎月投資額（または黒字の保守的割合）を現金→投資へ移す
-    if (working && cash > 0) {
-      const target = monthlyInvestKnown ? monthlyInvestAnnual : net > 0 ? net * DEFAULT_INVEST_FRACTION : 0;
-      const contribution = Math.min(Math.max(0, target), cash);
-      cash -= contribution;
-      invest += contribution;
+    // 3) 黒字かつ現役期のみ、毎月投資額（または黒字の一部）を現金→投資へ振替。
+    //    赤字年は新規投資を停止（現金不足の無視を防ぐ）。
+    let newInvestmentAmount = 0;
+    let actualInvestmentTransfer = 0;
+    let skippedInvestmentDueToCashShortage = 0;
+    if (working && net > 0) {
+      newInvestmentAmount = monthlyInvestKnown
+        ? Math.min(monthlyInvestAnnual, net)
+        : net * DEFAULT_INVEST_FRACTION;
+      actualInvestmentTransfer = Math.min(newInvestmentAmount, Math.max(0, cash));
+      skippedInvestmentDueToCashShortage = Math.max(0, newInvestmentAmount - actualInvestmentTransfer);
+      cash -= actualInvestmentTransfer;
+      invest += actualInvestmentTransfer;
+    } else if (working && monthlyInvestKnown && net <= 0) {
+      skippedInvestmentDueToCashShortage = monthlyInvestAnnual; // 赤字年は新規投資を見送り
     }
+    const cashAfterInvestmentTransfer = cash;
 
-    // 4) 現金がマイナスなら投資資産から取り崩す
+    // 4) 現金がマイナスなら投資資産から取り崩す。なお足りなければ累計不足額へ。
+    //    現金・投資はマイナスにしない（負の複利を防ぐ）。
     let withdrawalFromInvestment = 0;
     if (cash < 0) {
-      withdrawalFromInvestment = -cash;
-      invest += cash;
+      const need = -cash;
+      withdrawalFromInvestment = Math.min(Math.max(0, invest), need);
+      invest -= withdrawalFromInvestment;
+      const stillShort = need - withdrawalFromInvestment;
+      if (stillShort > 0) cumulativeShortfall += stillShort;
       cash = 0;
     }
-    const deficit = Math.max(0, -net);
-    const withdrawalFromCash = Math.min(deficit, Math.max(0, cashBeforeNet));
+    invest = Math.max(0, invest);
+    const withdrawalFromCash = net < 0 ? Math.min(-net, Math.max(0, cashBeforeNet)) : 0;
 
-    const endAssets = cash + invest;
+    const endAssets = cash + invest; // 0未満にはならない
 
     rows.push({
       age,
@@ -155,20 +177,29 @@ export function runSimulation(input: SimulationInput): SimulationResult {
       endAssets,
       events: eventsForAge(age, fireStartAge, input, baseEvents, endAssets, startAssets),
       debug: {
+        displayTotalAssets: endAssets,
+        cumulativeShortfall,
         cashAssets: cash,
         investmentAssets: invest,
+        investmentBeforeReturn,
+        investmentAfterReturn,
         homeMaintenanceCost,
         lifeEventIncome,
         lifeEventExpense,
         retirementIncome,
         annualNetCashflow: net,
+        newInvestmentAmount,
+        actualInvestmentTransfer,
+        skippedInvestmentDueToCashShortage,
+        cashBeforeInvestmentTransfer,
+        cashAfterInvestmentTransfer,
         withdrawalFromCash,
         withdrawalFromInvestment,
       },
     });
   }
 
-  const indicators = computeIndicators(rows, input, fireStartAge);
+  const indicators = computeIndicators(rows, input, fireStartAge, cumulativeShortfall);
   const score = judge(indicators);
   const suggestions = buildSuggestions(indicators, score);
 
@@ -219,6 +250,18 @@ function buildNotes(input: SimulationInput, cashRatioKnown: boolean, monthlyInve
   const { method } = computeTakeHome(input);
   notes.push(TAKE_HOME_METHOD_NOTE[method]);
 
+  // FIRE後生活費は現在価値で入力され、支出インフレで将来額に換算している旨。
+  if (input.fire.type.value !== 'none') {
+    notes.push('FIRE後生活費は現在価値で入力され、支出インフレを反映して将来額に換算しています。');
+  }
+
+  // 年金未入力の明示（誤解防止・資産寿命への影響を案内）。
+  if (input.retirement.pension.source !== 'user_input') {
+    notes.push(
+      'この試算では年金が未入力のため、65歳以降の年金収入は反映していません。年金見込みを入力すると、老後の見通しがより現実に近づきます。',
+    );
+  }
+
   notes.push(
     cashRatioKnown
       ? `現金比率${input.basic.cashRatio.value}%を反映し、投資資産にのみ利回りを適用しています。`
@@ -245,6 +288,11 @@ function buildNotes(input: SimulationInput, cashRatioKnown: boolean, monthlyInve
       notes.push('相続見込みは入力値に基づく仮定です（不確実性があります）。');
     }
   }
+
+  // 4%ルール系の達成率は参考指標である旨。
+  notes.push(
+    'FIRE準備率は4%ルールに基づく簡易的な目安です。教育費・住宅費・年金未入力なども含む年次シミュレーションの資産寿命とあわせてご確認ください。',
+  );
 
   if (input.meta.mode === 'thorough') notes.push(CAPTURE_NOTE);
   return notes;
@@ -306,7 +354,12 @@ function eventsForAge(
   return out;
 }
 
-function computeIndicators(rows: YearRow[], input: SimulationInput, fireStartAge: number): Indicators {
+function computeIndicators(
+  rows: YearRow[],
+  input: SimulationInput,
+  fireStartAge: number,
+  cumulativeShortfall: number,
+): Indicators {
   const atFire = rows.find((r) => r.age === fireStartAge);
   const assetsAtFire = atFire ? atFire.startAssets : 0;
 
@@ -332,6 +385,7 @@ function computeIndicators(rows: YearRow[], input: SimulationInput, fireStartAge
       pctOfAssets: peakPct,
     },
     mortgageBurden: annualHousing / takeHome,
+    cumulativeShortfall,
   };
 }
 

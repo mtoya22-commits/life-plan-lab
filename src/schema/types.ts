@@ -247,13 +247,22 @@ export interface YearRow {
 
 /** 年次シミュレーションのデバッグ内訳。 */
 export interface YearDebug {
+  displayTotalAssets: number; // 0未満にしない表示用資産
+  cumulativeShortfall: number; // 枯渇後の累計不足額（年末時点）
   cashAssets: number;
   investmentAssets: number;
+  investmentBeforeReturn: number;
+  investmentAfterReturn: number;
   homeMaintenanceCost: number;
   lifeEventIncome: number;
   lifeEventExpense: number;
   retirementIncome: number; // 退職金の一時収入
   annualNetCashflow: number;
+  newInvestmentAmount: number; // その年に投資へ回そうとした額（目標）
+  actualInvestmentTransfer: number; // 実際に現金→投資へ振り替えた額
+  skippedInvestmentDueToCashShortage: number; // 現金不足/赤字で見送った額
+  cashBeforeInvestmentTransfer: number;
+  cashAfterInvestmentTransfer: number;
   withdrawalFromCash: number;
   withdrawalFromInvestment: number;
 }
@@ -273,6 +282,8 @@ export interface Indicators {
   };
   /** 住宅ローン返済負担率（年間返済 / 手取り） */
   mortgageBurden: number;
+  /** 95歳までの累計不足額（枯渇後に発生した取り崩せなかった額の合計, 万円） */
+  cumulativeShortfall: number;
 }
 
 export type ScoreBand = 'stable' | 'realistic' | 'needs_adjust' | 'tough';
