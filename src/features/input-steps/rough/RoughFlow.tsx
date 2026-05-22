@@ -91,7 +91,7 @@ export function RoughFlow() {
       {/* 下部余白（固定ナビと本文が重ならないように） */}
       <div className="bottom-nav-spacer" />
 
-      <nav className="bottom-nav">
+      <nav className="bottom-nav" aria-label="ステップ操作">
         <div className="bottom-nav__inner">
           {cameFromResult ? (
             <>

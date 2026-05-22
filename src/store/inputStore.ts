@@ -112,7 +112,23 @@ interface InputState {
   editCategory: (stepId: StepId) => void;
   backToResult: () => void;
   deepenToThorough: () => void;
+
+  // 開発用: 9問を手入力せずに結果画面まで進める（source は recommended_value 扱い）。
+  loadSample: () => void;
 }
+
+// 開発用サンプル回答（本番のユーザー入力フローとは分離）。
+const SAMPLE_ANSWERS: Record<RoughFieldId, string | number> = {
+  age: 38,
+  householdIncome: 850,
+  currentAssets: 1200,
+  childrenCount: '2',
+  educationPolicy: 'public',
+  housing: 'own',
+  workStyle: 'work_a_little',
+  reduceWorkAge: 55,
+  investmentStyle: 'balanced',
+};
 
 function setCell(state: InputState, id: RoughFieldId, cell: RoughCell): Partial<InputState> {
   return { roughDraft: { ...state.roughDraft, [id]: cell } };
@@ -202,6 +218,16 @@ export const useInputStore = create<InputState>((set, get) => ({
   backToResult: () => set({ phase: 'result', cameFromResult: false }),
 
   deepenToThorough: () => set({ mode: 'thorough', phase: 'input', cameFromResult: false }),
+
+  loadSample: () => {
+    const draft = emptyRoughDraft();
+    for (const id of Object.keys(SAMPLE_ANSWERS) as RoughFieldId[]) {
+      draft[id] = { value: SAMPLE_ANSWERS[id], source: 'recommended_value' };
+    }
+    const input = buildFullInputFromRough(draft);
+    const result = runSimulation(input);
+    set({ mode: 'rough', roughDraft: draft, input, result, phase: 'result', cameFromResult: false, resumePrompt: false });
+  },
 }));
 
 // 入力状態が変わるたびに自動保存する（次回の「続きから再開」用）。

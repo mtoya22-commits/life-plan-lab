@@ -68,7 +68,7 @@ export function AssetChartMini({ rows, events }: { rows: YearRow[]; events: Life
 
   return (
     <div className="asset-rc asset-rc--compact">
-      <ResponsiveContainer width="100%" height={130}>
+      <ResponsiveContainer width="100%" height={120}>
         <AreaChart data={data} margin={{ top: 6, right: 8, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="assetFillMini" x1="0" y1="0" x2="0" y2="1">

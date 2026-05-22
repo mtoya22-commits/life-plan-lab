@@ -56,15 +56,25 @@ describe('render smoke (jsdom)', () => {
     expect(container.querySelector('.asset-rc')).not.toBeNull();
   });
 
-  it('opens the expanded asset chart in a bottom sheet', () => {
+  it('opens the expanded asset chart in a bottom sheet (lazy-loaded)', async () => {
     fillAll();
     store().submitRough();
     render(<App />);
     fireEvent.click(screen.getByText(/グラフを拡大/));
-    const sheet = document.querySelector('.sheet');
-    expect(sheet).not.toBeNull();
-    expect(sheet?.querySelector('.asset-rc')).not.toBeNull();
-    expect(sheet?.textContent).toContain('縦軸：資産');
+    expect(document.querySelector('.sheet')).not.toBeNull();
+    // Recharts は遅延読み込みのため、解決を待ってから内容を確認する
+    await screen.findByText(/縦軸：資産/);
+    expect(document.querySelector('.sheet .asset-rc')).not.toBeNull();
+  });
+
+  it('closes a bottom sheet via the close button', () => {
+    fillAll();
+    store().submitRough();
+    render(<App />);
+    fireEvent.click(screen.getByText(/タイムラインを詳しく見る/));
+    expect(document.querySelector('.sheet')).not.toBeNull();
+    fireEvent.click(screen.getByLabelText('閉じる'));
+    expect(document.querySelector('.sheet')).toBeNull();
   });
 
   it('opens a bottom sheet when a detail link is tapped', () => {

@@ -55,6 +55,15 @@ describe('rough flow store wiring', () => {
     expect(store().cameFromResult).toBe(false);
   });
 
+  it('loadSample (dev shortcut) reaches the result screen', () => {
+    store().loadSample();
+    expect(store().phase).toBe('result');
+    expect(store().result).not.toBeNull();
+    expect(store().result!.rows.at(-1)?.age).toBe(95);
+    // サンプルは user_input ではなく recommended_value 扱い
+    expect(store().roughDraft.age.source).toBe('recommended_value');
+  });
+
   it('deepenToThorough carries state over to thorough mode without restarting', () => {
     fillAll();
     store().submitRough();

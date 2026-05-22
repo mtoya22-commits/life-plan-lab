@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { useInputStore } from '../../store/inputStore';
 import { ja } from '../../strings/ja';
 import { formatMan } from '../../lib/format';
@@ -7,8 +7,11 @@ import { BottomSheet } from '../../components/BottomSheet';
 import { Hero } from './Hero';
 import { ResultSummary } from './ResultSummary';
 import { DetailCard } from './DetailCard';
-import { AssetChartMini, AssetChartFull } from './AssetChart';
 import { TimelineSummary, TimelineFull } from './Timeline';
+
+// Recharts は重いため、入力フローには含めず結果画面到達時に遅延読み込みする。
+const AssetChartMini = lazy(() => import('./AssetChart').then((m) => ({ default: m.AssetChartMini })));
+const AssetChartFull = lazy(() => import('./AssetChart').then((m) => ({ default: m.AssetChartFull })));
 import { buildLifeEvents, summaryEvents } from './lifeEvents';
 import { EducationDetail } from './EducationDetail';
 import { MortgageDetail } from './MortgageDetail';
@@ -61,7 +64,9 @@ export function ResultDashboard() {
         onOpen={() => setSheet('chart')}
         openLabel={ja.result.assetExpand}
       >
-        <AssetChartMini rows={result.rows} events={events} />
+        <Suspense fallback={<div className="asset-rc asset-rc--compact" aria-hidden />}>
+          <AssetChartMini rows={result.rows} events={events} />
+        </Suspense>
       </DetailCard>
 
       {hasChildren && (
@@ -117,7 +122,9 @@ export function ResultDashboard() {
         <TimelineFull events={events} />
       </BottomSheet>
       <BottomSheet open={sheet === 'chart'} onClose={() => setSheet(null)} title={ja.result.assetSheetHeading}>
-        <AssetChartFull rows={result.rows} events={events} />
+        <Suspense fallback={<div className="asset-rc" />}>
+          <AssetChartFull rows={result.rows} events={events} />
+        </Suspense>
       </BottomSheet>
       <BottomSheet open={sheet === 'education'} onClose={() => setSheet(null)} title={ja.result.educationSheetHeading}>
         <EducationDetail result={result} />

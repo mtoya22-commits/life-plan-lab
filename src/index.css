@@ -47,7 +47,7 @@ body {
 .screen {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 14px;
 }
 
 .app-title {
@@ -283,7 +283,7 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 22px;
+  padding: 18px;
 }
 .hero__band {
   display: inline-flex;
@@ -865,6 +865,15 @@ body {
 .sheet__body {
   padding: 16px 18px calc(20px + env(safe-area-inset-bottom));
   overflow-y: auto;
+  overscroll-behavior: contain; /* 背面ページへのスクロール連鎖を防ぐ */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 開発用サンプル導線 */
+.dev-sample {
+  align-self: flex-start;
+  margin-top: 4px;
+  opacity: 0.7;
 }
 
 @media (max-width: 480px) {
