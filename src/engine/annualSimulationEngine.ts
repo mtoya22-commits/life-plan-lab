@@ -22,6 +22,19 @@ import { CAPTURE_NOTE, MEDICAL_CARE_RESERVE, RETURN_MODEL_NOTE, SIM, TAX_SIMPLIF
 //   - 実質利回りとして自動で差し引く処理はしない
 //   - 税金は簡略化（収入は手取りベース、投資課税・各種控除は未反映）
 // ざっくり/しっかり問わず buildFullInput 済みの SimulationInput を受け取る。
+//
+// ── 計算反映ステータス（STEP4.6 監査） ──
+// 反映済み: 年齢 / 手取り年収(額面×0.78 もしくは入力) / 現在資産 /
+//   毎月生活費 / 住宅費(賃貸=家賃, 持ち家=ローン返済を完済年齢まで) /
+//   子ども別年齢→教育費 / 教育方針 / 想定利回り(名目) / インフレ率(支出側) /
+//   FIRE種別・希望年齢 / FIRE後生活費 / サイドFIRE後収入・就労終了年齢 /
+//   年間特別費・車・旅行・保険 / 退職金(退職年に一括) / 年金(65歳〜, 入力時) /
+//   医療介護予備費 / ライフイベント支出・収入
+// 簡略反映: 住宅完済後の維持費(現在0) / 教育費は初期値テーブル / 税(0)
+// 未反映(STEP5): 昇給率 / 本人・配偶者収入の内訳 / 毎月投資額(純増として暗黙計上のみ) /
+//   住宅ローン残高・金利・固定変動・返済方式・ボーナス払い / 配偶者年齢 / 現金比率 /
+//   NISA・iDeCo・各種控除 / 暴落シナリオ
+// 重要: 毎月投資額は二重加算しない（収支差額が利回りで複利成長する単一モデル）。
 // =============================================================================
 
 export function runSimulation(input: SimulationInput): SimulationResult {
@@ -55,7 +68,7 @@ export function runSimulation(input: SimulationInput): SimulationResult {
     // ---- 支出（インフレを適用）----
     const living = livingCostForAge(input, age, fireStartAge) * inflationFactor;
     const education = totalEducationCost(input.children, offset) * inflationFactor;
-    const housing = annualHousingCost(input.housing, age); // ローンは名目固定のため非インフレ
+    const housing = annualHousingCost(input.housing, age, startAge); // ローンは名目固定のため非インフレ
     const special =
       (input.expense.annualSpecial.value +
         input.expense.carCost.value +
@@ -173,7 +186,7 @@ function computeIndicators(rows: YearRow[], input: SimulationInput, fireStartAge
   const peakNet = peak ? peak.income.total - peak.expense.total : 0;
   const peakPct = peak && peak.startAssets > 0 ? (Math.abs(Math.min(0, peakNet)) / peak.startAssets) * 100 : 0;
 
-  const annualHousing = annualHousingCost(input.housing, input.basic.age.value);
+  const annualHousing = annualHousingCost(input.housing, input.basic.age.value, input.basic.age.value);
   const takeHome = input.basic.takeHomeIncome.value || 1;
 
   return {

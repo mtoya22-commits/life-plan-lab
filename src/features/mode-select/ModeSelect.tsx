@@ -6,6 +6,7 @@ export function ModeSelect() {
   const setMode = useInputStore((s) => s.setMode);
   const loadSample = useInputStore((s) => s.loadSample);
   const loadThoroughSample = useInputStore((s) => s.loadThoroughSample);
+  const loadHighIncomeSample = useInputStore((s) => s.loadHighIncomeSample);
 
   return (
     <section className="screen mode-select">
@@ -35,6 +36,9 @@ export function ModeSelect() {
           </button>
           <button className="link-btn dev-sample" onClick={() => loadThoroughSample(true)}>
             しっかり診断サンプルで結果を見る（開発用）
+          </button>
+          <button className="link-btn dev-sample" onClick={loadHighIncomeSample}>
+            高収入ケースで結果を見る（開発用）
           </button>
         </div>
       )}

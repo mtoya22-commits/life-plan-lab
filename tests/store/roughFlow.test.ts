@@ -46,7 +46,7 @@ describe('rough flow store wiring', () => {
     store().editCategory('fire');
     expect(store().phase).toBe('input');
     expect(store().cameFromResult).toBe(true);
-    expect(store().roughPage).toBe(3); // basic, family, housing, fire -> index 3
+    expect(store().roughPage).toBe(4); // basic, housing, 生活費, family, fire -> index 4
 
     // 条件を変えて再計算
     store().setRoughValue('reduceWorkAge', 60);

@@ -1,10 +1,10 @@
-import type { RoughFieldId, StepId } from './types';
+import type { RoughDraft, RoughFieldId, StepId } from './types';
 
 // =============================================================================
 // ざっくり診断の質問定義（宣言的・ドメイン設定）。
-// 1ページ＝1カテゴリ（stepId）。1ページ1〜3項目で、スマホで軽く感じる粒度に保つ。
-// 各ページに目的説明(purpose)を持たせ、なぜ聞くのかを短く伝える。
-// UI(RoughFlow) と 写像(roughMapping) と 結果画面の修正導線が、ここを参照する。
+// 1ページ＝1カテゴリ寄り。1ページ1〜3項目で、スマホで軽く感じる粒度に保つ。
+// 現実感に必要な最小限の数字（生活費・住居費・子の年齢・FIRE後生活費等）を追加。
+// しっかり診断と意味が重複する項目は、同じ SimulationInput フィールドへ合流させる。
 // =============================================================================
 
 export interface ChoiceOption {
@@ -24,20 +24,33 @@ export interface RoughQuestion {
   max?: number;
   allowSkip?: boolean;
   allowRecommended?: boolean;
-  /** おすすめ値（allowRecommended のとき使用）。 */
   recommendedValue?: string | number;
   recommendedLabel?: string;
-  /** childrenCount が 0 のとき非表示にする等の条件。 */
-  showIf?: (childrenCount: number) => boolean;
+  /** ドラフトの状態で表示可否を決める。 */
+  showIf?: (draft: RoughDraft) => boolean;
 }
 
 export interface RoughPage {
-  /** カテゴリ識別子。結果画面の「修正」導線と対応する。 */
   id: StepId;
   title: string;
-  /** なぜ聞くのかの短い説明（長文禁止）。 */
   purpose: string;
   questions: RoughQuestion[];
+}
+
+// ---- ドラフト読み取りヘルパー ----
+function countOf(draft: RoughDraft): number {
+  const c = draft.childrenCount;
+  if (c.source !== 'user_input' || c.value == null) return 0;
+  const n = typeof c.value === 'string' ? parseInt(c.value, 10) : c.value;
+  return Number.isFinite(n) ? n : 0;
+}
+function housingTypeOf(draft: RoughDraft): string | null {
+  const h = draft.housing;
+  return h.source === 'user_input' ? String(h.value) : null;
+}
+function workStyleOf(draft: RoughDraft): string | null {
+  const w = draft.workStyle;
+  return w.source === 'user_input' ? String(w.value) : null;
 }
 
 export const ROUGH_PAGES: RoughPage[] = [
@@ -46,16 +59,7 @@ export const ROUGH_PAGES: RoughPage[] = [
     title: 'あなたについて',
     purpose: '現在地を確認するための情報です。',
     questions: [
-      {
-        id: 'age',
-        label: '今のご年齢',
-        help: '現在の満年齢を入力してください。',
-        kind: 'number',
-        unit: '歳',
-        placeholder: '例：38',
-        min: 18,
-        max: 80,
-      },
+      { id: 'age', label: '今のご年齢', help: '現在の満年齢を入力してください。', kind: 'number', unit: '歳', placeholder: '例：38', min: 18, max: 80 },
       {
         id: 'householdIncome',
         label: '世帯年収（ざっくり）',
@@ -73,6 +77,68 @@ export const ROUGH_PAGES: RoughPage[] = [
         kind: 'number',
         unit: '万円',
         placeholder: '例：1200',
+        min: 0,
+        allowSkip: true,
+      },
+    ],
+  },
+  {
+    id: 'housing',
+    title: '住まい',
+    purpose: '住宅費とFIRE時期の重なりを確認します。',
+    questions: [
+      {
+        id: 'housing',
+        label: 'お住まい',
+        kind: 'choice',
+        options: [
+          { value: 'own', label: '持ち家' },
+          { value: 'rent', label: '賃貸' },
+          { value: 'considering', label: '購入検討中' },
+        ],
+      },
+      {
+        id: 'monthlyHousing',
+        label: '毎月の住居費',
+        help: '賃貸は家賃、持ち家は毎月のローン返済額です。ボーナス払いがある場合は月額に均してください。',
+        kind: 'number',
+        unit: '万円',
+        placeholder: '例：11',
+        min: 0,
+        allowSkip: true,
+      },
+      {
+        id: 'loanYears',
+        label: '住宅ローン残年数',
+        help: 'あと何年返済が残っているか、分かる範囲で。完済時期の目安に使います。',
+        kind: 'number',
+        unit: '年',
+        placeholder: '例：30',
+        min: 0,
+        max: 50,
+        allowSkip: true,
+        allowRecommended: true,
+        recommendedValue: 30,
+        recommendedLabel: 'おすすめ（30年）',
+        showIf: (d) => {
+          const t = housingTypeOf(d);
+          return t === 'own' || t === 'considering';
+        },
+      },
+    ],
+  },
+  {
+    id: 'basic',
+    title: '毎月の生活費',
+    purpose: '生活費の規模を確認します。',
+    questions: [
+      {
+        id: 'monthlyLiving',
+        label: '毎月の生活費',
+        help: '食費・通信費・日用品・光熱費など、毎月の生活費です。住居費・投資額は含めなくて構いません。',
+        kind: 'number',
+        unit: '万円',
+        placeholder: '例：25',
         min: 0,
         allowSkip: true,
       },
@@ -107,26 +173,12 @@ export const ROUGH_PAGES: RoughPage[] = [
           { value: 'education_focused', label: '教育重視' },
           { value: 'undecided', label: '未定' },
         ],
-        showIf: (childrenCount) => childrenCount > 0,
+        showIf: (d) => countOf(d) > 0,
       },
-    ],
-  },
-  {
-    id: 'housing',
-    title: '住まい',
-    purpose: '住宅費とFIRE時期の重なりを確認します。',
-    questions: [
-      {
-        id: 'housing',
-        label: 'お住まい',
-        help: '現在の状況に近いものを選んでください。',
-        kind: 'choice',
-        options: [
-          { value: 'own', label: '持ち家' },
-          { value: 'rent', label: '賃貸' },
-          { value: 'considering', label: '購入検討中' },
-        ],
-      },
+      { id: 'childAge1', label: '1人目のお子さまの年齢', kind: 'number', unit: '歳', placeholder: '例：4', min: 0, max: 30, allowSkip: true, showIf: (d) => countOf(d) >= 1 },
+      { id: 'childAge2', label: '2人目のお子さまの年齢', kind: 'number', unit: '歳', placeholder: '例：2', min: 0, max: 30, allowSkip: true, showIf: (d) => countOf(d) >= 2 },
+      { id: 'childAge3', label: '3人目のお子さまの年齢', kind: 'number', unit: '歳', min: 0, max: 30, allowSkip: true, showIf: (d) => countOf(d) >= 3 },
+      { id: 'childAge4', label: '4人目のお子さまの年齢', kind: 'number', unit: '歳', min: 0, max: 30, allowSkip: true, showIf: (d) => countOf(d) >= 4 },
     ],
   },
   {
@@ -162,6 +214,37 @@ export const ROUGH_PAGES: RoughPage[] = [
     ],
   },
   {
+    id: 'fire',
+    title: 'FIRE後の暮らし',
+    purpose: '仕事を減らした後の生活費と収入を確認します。',
+    questions: [
+      {
+        id: 'postFireLiving',
+        label: 'FIRE後の毎月生活費',
+        help: '仕事を減らした後の毎月の生活費の目安です。未入力なら現在の生活費から概算します。',
+        kind: 'number',
+        unit: '万円',
+        placeholder: '例：30',
+        min: 0,
+        allowSkip: true,
+      },
+      {
+        id: 'sideFireIncome',
+        label: 'サイドFIRE後の毎月収入',
+        help: '少し働き続ける場合の毎月の収入の目安です。',
+        kind: 'number',
+        unit: '万円',
+        placeholder: '例：20',
+        min: 0,
+        allowSkip: true,
+        allowRecommended: true,
+        recommendedValue: 10,
+        recommendedLabel: 'おすすめ（月10万円）',
+        showIf: (d) => workStyleOf(d) !== 'full_retire',
+      },
+    ],
+  },
+  {
     id: 'investment',
     title: '投資のスタイル',
     purpose: '資産の増え方を概算します。',
@@ -191,7 +274,7 @@ export const ALL_ROUGH_QUESTIONS: RoughQuestion[] = ROUGH_PAGES.flatMap((p) => p
 /** ページ順の stepId 一覧。 */
 export const STEP_ORDER: StepId[] = ROUGH_PAGES.map((p) => p.id);
 
-/** stepId からページ番号を引く（見つからなければ0）。 */
+/** stepId からページ番号を引く（最初の該当ページ）。 */
 export function pageIndexByStepId(stepId: StepId): number {
   const i = ROUGH_PAGES.findIndex((p) => p.id === stepId);
   return i < 0 ? 0 : i;

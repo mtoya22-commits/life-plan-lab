@@ -20,12 +20,6 @@ function isComplete(cell: RoughCell): boolean {
   return false;
 }
 
-function countFromDraft(cell: RoughCell): number {
-  if (cell.source !== 'user_input' || cell.value === null) return 0;
-  const n = typeof cell.value === 'string' ? parseInt(cell.value, 10) : cell.value;
-  return Number.isFinite(n) ? n : 0;
-}
-
 export function RoughFlow() {
   const roughPage = useInputStore((s) => s.roughPage);
   const draft = useInputStore((s) => s.roughDraft);
@@ -38,14 +32,13 @@ export function RoughFlow() {
   const [attempted, setAttempted] = useState(false);
 
   const page = ROUGH_PAGES[roughPage];
-  const childrenCount = countFromDraft(draft.childrenCount);
-  const visible = page.questions.filter((q) => (q.showIf ? q.showIf(childrenCount) : true));
+  const visible = page.questions.filter((q) => (q.showIf ? q.showIf(draft) : true));
   const pageComplete = visible.every((q) => isComplete(draft[q.id]));
   const isLast = roughPage === ROUGH_PAGES.length - 1;
 
   // あと何問・あと何分（おおよそ）
   const laterQuestions = ROUGH_PAGES.slice(roughPage + 1).reduce(
-    (n, p) => n + p.questions.filter((q) => (q.showIf ? q.showIf(childrenCount) : true)).length,
+    (n, p) => n + p.questions.filter((q) => (q.showIf ? q.showIf(draft) : true)).length,
     0,
   );
   const remainingQuestions = laterQuestions + visible.filter((q) => !isComplete(draft[q.id])).length;

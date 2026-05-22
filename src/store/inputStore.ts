@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { buildFullInputFromRough, buildFullInputFromThorough } from '../schema/normalize';
+import { draftFromAnswers } from '../schema/roughMapping';
 import { runSimulation } from '../engine/annualSimulationEngine';
 import { createDefaultInput } from '../schema/defaultValues';
 import { applyRecommendedValues } from '../schema/recommendedValues';
@@ -154,7 +155,29 @@ interface InputState {
   // 開発用
   loadSample: () => void;
   loadThoroughSample: (toResult: boolean) => void;
+  loadHighIncomeSample: () => void;
 }
+
+// 検証用ケース: 高収入・高資産・子ども2人・住宅ローンあり・55歳サイドFIRE。
+// 結果が過度に楽観的にならないか（住宅費・教育費ピーク・FIRE後収入・インフレ）を確認する。
+const HIGH_INCOME_ANSWERS: Partial<Record<RoughFieldId, string | number>> = {
+  age: 38,
+  householdIncome: 1200,
+  currentAssets: 3200,
+  monthlyLiving: 35,
+  monthlyHousing: 11,
+  loanYears: 30,
+  childrenCount: 2,
+  educationPolicy: 'some_private',
+  childAge1: 4,
+  childAge2: 2,
+  housing: 'own',
+  workStyle: 'work_a_little',
+  reduceWorkAge: 55,
+  postFireLiving: 30,
+  sideFireIncome: 20,
+  investmentStyle: 'balanced',
+};
 
 // 開発用: しっかり診断のサンプル値（source は recommended_value 扱い）。
 const SAMPLE_THOROUGH_FIELDS: [string, string | number | boolean][] = [
@@ -208,11 +231,20 @@ const SAMPLE_ANSWERS: Record<RoughFieldId, string | number> = {
   age: 38,
   householdIncome: 850,
   currentAssets: 1200,
+  monthlyLiving: 25,
+  monthlyHousing: 10,
+  loanYears: 25,
   childrenCount: '2',
   educationPolicy: 'public',
+  childAge1: 10,
+  childAge2: 7,
+  childAge3: 0,
+  childAge4: 0,
   housing: 'own',
   workStyle: 'work_a_little',
   reduceWorkAge: 55,
+  postFireLiving: 22,
+  sideFireIncome: 10,
   investmentStyle: 'balanced',
 };
 
@@ -436,6 +468,13 @@ export const useInputStore = create<InputState>((set, get) => ({
       roughPage: 0,
     });
     if (toResult) get().submitThorough();
+  },
+
+  loadHighIncomeSample: () => {
+    const draft = draftFromAnswers(HIGH_INCOME_ANSWERS);
+    const input = buildFullInputFromRough(draft);
+    const result = runSimulation(input);
+    set({ mode: 'rough', roughDraft: draft, input, result, phase: 'result', cameFromResult: false, resumePrompt: false });
   },
 }));
 

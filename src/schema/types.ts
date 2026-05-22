@@ -162,16 +162,25 @@ export interface SimulationInput {
 
 // ---- 生の回答（正規化前） --------------------------------------------------
 
-/** ざっくり診断の生回答（9問, 解決済みのフラット値）。 */
+/** ざっくり診断の生回答（解決済みのフラット値）。現実感のための最小項目を含む。 */
 export interface RoughAnswers {
   age: number;
   householdIncome: number;
   currentAssets: number;
+  monthlyLiving: number; // 毎月生活費（万円/月）
+  monthlyHousing: number; // 毎月住居費（家賃 or ローン返済, 万円/月）
+  loanYears: number; // 住宅ローン残年数
   childrenCount: number;
   educationPolicy: EducationPolicy;
+  childAge1: number;
+  childAge2: number;
+  childAge3: number;
+  childAge4: number;
   housing: HousingType;
   workStyle: WorkStyle;
   reduceWorkAge: number;
+  postFireLiving: number; // FIRE後生活費（万円/月）
+  sideFireIncome: number; // サイドFIRE後収入（万円/月）
   investmentStyle: InvestmentStyle;
 }
 

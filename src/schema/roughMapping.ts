@@ -59,6 +59,27 @@ export function applyRoughDraft(base: SimulationInput, draft: RoughDraft): Simul
 
   const housing = resolve('housing', draft);
   input.housing.type = withResolved(input.housing.type, housing.value as HousingType, housing.source);
+  const isRent = (housing.value as HousingType) === 'rent';
+
+  // 毎月の住居費 → 賃貸は家賃、それ以外は毎月返済額（同じ意味の項目に合流）
+  const monthlyHousing = resolve('monthlyHousing', draft);
+  if (isRent) {
+    input.housing.rent = withResolved(input.housing.rent, monthlyHousing.value as number, monthlyHousing.source);
+  } else {
+    input.housing.monthlyPayment = withResolved(
+      input.housing.monthlyPayment,
+      monthlyHousing.value as number,
+      monthlyHousing.source,
+    );
+  }
+
+  // 住宅ローン残年数（持ち家系のみ意味を持つ）
+  const loanYears = resolve('loanYears', draft);
+  input.housing.remainingYears = withResolved(input.housing.remainingYears, loanYears.value as number, loanYears.source);
+
+  // 毎月生活費
+  const monthlyLiving = resolve('monthlyLiving', draft);
+  input.expense.monthlyLiving = withResolved(input.expense.monthlyLiving, monthlyLiving.value as number, monthlyLiving.source);
 
   // 働き方 → FIREタイプ + 仕事を減らす年齢
   const work = resolve('workStyle', draft);
@@ -66,6 +87,23 @@ export function applyRoughDraft(base: SimulationInput, draft: RoughDraft): Simul
   const reduceAge = resolve('reduceWorkAge', draft);
   input.fire.reduceWorkAge = withResolved(input.fire.reduceWorkAge, reduceAge.value as number, reduceAge.source);
   input.fire.targetAge = withResolved(input.fire.targetAge, reduceAge.value as number, reduceAge.source);
+
+  // FIRE後の毎月生活費（月額入力 → 年額に変換して合流）
+  const postLiving = resolve('postFireLiving', draft);
+  if (postLiving.source !== 'skipped' && postLiving.value != null) {
+    input.fire.postFireLiving = withResolved(input.fire.postFireLiving, (postLiving.value as number) * 12, postLiving.source, {
+      user: `FIRE後の生活費（月${postLiving.value}万円）で試算しています。`,
+    });
+  }
+
+  // サイドFIRE後の毎月収入（月額入力 → 年額に変換して合流）
+  const sideIncome = resolve('sideFireIncome', draft);
+  if (sideIncome.source !== 'skipped' && sideIncome.value != null) {
+    input.fire.postFireIncome = withResolved(input.fire.postFireIncome, (sideIncome.value as number) * 12, sideIncome.source, {
+      user: `サイドFIRE後の収入（月${sideIncome.value}万円）で試算しています。`,
+      recommended: `サイドFIRE後の収入（月${sideIncome.value}万円）で概算しています。`,
+    });
+  }
 
   // 投資スタイル → 想定（名目）利回り
   const style = resolve('investmentStyle', draft);
@@ -78,14 +116,21 @@ export function applyRoughDraft(base: SimulationInput, draft: RoughDraft): Simul
     });
   }
 
-  // 子ども: 人数分だけ年齢を仮置きで生成（ageAssumed=true）。
+  // 子ども: 人数分だけ生成。年齢が入力されていれば反映（ageAssumed=false）、なければ仮置き8歳。
   const countRes = resolve('childrenCount', draft);
   const count = typeof countRes.value === 'string' ? parseInt(countRes.value, 10) : (countRes.value as number) ?? 0;
   const policyRes = resolve('educationPolicy', draft);
   const policy = (policyRes.value as EducationPolicy) ?? 'undecided';
-  input.children = Array.from({ length: Number.isFinite(count) ? count : 0 }, () =>
-    makeAssumedChild(policy, policyRes.source),
-  );
+  const childAgeIds: RoughFieldId[] = ['childAge1', 'childAge2', 'childAge3', 'childAge4'];
+  input.children = Array.from({ length: Number.isFinite(count) ? count : 0 }, (_unused, i) => {
+    const child = makeAssumedChild(policy, policyRes.source);
+    const ageRes = resolve(childAgeIds[i], draft);
+    if (ageRes.source === 'user_input' && ageRes.value != null) {
+      child.currentAge = withResolved(child.currentAge, ageRes.value as number, 'user_input');
+      child.ageAssumed = false;
+    }
+    return child;
+  });
 
   return input;
 }
@@ -117,31 +162,12 @@ function makeAssumedChild(policy: EducationPolicy, policySource: FieldSource): C
   };
 }
 
-/** テスト/サンプル用: フラットな回答から「全て user_input」のドラフトを作る。 */
-export function draftFromAnswers(a: {
-  age: number;
-  householdIncome: number;
-  currentAssets: number;
-  childrenCount: number;
-  educationPolicy: EducationPolicy;
-  housing: HousingType;
-  workStyle: string;
-  reduceWorkAge: number;
-  investmentStyle: InvestmentStyle;
-}): RoughDraft {
-  const u = (value: string | number): { value: string | number; source: FieldSource } => ({
-    value,
-    source: 'user_input',
-  });
-  return {
-    age: u(a.age),
-    householdIncome: u(a.householdIncome),
-    currentAssets: u(a.currentAssets),
-    childrenCount: u(a.childrenCount),
-    educationPolicy: u(a.educationPolicy),
-    housing: u(a.housing),
-    workStyle: u(a.workStyle),
-    reduceWorkAge: u(a.reduceWorkAge),
-    investmentStyle: u(a.investmentStyle),
-  };
+/** テスト/サンプル用: フラットな（部分）回答から「指定分は user_input」のドラフトを作る。 */
+export function draftFromAnswers(a: Partial<Record<RoughFieldId, string | number>>): RoughDraft {
+  const draft = {} as RoughDraft;
+  for (const q of ALL_ROUGH_QUESTIONS) {
+    const v = a[q.id];
+    draft[q.id] = v === undefined ? { value: null, source: 'default_value' } : { value: v, source: 'user_input' };
+  }
+  return draft;
 }
