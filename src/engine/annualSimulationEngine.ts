@@ -76,11 +76,13 @@ export function runSimulation(input: SimulationInput): SimulationResult {
   const baseEvents = mortgageEvents(input.housing, startAge);
 
   let cumulativeShortfall = 0;
+  let cumulativeShortfallPresentValue = 0;
 
   for (let age = startAge; age <= SIM.endAge; age++) {
     const offset = age - startAge;
     const startAssets = cash + invest;
     const inflationFactor = Math.pow(1 + inflation, offset); // 支出側の増加率
+    const presentValueFactor = 1 / inflationFactor; // 将来額 → 現在価値
 
     // 1) 投資資産にのみ利回りを適用（運用順序: 年初投資資産のみ＝保守的。
     //    その年の新規投入は翌年から運用。マイナス残高には利回りをかけない）
@@ -158,7 +160,10 @@ export function runSimulation(input: SimulationInput): SimulationResult {
       withdrawalFromInvestment = Math.min(Math.max(0, invest), need);
       invest -= withdrawalFromInvestment;
       const stillShort = need - withdrawalFromInvestment;
-      if (stillShort > 0) cumulativeShortfall += stillShort;
+      if (stillShort > 0) {
+        cumulativeShortfall += stillShort;
+        cumulativeShortfallPresentValue += stillShort * presentValueFactor; // 各年の不足額を現在価値で割り戻して累計
+      }
       cash = 0;
     }
     invest = Math.max(0, invest);
@@ -195,11 +200,16 @@ export function runSimulation(input: SimulationInput): SimulationResult {
         cashAfterInvestmentTransfer,
         withdrawalFromCash,
         withdrawalFromInvestment,
+        presentValueFactor,
+        totalAssetsPresentValue: endAssets * presentValueFactor,
+        cumulativeShortfallPresentValue,
+        annualExpenseTotalPresentValue: expenseTotal * presentValueFactor,
+        livingCostPresentValue: living * presentValueFactor,
       },
     });
   }
 
-  const indicators = computeIndicators(rows, input, fireStartAge, cumulativeShortfall);
+  const indicators = computeIndicators(rows, input, fireStartAge, cumulativeShortfall, cumulativeShortfallPresentValue);
   const score = judge(indicators);
   const suggestions = buildSuggestions(indicators, score);
 
@@ -289,6 +299,11 @@ function buildNotes(input: SimulationInput, cashRatioKnown: boolean, monthlyInve
     }
   }
 
+  // 現在価値換算の説明。
+  notes.push(
+    '将来額はインフレを反映した金額です。現在価値は、今のお金の感覚に割り戻した目安として併記しています。',
+  );
+
   // 4%ルール系の達成率は参考指標である旨。
   notes.push(
     'FIRE準備率は4%ルールに基づく簡易的な目安です。教育費・住宅費・年金未入力なども含む年次シミュレーションの資産寿命とあわせてご確認ください。',
@@ -359,12 +374,15 @@ function computeIndicators(
   input: SimulationInput,
   fireStartAge: number,
   cumulativeShortfall: number,
+  cumulativeShortfallPresentValue: number,
 ): Indicators {
   const atFire = rows.find((r) => r.age === fireStartAge);
   const assetsAtFire = atFire ? atFire.startAssets : 0;
 
   const depleted = rows.find((r) => r.endAssets <= 0);
   const at95 = rows.find((r) => r.age === SIM.endAge);
+  const assetsAt95 = at95 ? at95.endAssets : 0;
+  const assetsAt95PresentValue = at95 ? at95.endAssets * (at95.debug?.presentValueFactor ?? 1) : 0;
 
   // 教育費ピーク年
   let peak = rows[0];
@@ -378,7 +396,8 @@ function computeIndicators(
   return {
     fireAchievementRate: fireAchievementRate(assetsAtFire, input.fire),
     assetLongevityAge: depleted ? depleted.age : null,
-    assetsAt95: at95 ? at95.endAssets : 0,
+    assetsAt95,
+    assetsAt95PresentValue,
     eduPeakResilience: {
       peakAge: peak ? peak.age : input.basic.age.value,
       netCashFlow: peakNet,
@@ -386,6 +405,7 @@ function computeIndicators(
     },
     mortgageBurden: annualHousing / takeHome,
     cumulativeShortfall,
+    cumulativeShortfallPresentValue,
   };
 }
 

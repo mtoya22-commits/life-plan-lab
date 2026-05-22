@@ -324,6 +324,10 @@ body {
   font-size: 1.15rem;
   font-weight: 700;
 }
+.metric__sub {
+  font-size: 0.72rem;
+  margin-top: 2px;
+}
 
 /* ---- 結果: 各セクション共通カード ---- */
 .asset-chart,

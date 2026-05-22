@@ -41,8 +41,9 @@ function buildHighlights(result: SimulationResult, input: SimulationInput): stri
   const fireStartAge = input.fire.type.value === 'none' ? input.income.retirementAge.value : input.fire.targetAge.value;
 
   if (depletion) {
-    const shortfall = result.indicators.cumulativeShortfall;
-    const tail = shortfall > 0 ? `（95歳時点の累計不足額：約${formatMan(shortfall)}）` : '';
+    const pv = result.indicators.cumulativeShortfallPresentValue;
+    const nominal = result.indicators.cumulativeShortfall;
+    const tail = pv > 0 ? `（累計不足額：現在価値 約${formatMan(pv)}／将来額 約${formatMan(nominal)}）` : '';
     out.push(`資産は${depletion.age}歳ごろに尽きる見込みです${tail}。条件調整で改善できる可能性があります。`);
   } else if (payoff && payoff.age > fireStartAge) {
     out.push('住宅ローンはFIRE後も残る見込みです。ゆとりをみておくと良さそうです。');

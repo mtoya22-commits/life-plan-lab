@@ -129,7 +129,9 @@ export function AssetChartFull({ rows, events }: { rows: YearRow[]; events: Life
 
   return (
     <div className="asset-rc">
-      <p className="muted chart-axis-note">縦軸：資産（万円）／横軸：年齢</p>
+      <p className="muted chart-axis-note">
+        縦軸：資産（万円・将来額）／横軸：年齢　※現在価値は下の表と結果カードに表示（現在価値グラフは今後対応）
+      </p>
       <ResponsiveContainer width="100%" height={260}>
         <AreaChart data={data} margin={{ top: 16, right: 14, left: 0, bottom: 0 }}>
           <defs>
@@ -218,7 +220,8 @@ function YearlyTable({ rows, eventsByAge }: { rows: YearRow[]; eventsByAge: Map<
         <tr>
           <th>年齢</th>
           <th>西暦</th>
-          <th>資産額</th>
+          <th>資産額（将来）</th>
+          <th>現在価値</th>
           <th>主なイベント</th>
         </tr>
       </thead>
@@ -228,6 +231,7 @@ function YearlyTable({ rows, eventsByAge }: { rows: YearRow[]; eventsByAge: Map<
             <td>{r.age}歳</td>
             <td>{r.year}</td>
             <td>{formatMan(r.endAssets)}</td>
+            <td>{formatMan(r.endAssets * (r.debug?.presentValueFactor ?? 1))}</td>
             <td className="yearly-table__event">{eventsByAge.get(r.age)?.join('・') ?? ''}</td>
           </tr>
         ))}

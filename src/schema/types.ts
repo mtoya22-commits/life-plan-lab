@@ -265,6 +265,12 @@ export interface YearDebug {
   cashAfterInvestmentTransfer: number;
   withdrawalFromCash: number;
   withdrawalFromInvestment: number;
+  // 現在価値換算（名目値はこの行の各フィールド＝将来額。PVは下記）
+  presentValueFactor: number; // 1 / (1+インフレ)^(age-startAge)
+  totalAssetsPresentValue: number;
+  cumulativeShortfallPresentValue: number;
+  annualExpenseTotalPresentValue: number;
+  livingCostPresentValue: number;
 }
 
 export interface Indicators {
@@ -272,8 +278,10 @@ export interface Indicators {
   fireAchievementRate: number;
   /** 資産が0以下になる年齢。枯渇しなければ null。 */
   assetLongevityAge: number | null;
-  /** 95歳時点の残資産（万円） */
+  /** 95歳時点の残資産（万円・将来額） */
   assetsAt95: number;
+  /** 95歳時点の残資産（万円・現在価値） */
+  assetsAt95PresentValue: number;
   /** 教育費ピーク耐性 */
   eduPeakResilience: {
     peakAge: number;
@@ -282,8 +290,10 @@ export interface Indicators {
   };
   /** 住宅ローン返済負担率（年間返済 / 手取り） */
   mortgageBurden: number;
-  /** 95歳までの累計不足額（枯渇後に発生した取り崩せなかった額の合計, 万円） */
+  /** 95歳までの累計不足額（枯渇後に発生した取り崩せなかった額の合計, 万円・将来額） */
   cumulativeShortfall: number;
+  /** 累計不足額の現在価値（各年の不足額を現在価値に割り戻して合計, 万円） */
+  cumulativeShortfallPresentValue: number;
 }
 
 export type ScoreBand = 'stable' | 'realistic' | 'needs_adjust' | 'tough';
