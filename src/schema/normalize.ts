@@ -1,7 +1,7 @@
 import { createDefaultInput } from './defaultValues';
 import { applyRecommendedValues } from './recommendedValues';
-import { applyRoughAnswers } from './roughMapping';
-import type { RoughAnswers, SimulationInput } from './types';
+import { applyRoughDraft } from './roughMapping';
+import type { RoughDraft, SimulationInput } from './types';
 
 // =============================================================================
 // buildFullInput: ざっくり/しっかり両モードの唯一の合流点
@@ -9,10 +9,10 @@ import type { RoughAnswers, SimulationInput } from './types';
 // 優先順位: user_input > recommended_value > default_value(skipped)
 // =============================================================================
 
-/** ざっくり診断の回答から完全な入力を組み立てる。 */
-export function buildFullInputFromRough(answers: RoughAnswers): SimulationInput {
+/** ざっくり診断のドラフトから完全な入力を組み立てる。 */
+export function buildFullInputFromRough(draft: RoughDraft): SimulationInput {
   const base = createDefaultInput('rough');
-  const withAnswers = applyRoughAnswers(base, answers);
+  const withAnswers = applyRoughDraft(base, draft);
   return applyRecommendedValues(withAnswers);
 }
 

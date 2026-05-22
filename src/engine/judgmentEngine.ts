@@ -1,62 +1,67 @@
 import type { Indicators, Score, ScoreBand, ScoreItem, Suggestion } from '../schema/types';
+import { JUDGE } from './constants';
 
 // =============================================================================
 // 判定エンジン（純粋関数）
 // 単一指標では判定しない。5指標 × 各3点 = 15点満点で総合判定する。
-// しきい値は引き継ぎ資料の初期案。確定値はプロダクトオーナーと擦り合わせる。
+// しきい値は constants.ts の JUDGE に集約（後で調整可能）。
 // =============================================================================
 
 function scoreFireRate(rate: number): ScoreItem {
+  const t = JUDGE.fireRate;
   let points = 0;
   let note = '50%未満：厳しめ';
-  if (rate >= 100) ((points = 3), (note = '100%以上：達成圏'));
-  else if (rate >= 80) ((points = 2), (note = '80〜99%：あと少し'));
-  else if (rate >= 50) ((points = 1), (note = '50〜79%：要調整'));
+  if (rate >= t.full) ((points = 3), (note = '100%以上：達成圏'));
+  else if (rate >= t.close) ((points = 2), (note = '80〜99%：あと少し'));
+  else if (rate >= t.adjust) ((points = 1), (note = '50〜79%：要調整'));
   return { key: 'fireAchievementRate', label: 'FIRE達成率', points, note };
 }
 
 function scoreLongevity(age: number | null): ScoreItem {
+  const t = JUDGE.longevityAge;
   let points = 0;
   let note = '74歳以前に枯渇：かなり厳しい';
-  if (age === null || age >= 95) ((points = 3), (note = '95歳以上まで資産あり：安定'));
-  else if (age >= 85) ((points = 2), (note = '85〜94歳で枯渇：やや注意'));
-  else if (age >= 75) ((points = 1), (note = '75〜84歳で枯渇：要改善'));
+  if (age === null || age >= t.stable) ((points = 3), (note = '95歳以上まで資産あり：安定'));
+  else if (age >= t.caution) ((points = 2), (note = '85〜94歳で枯渇：やや注意'));
+  else if (age >= t.improve) ((points = 1), (note = '75〜84歳で枯渇：要改善'));
   return { key: 'assetLongevityAge', label: '資産寿命', points, note };
 }
 
 function scoreAssetsAt95(assets: number): ScoreItem {
+  const t = JUDGE.assetsAt95;
   let points = 0;
   let note = '0円未満：要改善';
-  if (assets >= 3000) ((points = 3), (note = '3000万円以上：かなり余裕'));
-  else if (assets >= 1000) ((points = 2), (note = '1000〜3000万円：安定'));
-  else if (assets >= 0) ((points = 1), (note = '0〜1000万円：やや注意'));
+  if (assets >= t.ample) ((points = 3), (note = '3000万円以上：かなり余裕'));
+  else if (assets >= t.stable) ((points = 2), (note = '1000〜3000万円：安定'));
+  else if (assets >= t.caution) ((points = 1), (note = '0〜1000万円：やや注意'));
   return { key: 'assetsAt95', label: '95歳時点残資産', points, note };
 }
 
 function scoreEduPeak(pctOfAssets: number, netCashFlow: number): ScoreItem {
-  // 黒字 or 赤字が資産の何%か で判定
+  const t = JUDGE.eduPeakPct;
   let points = 0;
   let note = '赤字が資産の10%以上：要改善';
   if (netCashFlow >= 0) ((points = 3), (note = '黒字：問題少なめ'));
-  else if (pctOfAssets <= 5) ((points = 2), (note = '赤字だが資産の5%以内：許容範囲'));
-  else if (pctOfAssets <= 10) ((points = 1), (note = '赤字が資産の5〜10%：注意'));
+  else if (pctOfAssets <= t.allow) ((points = 2), (note = '赤字だが資産の5%以内：許容範囲'));
+  else if (pctOfAssets <= t.caution) ((points = 1), (note = '赤字が資産の5〜10%：注意'));
   return { key: 'eduPeakResilience', label: '教育費ピーク耐性', points, note };
 }
 
 function scoreMortgageBurden(burden: number): ScoreItem {
-  // burden = 年間住宅返済 / 手取り（割合）
+  const t = JUDGE.mortgageBurden;
   let points = 0;
   let note = '40%以上：かなり重い';
-  if (burden < 0.2) ((points = 3), (note = '20%未満：軽め'));
-  else if (burden < 0.3) ((points = 2), (note = '20〜30%：標準'));
-  else if (burden < 0.4) ((points = 1), (note = '30〜40%：重め'));
+  if (burden < t.light) ((points = 3), (note = '20%未満：軽め'));
+  else if (burden < t.standard) ((points = 2), (note = '20〜30%：標準'));
+  else if (burden < t.heavy) ((points = 1), (note = '30〜40%：重め'));
   return { key: 'mortgageBurden', label: 'ローン負担', points, note };
 }
 
 function bandForTotal(total: number): ScoreBand {
-  if (total >= 12) return 'stable';
-  if (total >= 8) return 'realistic';
-  if (total >= 4) return 'needs_adjust';
+  const b = JUDGE.bands;
+  if (total >= b.stable) return 'stable';
+  if (total >= b.realistic) return 'realistic';
+  if (total >= b.needsAdjust) return 'needs_adjust';
   return 'tough';
 }
 
@@ -76,7 +81,7 @@ export function judge(indicators: Indicators): Score {
  * 弱い指標に応じた改善提案を返す。
  * TODO(実装): 引き継ぎ資料30章の提案文を各指標ごとに拡充する。
  */
-export function buildSuggestions(indicators: Indicators, score: Score): Suggestion[] {
+export function buildSuggestions(_indicators: Indicators, score: Score): Suggestion[] {
   const out: Suggestion[] = [];
   for (const item of score.byIndicator) {
     if (item.points >= 2) continue;

@@ -141,8 +141,80 @@ body {
 .step-actions {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 12px;
   margin-top: 8px;
+}
+.step-actions__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.step-hint {
+  font-size: 0.8rem;
+}
+
+/* ---- 入力コントロール ---- */
+.input {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 1.05rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+}
+.input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.field-number {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.field-number__unit {
+  color: var(--muted);
+  white-space: nowrap;
+}
+.choice-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.choice {
+  flex: 1 1 auto;
+  min-width: 96px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+.choice:hover {
+  border-color: var(--accent);
+}
+.choice--selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.field-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+.btn.is-active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.field-status {
+  margin: 10px 0 0;
+  font-size: 0.82rem;
 }
 
 /* ---- ボタン ---- */
@@ -338,6 +410,12 @@ body {
 }
 .assumptions__note {
   color: var(--muted);
+}
+.assumptions__notes {
+  margin: 14px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 0.8rem;
 }
 .tag {
   display: inline-block;

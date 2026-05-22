@@ -21,6 +21,35 @@ export function withUserValue<T>(base: Field<T>, value: T, assumptionText?: stri
   };
 }
 
+/**
+ * 解決済みの (value, source) を Field に反映する。
+ * skipped の場合は base の標準値を保ったまま source だけ skipped にする。
+ */
+export function withResolved<T>(
+  base: Field<T>,
+  value: T | null,
+  source: FieldSource,
+  texts?: { user?: string; recommended?: string; skipped?: string },
+): Field<T> {
+  const unit = base.unit ?? '';
+  if ((source === 'user_input' || source === 'recommended_value') && value !== null) {
+    const isUser = source === 'user_input';
+    return {
+      ...base,
+      value,
+      source,
+      assumptionText:
+        (isUser ? texts?.user : texts?.recommended) ??
+        `${isUser ? '入力された値' : 'おすすめ値'}（${formatValue(value)}${unit}）を使用しています。`,
+    };
+  }
+  return {
+    ...base,
+    source: 'skipped',
+    assumptionText: texts?.skipped ?? `未入力のため標準値（${formatValue(base.value)}${unit}）で試算しています。`,
+  };
+}
+
 function formatValue(v: unknown): string {
   return typeof v === 'number' ? v.toLocaleString('ja-JP') : String(v);
 }

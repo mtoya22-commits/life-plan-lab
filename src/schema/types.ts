@@ -145,7 +145,7 @@ export interface SimulationInput {
 
 // ---- 生の回答（正規化前） --------------------------------------------------
 
-/** ざっくり診断の生回答（9問）。buildFullInput で SimulationInput に展開する。 */
+/** ざっくり診断の生回答（9問, 解決済みのフラット値）。 */
 export interface RoughAnswers {
   age: number;
   householdIncome: number;
@@ -157,6 +157,18 @@ export interface RoughAnswers {
   reduceWorkAge: number;
   investmentStyle: InvestmentStyle;
 }
+
+/** ざっくり診断の質問ID。 */
+export type RoughFieldId = keyof RoughAnswers;
+
+/** 入力途中のセル。value は未回答なら null、source で出どころを保持する。 */
+export interface RoughCell {
+  value: string | number | null;
+  source: FieldSource;
+}
+
+/** ざっくり診断の入力ドラフト（UIが保持する状態）。buildFullInput の入力になる。 */
+export type RoughDraft = Record<RoughFieldId, RoughCell>;
 
 // =============================================================================
 // シミュレーション結果の型
@@ -260,5 +272,7 @@ export interface SimulationResult {
   assumptions: AssumptionLine[];
   /** 「子の年齢は想定値」「年金は推奨値」等の注意フラグ */
   flags: string[];
+  /** 税制簡略化・計算前提などの中立的な注記 */
+  notes: string[];
   suggestions: Suggestion[];
 }

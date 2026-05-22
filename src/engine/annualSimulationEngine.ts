@@ -10,57 +10,66 @@ import { totalEducationCost } from './educationCostEngine';
 import { annualHousingCost, mortgageEvents } from './mortgageEngine';
 import { fireAchievementRate, postFireIncomeForAge } from './fireEngine';
 import { buildSuggestions, judge } from './judgmentEngine';
+import { MEDICAL_CARE_RESERVE, RETURN_MODEL_NOTE, SIM, TAX_SIMPLIFIED_NOTE } from './constants';
 
 // =============================================================================
 // 年次シミュレーション オーケストレーター（純粋関数・React非依存）
-// 漸化式: 翌年資産 = 前年資産 ×(1+利回り) + 年間収入 − 年間支出 − 税金
+// 漸化式: 翌年資産 = 前年資産 ×(1+名目利回り) + 年間収入 − 年間支出 − 税金
+//
+// 計算前提（初期実装）:
+//   - 想定利回り = 名目利回り（資産にそのまま適用）
+//   - インフレ率 = 支出（生活費・教育費など）の毎年の増加率
+//   - 実質利回りとして自動で差し引く処理はしない
+//   - 税金は簡略化（収入は手取りベース、投資課税・各種控除は未反映）
 // ざっくり/しっかり問わず buildFullInput 済みの SimulationInput を受け取る。
 // =============================================================================
-
-const END_AGE = 95;
-const PENSION_START_AGE = 65;
 
 export function runSimulation(input: SimulationInput): SimulationResult {
   const startAge = input.basic.age.value;
   const fireStartAge = input.fire.type.value === 'none' ? input.income.retirementAge.value : input.fire.targetAge.value;
+  const returnRate = input.investment.returnRate.value / 100;
+  const inflation = input.investment.inflationRate.value / 100;
 
   const rows: YearRow[] = [];
   const baseEvents = mortgageEvents(input.housing, startAge);
 
   let assets = input.basic.currentAssets.value;
 
-  for (let age = startAge; age <= END_AGE; age++) {
+  for (let age = startAge; age <= SIM.endAge; age++) {
     const offset = age - startAge;
     const startAssets = assets;
+    const inflationFactor = Math.pow(1 + inflation, offset); // 支出側の増加率
 
-    const investmentReturn = startAssets * (input.investment.returnRate.value / 100);
+    const investmentReturn = startAssets * returnRate;
 
-    // ---- 収入 ----
+    // ---- 収入（名目・手取りベース。インフレ・昇給は初期実装では未反映）----
     const working = age < fireStartAge && age < input.income.retirementAge.value;
     const labor = working ? input.basic.takeHomeIncome.value : 0;
     const postFire = postFireIncomeForAge(input.fire, age);
-    const pension = age >= PENSION_START_AGE ? input.retirement.pension.value : 0;
-    const other = sumLifeEventInflows(input, age) + (age === input.income.retirementAge.value ? input.income.retirementLumpSum.value : 0);
+    const pension = age >= SIM.pensionStartAge ? input.retirement.pension.value : 0;
+    const other =
+      sumLifeEventInflows(input, age) +
+      (age === input.income.retirementAge.value ? input.income.retirementLumpSum.value : 0);
     const incomeTotal = labor + postFire + pension + other;
 
-    // ---- 支出 ----
-    const living = livingCostForAge(input, age, fireStartAge);
-    const education = totalEducationCost(input.children, offset);
-    const housing = annualHousingCost(input.housing, age);
+    // ---- 支出（インフレを適用）----
+    const living = livingCostForAge(input, age, fireStartAge) * inflationFactor;
+    const education = totalEducationCost(input.children, offset) * inflationFactor;
+    const housing = annualHousingCost(input.housing, age); // ローンは名目固定のため非インフレ
     const special =
-      input.expense.annualSpecial.value +
-      input.expense.carCost.value +
-      input.expense.travelCost.value +
-      input.expense.insuranceCost.value +
-      sumLifeEventCosts(input, age);
-    const retirementExtra = medicalCareExtra(input, age);
+      (input.expense.annualSpecial.value +
+        input.expense.carCost.value +
+        input.expense.travelCost.value +
+        input.expense.insuranceCost.value +
+        sumLifeEventCosts(input, age)) *
+      inflationFactor;
+    const retirementExtra = medicalCareExtra(input, age) * inflationFactor;
     const expenseTotal = living + education + housing + special + retirementExtra;
 
     // ---- 税金（初期は簡略化: 手取りベースのため0）----
-    // TODO(実装): 投資課税やFIRE後の税を簡易モデルで加える。
     const tax = 0;
 
-    const endAssets = startAssets * (1 + input.investment.returnRate.value / 100) + incomeTotal - expenseTotal - tax;
+    const endAssets = startAssets * (1 + returnRate) + incomeTotal - expenseTotal - tax;
 
     rows.push({
       age,
@@ -71,7 +80,7 @@ export function runSimulation(input: SimulationInput): SimulationResult {
       expense: { living, education, housing, special, retirementExtra, total: expenseTotal },
       tax,
       endAssets,
-      events: eventsForAge(age, startAge, fireStartAge, input, baseEvents, endAssets, startAssets),
+      events: eventsForAge(age, fireStartAge, input, baseEvents, endAssets, startAssets),
     });
 
     assets = endAssets;
@@ -87,6 +96,7 @@ export function runSimulation(input: SimulationInput): SimulationResult {
     score,
     assumptions: collectAssumptions(input),
     flags: collectFlags(input),
+    notes: [TAX_SIMPLIFIED_NOTE, RETURN_MODEL_NOTE],
     suggestions,
   };
 }
@@ -94,15 +104,15 @@ export function runSimulation(input: SimulationInput): SimulationResult {
 // ---- 補助関数 --------------------------------------------------------------
 
 function livingCostForAge(input: SimulationInput, age: number, fireStartAge: number): number {
-  if (age >= PENSION_START_AGE) return input.retirement.retirementLiving.value;
+  if (age >= SIM.pensionStartAge) return input.retirement.retirementLiving.value;
   if (age >= fireStartAge) return input.fire.postFireLiving.value;
   return input.expense.monthlyLiving.value * 12;
 }
 
 function medicalCareExtra(input: SimulationInput, age: number): number {
   if (!input.retirement.medicalCareReserve.value) return 0;
-  if (age >= 85) return 60;
-  if (age >= 75) return 30;
+  if (age >= 85) return MEDICAL_CARE_RESERVE.from85;
+  if (age >= 75) return MEDICAL_CARE_RESERVE.from75;
   return 0;
 }
 
@@ -120,7 +130,6 @@ function sumLifeEventInflows(input: SimulationInput, age: number): number {
 
 function eventsForAge(
   age: number,
-  startAge: number,
   fireStartAge: number,
   input: SimulationInput,
   baseEvents: LifeEventMarker[],
@@ -136,7 +145,7 @@ function eventsForAge(
       label: input.fire.type.value === 'side' ? 'サイドFIRE開始' : 'FIRE開始',
     });
   }
-  if (age === PENSION_START_AGE && input.retirement.pension.value > 0) {
+  if (age === SIM.pensionStartAge && input.retirement.pension.value > 0) {
     out.push({ age, kind: 'pension_start', label: '年金受給開始' });
   }
   if (input.fire.type.value === 'side' && age === input.fire.workUntilAge.value) {
@@ -153,7 +162,7 @@ function computeIndicators(rows: YearRow[], input: SimulationInput, fireStartAge
   const assetsAtFire = atFire ? atFire.startAssets : 0;
 
   const depleted = rows.find((r) => r.endAssets <= 0);
-  const at95 = rows.find((r) => r.age === END_AGE);
+  const at95 = rows.find((r) => r.age === SIM.endAge);
 
   // 教育費ピーク年
   let peak = rows[0];

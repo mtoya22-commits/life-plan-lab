@@ -20,7 +20,7 @@ export function ResultDashboard() {
       <Hero result={result} />
       <AssetChart rows={result.rows} />
       <Timeline rows={result.rows} />
-      <AssumptionSummary assumptions={result.assumptions} flags={result.flags} />
+      <AssumptionSummary assumptions={result.assumptions} flags={result.flags} notes={result.notes} />
       <Suggestions suggestions={result.suggestions} />
 
       <p className="muted disclaimer">{ja.result.disclaimer}</p>

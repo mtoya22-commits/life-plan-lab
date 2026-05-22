@@ -5,9 +5,11 @@ import { ja } from '../../strings/ja';
 export function AssumptionSummary({
   assumptions,
   flags,
+  notes,
 }: {
   assumptions: AssumptionLine[];
   flags: string[];
+  notes: string[];
 }) {
   return (
     <div className="assumptions">
@@ -37,6 +39,14 @@ export function AssumptionSummary({
           ))}
         </tbody>
       </table>
+
+      {notes.length > 0 && (
+        <ul className="assumptions__notes">
+          {notes.map((n, i) => (
+            <li key={i}>{n}</li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
