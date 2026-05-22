@@ -30,10 +30,28 @@ export const MEDICAL_CARE_RESERVE = {
 
 /** おすすめ値の導出に使う比率。 */
 export const RATIOS = {
-  takeHomeFromGross: 0.78, // 世帯年収 → 手取りの概算
+  takeHomeFromGross: 0.78, // 世帯年収 → 手取りの概算（バンド未適用時のフォールバック）
   postFireLivingFromCurrent: 0.9, // FIRE後生活費 = 現在生活費の90%
   retirementLivingFromCurrent: 0.85, // 老後生活費 = 現在生活費の85%
 } as const;
+
+/** 年収帯ごとの簡易手取り率（額面年収・万円 → 手取り率）。 */
+export function takeHomeRate(gross: number): number {
+  if (gross < 400) return 0.8;
+  if (gross < 700) return 0.78;
+  if (gross < 1000) return 0.75;
+  if (gross < 1500) return 0.72;
+  return 0.68;
+}
+
+/** 持ち家のローン完済後に残る維持費（固定資産税・火災保険・修繕など, 万円/年）。 */
+export const HOME_MAINTENANCE_ANNUAL = 60;
+
+/** 現金比率が未入力のときに仮定する保守的な現金割合。 */
+export const DEFAULT_CASH_RATIO = 0.2;
+
+/** 毎月投資額が未入力のとき、年間黒字のうち投資へ回す保守的な割合。 */
+export const DEFAULT_INVEST_FRACTION = 0.5;
 
 /** 投資スタイル → 想定（名目）利回り（%）。 */
 export const RETURN_RATE_BY_STYLE = {

@@ -1,4 +1,5 @@
 import type { HousingGroup, LifeEventMarker } from '../schema/types';
+import { HOME_MAINTENANCE_ANNUAL } from './constants';
 
 // =============================================================================
 // 住宅費エンジン（純粋関数）
@@ -9,8 +10,8 @@ import type { HousingGroup, LifeEventMarker } from '../schema/types';
 /**
  * その年の住宅費（万円）。
  * - 賃貸: 家賃 × 12
- * - 持ち家/購入検討: 毎月返済額 × 12 を、残年数から決まる完済年齢まで計上
- *   （完済後は 0。完済後の維持費＝固定資産税・修繕は TODO(STEP5)）
+ * - 持ち家/購入検討: 毎月返済額 × 12 を完済年齢（現在年齢＋残年数）まで計上し、
+ *   完済後は持ち家維持費（固定資産税・火災保険・修繕など）を計上する。
  * @param age 評価する年齢
  * @param baseAge 現在年齢（残年数の起点）
  */
@@ -19,15 +20,15 @@ export function annualHousingCost(housing: HousingGroup, age: number, baseAge: n
     return housing.rent.value * 12;
   }
 
-  // 持ち家/購入検討: 毎月返済額があれば最優先
+  // 持ち家/購入検討: 返済中は毎月返済額、完済後は維持費。
   if (housing.monthlyPayment.value > 0) {
     const payoffAge = housing.remainingYears.value > 0 ? baseAge + housing.remainingYears.value : Infinity;
     if (age < payoffAge) return housing.monthlyPayment.value * 12;
-    return 0; // TODO(STEP5): 完済後の維持費（固定資産税・修繕）を加味する
+    return HOME_MAINTENANCE_ANNUAL; // 完済後の維持費
   }
 
-  // TODO(STEP5): 残高×金利×返済方式から年間返済額を概算するフォールバック。
-  return 0;
+  // 返済情報がない持ち家（ローンなし/完済済み）は維持費のみ。
+  return HOME_MAINTENANCE_ANNUAL;
 }
 
 /** 住宅ローンに関するタイムラインイベント（固定終了・完済）を返す。 */

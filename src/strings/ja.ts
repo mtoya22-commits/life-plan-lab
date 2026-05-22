@@ -87,7 +87,7 @@ export const ja = {
     events: 'ライフイベントを修正',
   },
   band: {
-    stable: '安定',
+    stable: '安定寄り',
     realistic: 'おおむね現実的',
     needs_adjust: '要調整',
     tough: 'やや注意（条件調整で改善の余地あり）',

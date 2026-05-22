@@ -42,9 +42,10 @@ describe('verification case: high income, side-FIRE at 55', () => {
     expect(at(45).expense.housing).toBeCloseTo(11 * 12, 5); // 月11万 × 12
   });
 
-  it('stops the mortgage at payoff (38 + 30 = 68)', () => {
-    expect(at(67).expense.housing).toBeGreaterThan(0);
-    expect(at(70).expense.housing).toBe(0); // 完済後は住居費が下がる
+  it('stops the mortgage at payoff (38 + 30 = 68) and leaves only maintenance', () => {
+    expect(at(67).expense.housing).toBeCloseTo(11 * 12, 5); // 返済中
+    expect(at(70).expense.housing).toBe(60); // 完済後は持ち家維持費(年60万)のみ
+    expect(at(70).expense.housing).toBeLessThan(at(67).expense.housing); // 返済額より下がる
   });
 
   it('reflects child ages in the education peak (older child to university ~52)', () => {

@@ -1,4 +1,4 @@
-import { RATIOS, RETURN_RATE_BY_STYLE } from '../engine/constants';
+import { RATIOS, RETURN_RATE_BY_STYLE, takeHomeRate } from '../engine/constants';
 import type { InvestmentStyle, SimulationInput } from './types';
 
 // =============================================================================
@@ -37,11 +37,12 @@ export function applyRecommendedValues(input: SimulationInput): SimulationInput 
     next.retirement.retirementLiving.assumptionText = '現在生活費の85%をおすすめ値として使用しています。';
   }
 
-  // 手取り年収が未確定なら、世帯年収の約78%を概算で使う。
+  // 手取り年収が未確定なら、年収帯ごとの簡易手取り率で概算する。
   if (next.basic.takeHomeIncome.source !== 'user_input') {
-    next.basic.takeHomeIncome.value = Math.round(next.basic.householdIncome.value * RATIOS.takeHomeFromGross);
+    const rate = takeHomeRate(next.basic.householdIncome.value);
+    next.basic.takeHomeIncome.value = Math.round(next.basic.householdIncome.value * rate);
     next.basic.takeHomeIncome.source = 'recommended_value';
-    next.basic.takeHomeIncome.assumptionText = '世帯年収の約78%を手取りの概算として使用しています。';
+    next.basic.takeHomeIncome.assumptionText = `世帯年収から簡易手取り率（${Math.round(rate * 100)}%）で概算しています。`;
   }
 
   return next;
