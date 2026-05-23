@@ -29,6 +29,14 @@ describe('render smoke (jsdom)', () => {
     expect(container.textContent).toContain('しっかり診断');
   });
 
+  it('depleted Hero shows 資産は枯渇済み + 累計不足額 (not just 0万円)', () => {
+    store().loadHighIncomeSample(0); // 年金未入力で枯渇するケース
+    const { container } = render(<App />);
+    expect(container.textContent).toContain('資産は枯渇済み');
+    expect(container.textContent).toContain('累計不足額');
+    expect(container.textContent).toContain('年金が未入力'); // 年金未入力の影響を明示
+  });
+
   it('rough flow renders purpose text, ETA and bottom nav', () => {
     store().setMode('rough');
     const { container } = render(<App />);

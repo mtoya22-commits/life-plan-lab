@@ -37,8 +37,11 @@ export function ModeSelect() {
           <button className="link-btn dev-sample" onClick={() => loadThoroughSample(true)}>
             しっかり診断サンプルで結果を見る（開発用）
           </button>
-          <button className="link-btn dev-sample" onClick={loadHighIncomeSample}>
-            高収入ケースで結果を見る（開発用）
+          <button className="link-btn dev-sample" onClick={() => loadHighIncomeSample(0)}>
+            高収入ケース（年金未入力・検証用）
+          </button>
+          <button className="link-btn dev-sample" onClick={() => loadHighIncomeSample(330)}>
+            高収入ケース（年金あり・現実寄り）
           </button>
         </div>
       )}

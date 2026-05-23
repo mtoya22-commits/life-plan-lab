@@ -12,7 +12,7 @@ import {
   visibleThoroughPages,
 } from '../schema/thoroughSteps';
 import { getFieldByPath, hasUserInput, setFieldByPath } from '../schema/fieldPath';
-import { withResolved } from '../schema/field';
+import { field, withResolved } from '../schema/field';
 import type {
   LifeEvent,
   Mode,
@@ -155,7 +155,7 @@ interface InputState {
   // 開発用
   loadSample: () => void;
   loadThoroughSample: (toResult: boolean) => void;
-  loadHighIncomeSample: () => void;
+  loadHighIncomeSample: (pensionAnnual?: number) => void;
 }
 
 // 検証用ケース: 高収入・高資産・子ども2人・住宅ローンあり・55歳サイドFIRE。
@@ -470,9 +470,13 @@ export const useInputStore = create<InputState>((set, get) => ({
     if (toResult) get().submitThorough();
   },
 
-  loadHighIncomeSample: () => {
+  loadHighIncomeSample: (pensionAnnual = 0) => {
     const draft = draftFromAnswers(HIGH_INCOME_ANSWERS);
     const input = buildFullInputFromRough(draft);
+    // 「年金あり・現実寄り」検証では、年金見込みを反映する。
+    if (pensionAnnual > 0) {
+      input.retirement.pension = field(pensionAnnual, 'user_input', '年金見込み', '', '万円');
+    }
     const result = runSimulation(input);
     set({ mode: 'rough', roughDraft: draft, input, result, phase: 'result', cameFromResult: false, resumePrompt: false });
   },

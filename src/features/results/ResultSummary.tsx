@@ -39,12 +39,18 @@ function buildHighlights(result: SimulationResult, input: SimulationInput): stri
   const depletion = events.find((e) => e.type === 'depletion');
   const payoff = events.find((e) => e.type === 'mortgage');
   const fireStartAge = input.fire.type.value === 'none' ? input.income.retirementAge.value : input.fire.targetAge.value;
+  const pensionUnset = input.retirement.pension.source !== 'user_input';
+  const lumpUnset = input.income.retirementLumpSum.source !== 'user_input';
 
   if (depletion) {
     const pv = result.indicators.cumulativeShortfallPresentValue;
     const nominal = result.indicators.cumulativeShortfall;
     const tail = pv > 0 ? `（累計不足額：現在価値 約${formatMan(pv)}／将来額 約${formatMan(nominal)}）` : '';
     out.push(`資産は${depletion.age}歳ごろに尽きる見込みです${tail}。条件調整で改善できる可能性があります。`);
+    // 年金未入力が枯渇の主因になりやすいので、強めに案内する。
+    if (pensionUnset) {
+      out.push('年金が未入力のため、65歳以降の収入を0円としています。年金を入力すると資産寿命が大きく変わる可能性があります。');
+    }
   } else if (payoff && payoff.age > fireStartAge) {
     out.push('住宅ローンはFIRE後も残る見込みです。ゆとりをみておくと良さそうです。');
   } else {
@@ -52,8 +58,6 @@ function buildHighlights(result: SimulationResult, input: SimulationInput): stri
   }
 
   // 年金・退職金が未反映なら、現実に近づけるための入力を促す（断定しない）。
-  const pensionUnset = input.retirement.pension.source !== 'user_input';
-  const lumpUnset = input.income.retirementLumpSum.source !== 'user_input';
   if ((pensionUnset || lumpUnset) && out.length < 3) {
     out.push('年金や退職金を入力すると、老後の見通しがより現実に近づきます。');
   }

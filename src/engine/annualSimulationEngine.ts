@@ -257,6 +257,14 @@ const TAKE_HOME_METHOD_NOTE: Record<'direct' | 'split' | 'household', string> = 
 function buildNotes(input: SimulationInput, cashRatioKnown: boolean, monthlyInvestKnown: boolean): string[] {
   const notes = [TAX_SIMPLIFIED_NOTE, RETURN_MODEL_NOTE];
 
+  // 名目利回りとインフレ率から実質利回りの目安を示す。
+  const nominal = input.investment.returnRate.value;
+  const inflationPct = input.investment.inflationRate.value;
+  const realRate = ((1 + nominal / 100) / (1 + inflationPct / 100) - 1) * 100;
+  notes.push(
+    `名目利回り${nominal}%、支出インフレ${inflationPct}%で試算しています。現在価値ベースの実質利回り目安は約${realRate.toFixed(1)}%です。`,
+  );
+
   const { method } = computeTakeHome(input);
   notes.push(TAKE_HOME_METHOD_NOTE[method]);
 
@@ -268,7 +276,7 @@ function buildNotes(input: SimulationInput, cashRatioKnown: boolean, monthlyInve
   // 年金未入力の明示（誤解防止・資産寿命への影響を案内）。
   if (input.retirement.pension.source !== 'user_input') {
     notes.push(
-      'この試算では年金が未入力のため、65歳以降の年金収入は反映していません。年金見込みを入力すると、老後の見通しがより現実に近づきます。',
+      'この試算では年金が未入力のため、65歳以降の収入を0円として計算しています。年金見込みを入力すると、資産寿命が大きく変わる可能性があります。',
     );
   }
 
