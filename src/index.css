@@ -1,28 +1,35 @@
 /* =========================================================================
    デザイントークン
-   世界観: 静かで上質（Apple/Notion）。余白多め、落ち着いた配色、煽らない。
+   世界観: 静かで上質（Quiet Luxury / Quiet Trust）。深緑を主軸に、
+   ウォームアイボリーの背景、温かい白のカード。森の中の落ち着いた相談室。
+   赤は使わず、注意系はブラス/ブラウンで落ち着かせる。ゴールドは細い差し色のみ。
    ========================================================================= */
 :root {
-  --bg: #fbfbfa;
-  --surface: #ffffff;
-  --text: #2b2b2b;
-  --muted: #8a8a85;
-  --border: #ececea;
-  --accent: #3b5b76; /* 落ち着いた紺。赤緑の煽りは使わない */
-  --accent-soft: #eef2f5;
+  --bg: #f4f1ea; /* ウォームアイボリー */
+  --surface: #fffdf7; /* 温かい白〜薄アイボリーのカード */
+  --text: #2a2c27; /* 深い墨色（わずかに温かい） */
+  --muted: #6e736a; /* 読みやすいグレー（やや緑寄り） */
+  --border: #e4e0d6; /* 薄い境界線 */
+  --accent: #2d4a3e; /* メイン: 青みを含んだ深緑（フォレスト） */
+  --accent-strong: #233f33; /* 押下・濃いめ */
+  --accent-soft: #e7ede8; /* セージ系の淡い面 */
+  --link: #3c5a52; /* リンク: 深緑寄りのブルーグレー */
+  --brass: #a98b5d; /* サテンブラス（細い差し色限定） */
   --radius: 14px;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.04);
+  --shadow: 0 1px 2px rgba(35, 50, 42, 0.035), 0 8px 22px rgba(35, 50, 42, 0.045);
+  --shadow-raised: 0 1px 2px rgba(35, 50, 42, 0.05), 0 14px 32px rgba(35, 50, 42, 0.07);
 
   /* source タグの色（控えめ） */
-  --tag-user: #3b5b76;
-  --tag-recommended: #6b8e6b;
-  --tag-default: #9a9a93;
-  --tag-skipped: #b58a5a;
+  --tag-user: #2d4a3e;
+  --tag-recommended: #577a61;
+  --tag-default: #9b988d;
+  --tag-skipped: #a98b5d;
 
-  --band-stable: #5b8b6a;
-  --band-realistic: #5b7a8b;
-  --band-needs: #b58a5a;
-  --band-tough: #a8736b;
+  /* 判定バッジ（赤は使わず、注意系はブラス/ブラウン） */
+  --band-stable: #3f6b54; /* 深緑〜セージ */
+  --band-realistic: #4c6b62; /* くすんだ青緑グレー */
+  --band-needs: #8f7344; /* くすんだブラス */
+  --band-tough: #8a6749; /* 落ち着いたブラウン */
 }
 
 * {
@@ -31,7 +38,10 @@
 
 body {
   margin: 0;
-  background: var(--bg);
+  background-color: var(--bg);
+  /* ごく薄い深緑のモヤ（森の気配）。派手にしない。 */
+  background-image: radial-gradient(1200px 420px at 50% -160px, rgba(45, 74, 62, 0.05), transparent 70%);
+  background-attachment: fixed;
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', 'Segoe UI', sans-serif;
   line-height: 1.7;
@@ -228,7 +238,7 @@ body {
   border-radius: 10px;
   font-size: 0.95rem;
   cursor: pointer;
-  transition: background 0.12s ease, border-color 0.12s ease;
+  transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
 }
 .btn:hover {
   border-color: var(--accent);
@@ -238,12 +248,22 @@ body {
   color: #fff;
   border-color: var(--accent);
 }
+.btn--primary:hover {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
 .btn--recommended {
   background: var(--accent-soft);
   border-color: var(--accent-soft);
+  color: var(--accent);
 }
 .btn--skip {
   color: var(--muted);
+}
+.btn:disabled,
+.btn[disabled] {
+  opacity: 0.55;
+  cursor: default;
 }
 
 /* ---- 補助説明 ---- */
@@ -280,11 +300,24 @@ body {
 
 /* ---- 結果: Hero ---- */
 .hero {
-  background: var(--surface);
+  position: relative;
+  background: linear-gradient(157deg, #edf3ed 0%, var(--surface) 58%);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 18px;
+  box-shadow: var(--shadow-raised);
+  padding: 22px 20px;
+  overflow: hidden;
+}
+/* 細いサテンブラスの差し色（上端）。面で使わず線で上質感を出す。 */
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--brass) 30%, var(--brass) 70%, transparent);
+  opacity: 0.7;
 }
 .hero__band {
   display: inline-flex;
@@ -344,11 +377,11 @@ body {
 
 /* ---- 結果: 人生フェーズ・次の節目（見通しカード） ---- */
 .outlook {
-  background: var(--surface);
+  background: linear-gradient(157deg, #f0f4ef 0%, var(--surface) 62%);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 18px;
+  box-shadow: var(--shadow-raised);
+  padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -585,7 +618,7 @@ body {
   right: 0;
   bottom: 0;
   z-index: 40;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 253, 247, 0.9);
   backdrop-filter: blur(8px);
   border-top: 1px solid var(--border);
   padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
@@ -618,9 +651,10 @@ body {
   appearance: none;
   background: none;
   border: none;
-  color: var(--accent);
+  color: var(--link);
   font-size: 0.82rem;
   text-decoration: underline;
+  text-underline-offset: 2px;
   cursor: pointer;
   padding: 6px 4px;
 }
@@ -661,7 +695,7 @@ body {
   gap: 14px;
 }
 .risk-factor {
-  border-left: 3px solid var(--accent-soft);
+  border-left: 3px solid var(--accent);
   padding-left: 12px;
 }
 .risk-factor__title {

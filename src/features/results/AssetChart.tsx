@@ -21,14 +21,14 @@ import { formatMan } from '../../lib/format';
 // =============================================================================
 
 const COLORS = {
-  line: '#3b5b76', // accent
-  grid: '#ececea',
-  muted: '#9a9a93',
-  depletion: '#a8736b',
+  line: '#2f5246', // 深い青緑（メイン）
+  grid: '#e7e3d9', // 薄いウォームグレー
+  muted: '#8c918a',
+  depletion: '#8a6749', // 落ち着いたブラウン（赤は使わない）
 };
 
-const COLORS_PV = '#3b5b76'; // 現在価値（主線）
-const COLORS_NOMINAL = '#9a9a93'; // 将来額（補助線）
+const COLORS_PV = '#2f5246'; // 現在価値（主線・深緑）
+const COLORS_NOMINAL = '#a39c8a'; // 将来額（補助線・ウォームグレー。主線より控えめ）
 
 interface ChartPoint {
   age: number;
