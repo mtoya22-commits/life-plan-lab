@@ -20,6 +20,14 @@ export function buildRiskFactors(result: SimulationResult, input: SimulationInpu
     }
   }
 
+  // 毎月投資額が家計の黒字を上回り、満額の積立ができていないケースを明示する。
+  if (input.investment.monthlyInvestment.source === 'user_input' && ind.investmentUnderfundedFromAge !== null) {
+    const m = input.investment.monthlyInvestment.value;
+    out.push(
+      `毎月投資額（月${m}万円）は家計の黒字を上回るため、${ind.investmentUnderfundedFromAge}歳ごろから満額は積み立てられていません（生活費・住居費を見直すと積立余力が増えます）。`,
+    );
+  }
+
   const payoff = rows.flatMap((r) => r.events).find((e) => e.kind === 'mortgage_payoff');
   if (payoff && payoff.age > fireStartAge) {
     out.push(`住宅ローンがFIRE後（${payoff.age}歳ごろ完済）まで残ります。`);

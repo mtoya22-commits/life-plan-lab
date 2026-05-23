@@ -264,9 +264,9 @@ export interface YearDebug {
   lifeEventExpense: number;
   retirementIncome: number; // 退職金の一時収入
   annualNetCashflow: number;
-  newInvestmentAmount: number; // その年に投資へ回そうとした額（目標）
-  actualInvestmentTransfer: number; // 実際に現金→投資へ振り替えた額
-  skippedInvestmentDueToCashShortage: number; // 現金不足/赤字で見送った額
+  plannedInvestmentAmount: number; // 毎月投資額×12（満額の意図）。現役期のみ。
+  actualInvestmentAmount: number; // 実際に現金→投資へ振り替えた額（家計の黒字・手元現金の範囲）
+  skippedInvestmentAmount: number; // 満額に対し積み立てられなかった額（黒字不足・現金不足）
   cashBeforeInvestmentTransfer: number;
   cashAfterInvestmentTransfer: number;
   withdrawalFromCash: number;
@@ -310,6 +310,10 @@ export interface Indicators {
   cumulativeShortfall: number;
   /** 累計不足額の現在価値（各年の不足額を現在価値に割り戻して合計, 万円） */
   cumulativeShortfallPresentValue: number;
+  /** 毎月投資額の満額換算（年額・万円）。未入力なら0。 */
+  monthlyInvestmentPlannedAnnual: number;
+  /** 満額の積立ができなくなる最初の年齢（黒字不足）。常に満額できれば null。毎月投資額が未入力なら null。 */
+  investmentUnderfundedFromAge: number | null;
 }
 
 export type ScoreBand = 'stable' | 'realistic' | 'needs_adjust' | 'tough';

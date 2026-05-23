@@ -261,7 +261,7 @@ function YearlyTable({ rows, eventsByAge }: { rows: YearRow[]; eventsByAge: Map<
   const assetAt = (r: YearRow) => (r.age === startAge ? r.startAssets : r.endAssets);
   return (
     <table className="yearly-table">
-      <caption className="yearly-table__caption">年齢ごとの資産と主なイベント（5年ごと）</caption>
+      <caption className="yearly-table__caption">年齢ごとの資産と主なイベント（5年ごと＋イベント年）</caption>
       <thead>
         <tr>
           <th>年齢</th>

@@ -105,6 +105,26 @@ describe('thorough flow store', () => {
     expect(store().thoroughPageId).toBe('retirement-1');
   });
 
+  it('editThoroughPage jumps to a specific page, preserves values, and recomputes', () => {
+    store().loadThoroughSample(true);
+    const before = store().result!.rows.find((r) => r.age === 66)!.income.pension;
+    const keptAge = store().thoroughInput!.basic.age.value;
+
+    // 「年金だけ」を直接修正する導線（投資ページ等を経由しない）。
+    store().editThoroughPage('retirement-1');
+    expect(store().phase).toBe('input');
+    expect(store().cameFromResult).toBe(true);
+    expect(store().thoroughPageId).toBe('retirement-1');
+    // 他の入力値は保持されている。
+    expect(store().thoroughInput!.basic.age.value).toBe(keptAge);
+
+    store().setThoroughValue('retirement.pension', 360);
+    store().submitThorough();
+    expect(store().phase).toBe('result');
+    const after = store().result!.rows.find((r) => r.age === 66)!.income.pension;
+    expect(after).toBeGreaterThan(before);
+  });
+
   it('hides loan pages when not an owner', () => {
     store().setMode('thorough'); // default housing.type = rent
     store().setThoroughValue('housing.type', 'rent');

@@ -58,8 +58,8 @@ describe('debug: high income breakdown', () => {
         `incTot=${r(row.income.total)}`,
         `expTot=${r(row.expense.total)}`,
         `net=${r(d.annualNetCashflow)}`,
-        `newInv=${r(d.newInvestmentAmount)}`,
-        `transfer=${r(d.actualInvestmentTransfer)}`,
+        `planInv=${r(d.plannedInvestmentAmount)}`,
+        `actInv=${r(d.actualInvestmentAmount)}`,
         `wCash=${r(d.withdrawalFromCash)}`,
         `wInv=${r(d.withdrawalFromInvestment)}`,
       ].join('  ');

@@ -149,6 +149,7 @@ interface InputState {
   // 結果からの再調整 / 深掘り
   editCategory: (stepId: StepId) => void;
   editThoroughStep: (stepId: ThoroughStepId) => void;
+  editThoroughPage: (pageId: string) => void;
   backToResult: () => void;
   deepenToThorough: () => void;
 
@@ -429,6 +430,15 @@ export const useInputStore = create<InputState>((set, get) => ({
     if (!ti) return;
     const pages = visibleThoroughPages(ti);
     const page = pages.find((p) => p.stepId === stepId) ?? pages[0];
+    set({ phase: 'input', thoroughPageId: page.pageId, cameFromResult: true });
+  },
+  // 結果画面から特定のページへ直接戻る（年金だけ・投資額だけ・車購入だけ等）。
+  // thoroughInput はそのまま（入力値を保持）。再計算は submitThorough で結果へ戻る。
+  editThoroughPage: (pageId) => {
+    const ti = get().thoroughInput;
+    if (!ti) return;
+    const pages = visibleThoroughPages(ti);
+    const page = pages.find((p) => p.pageId === pageId) ?? pages[0];
     set({ phase: 'input', thoroughPageId: page.pageId, cameFromResult: true });
   },
   backToResult: () => set({ phase: 'result', cameFromResult: false }),

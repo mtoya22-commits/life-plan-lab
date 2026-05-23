@@ -128,7 +128,7 @@ describe('STEP5.1 invariants', () => {
       expect(r.debug!.cashAssets).toBeGreaterThanOrEqual(0);
       expect(r.debug!.investmentAssets).toBeGreaterThanOrEqual(0);
       // 赤字年は新規投資の振替が起きない
-      if (r.debug!.annualNetCashflow < 0) expect(r.debug!.actualInvestmentTransfer).toBe(0);
+      if (r.debug!.annualNetCashflow < 0) expect(r.debug!.actualInvestmentAmount).toBe(0);
     }
   });
 

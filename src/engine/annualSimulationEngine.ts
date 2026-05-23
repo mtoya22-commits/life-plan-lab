@@ -149,21 +149,21 @@ export function runSimulation(input: SimulationInput): SimulationResult {
 
     const cashBeforeInvestmentTransfer = cash;
 
-    // 3) 黒字かつ現役期のみ、毎月投資額（または黒字の一部）を現金→投資へ振替。
-    //    赤字年は新規投資を停止（現金不足の無視を防ぐ）。
-    let newInvestmentAmount = 0;
-    let actualInvestmentTransfer = 0;
-    let skippedInvestmentDueToCashShortage = 0;
-    if (working && net > 0) {
-      newInvestmentAmount = monthlyInvestKnown
-        ? Math.min(monthlyInvestAnnual, net)
-        : net * DEFAULT_INVEST_FRACTION;
-      actualInvestmentTransfer = Math.min(newInvestmentAmount, Math.max(0, cash));
-      skippedInvestmentDueToCashShortage = Math.max(0, newInvestmentAmount - actualInvestmentTransfer);
-      cash -= actualInvestmentTransfer;
-      invest += actualInvestmentTransfer;
-    } else if (working && monthlyInvestKnown && net <= 0) {
-      skippedInvestmentDueToCashShortage = monthlyInvestAnnual; // 赤字年は新規投資を見送り
+    // 3) 現役期のみ、毎月投資額（満額の意図）を現金→投資へ振替。
+    //    ただし実際に回せるのは「その年の家計の黒字」かつ「手元現金」の範囲まで。
+    //    満額に届かない分（黒字不足・赤字）は積み立てられず skipped として記録する。
+    //    毎月投資額が未入力のときは、黒字の一定割合を控えめに積み立てる仮定。
+    let plannedInvestmentAmount = 0;
+    let actualInvestmentAmount = 0;
+    let skippedInvestmentAmount = 0;
+    if (working) {
+      plannedInvestmentAmount = monthlyInvestKnown
+        ? monthlyInvestAnnual
+        : Math.max(0, net) * DEFAULT_INVEST_FRACTION;
+      actualInvestmentAmount = Math.min(plannedInvestmentAmount, Math.max(0, net), Math.max(0, cash));
+      skippedInvestmentAmount = Math.max(0, plannedInvestmentAmount - actualInvestmentAmount);
+      cash -= actualInvestmentAmount;
+      invest += actualInvestmentAmount;
     }
     const cashAfterInvestmentTransfer = cash;
 
@@ -211,9 +211,9 @@ export function runSimulation(input: SimulationInput): SimulationResult {
         lifeEventExpense,
         retirementIncome,
         annualNetCashflow: net,
-        newInvestmentAmount,
-        actualInvestmentTransfer,
-        skippedInvestmentDueToCashShortage,
+        plannedInvestmentAmount,
+        actualInvestmentAmount,
+        skippedInvestmentAmount,
         cashBeforeInvestmentTransfer,
         cashAfterInvestmentTransfer,
         withdrawalFromCash,
@@ -236,7 +236,14 @@ export function runSimulation(input: SimulationInput): SimulationResult {
     });
   }
 
-  const indicators = computeIndicators(rows, input, fireStartAge, cumulativeShortfall, cumulativeShortfallPresentValue);
+  const indicators = computeIndicators(
+    rows,
+    input,
+    fireStartAge,
+    cumulativeShortfall,
+    cumulativeShortfallPresentValue,
+    monthlyInvestKnown ? monthlyInvestAnnual : 0,
+  );
   const score = judge(indicators);
   const suggestions = buildSuggestions(indicators, score);
 
@@ -431,6 +438,7 @@ function computeIndicators(
   fireStartAge: number,
   cumulativeShortfall: number,
   cumulativeShortfallPresentValue: number,
+  monthlyInvestmentPlannedAnnual: number,
 ): Indicators {
   const atFire = rows.find((r) => r.age === fireStartAge);
   const assetsAtFire = atFire ? atFire.startAssets : 0;
@@ -449,6 +457,12 @@ function computeIndicators(
   const annualHousing = annualHousingCost(input.housing, input.basic.age.value, input.basic.age.value);
   const takeHome = input.basic.takeHomeIncome.value || 1;
 
+  // 毎月投資額の満額に届かない最初の年齢（黒字不足で積立が削られる年）。
+  const underfunded =
+    monthlyInvestmentPlannedAnnual > 0
+      ? rows.find((r) => (r.debug?.skippedInvestmentAmount ?? 0) > 0.5)
+      : undefined;
+
   return {
     fireAchievementRate: fireAchievementRate(assetsAtFire, input.fire),
     assetLongevityAge: depleted ? depleted.age : null,
@@ -462,6 +476,8 @@ function computeIndicators(
     mortgageBurden: annualHousing / takeHome,
     cumulativeShortfall,
     cumulativeShortfallPresentValue,
+    monthlyInvestmentPlannedAnnual,
+    investmentUnderfundedFromAge: underfunded ? underfunded.age : null,
   };
 }
 

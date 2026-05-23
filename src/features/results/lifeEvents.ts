@@ -1,4 +1,4 @@
-import type { SimulationInput, SimulationResult, StepId } from '../../schema/types';
+import type { SimulationInput, SimulationResult, StepId, ThoroughStepId } from '../../schema/types';
 import { formatMan } from '../../lib/format';
 
 // =============================================================================
@@ -24,8 +24,8 @@ export interface LifeEventEntry {
   type: LifeEventType;
   title: string;
   description: string;
-  /** 結果画面「この条件を修正する」への接続先。 */
-  relatedStepId?: StepId;
+  /** 結果画面「この条件を修正する」への接続先（ざっくり/しっかり両対応）。 */
+  relatedStepId?: StepId | ThoroughStepId;
   /** 通常表示（要約/コンパクト）に出すか。false は詳細表示のみ。 */
   major: boolean;
 }
@@ -124,6 +124,24 @@ export function buildLifeEvents(result: SimulationResult, input: SimulationInput
           break;
       }
     }
+  }
+
+  // ユーザーが入力した一時的なライフイベント（車購入・リフォーム・相続など）。
+  // 計算に反映済みの同じソースを、グラフの節目・年次テーブルにも表示する。
+  for (const ev of input.lifeEvents) {
+    const age = ev.atAge.value;
+    if (age < startAge || age > 95) continue;
+    const isInflow = ev.amount.value < 0;
+    const amount = Math.abs(ev.amount.value);
+    events.push({
+      age,
+      year: yearAt(age),
+      type: 'custom',
+      title: ev.label.value || (isInflow ? '一時収入' : '一時支出'),
+      description: `${isInflow ? '一時的な収入' : '一時的な支出'}（${formatMan(amount)}）の予定です。`,
+      relatedStepId: 'detailed-events',
+      major: false,
+    });
   }
 
   const depletionAge = result.indicators.assetLongevityAge;

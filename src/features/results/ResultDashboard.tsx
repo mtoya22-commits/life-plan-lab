@@ -2,7 +2,8 @@ import { lazy, Suspense, useState } from 'react';
 import { useInputStore } from '../../store/inputStore';
 import { ja } from '../../strings/ja';
 import { formatMan } from '../../lib/format';
-import type { SimulationInput, StepId, ThoroughStepId } from '../../schema/types';
+import type { SimulationInput, StepId } from '../../schema/types';
+import { visibleThoroughPages } from '../../schema/thoroughSteps';
 import { BottomSheet } from '../../components/BottomSheet';
 import { Hero } from './Hero';
 import { ResultSummary } from './ResultSummary';
@@ -108,7 +109,8 @@ export function ResultDashboard() {
 
       {/* 条件変更導線（常時表示） */}
       <EditLinks />
-      <DeepenLink />
+      {/* しっかり診断の結果では「もっと正確に見る」は出さない（既に詳細なため）。 */}
+      {input.meta.mode !== 'thorough' && <DeepenLink />}
 
       {/* 見直しのヒント（折りたたみ） */}
       {result.suggestions.length > 0 && (
@@ -185,23 +187,16 @@ const ROUGH_EDIT_TARGETS: { stepId: StepId; label: string }[] = [
   { stepId: 'investment', label: ja.editLinks.investment },
 ];
 
-const THOROUGH_EDIT_TARGETS: { stepId: ThoroughStepId; label: string }[] = [
-  { stepId: 'detailed-basic', label: ja.editLinks.basic },
-  { stepId: 'detailed-income', label: ja.editLinks.income },
-  { stepId: 'detailed-expense', label: ja.editLinks.expense },
-  { stepId: 'detailed-family', label: ja.editLinks.family },
-  { stepId: 'detailed-housing', label: ja.editLinks.housing },
-  { stepId: 'detailed-fire', label: ja.editLinks.fire },
-  { stepId: 'detailed-investment', label: ja.editLinks.investment },
-  { stepId: 'detailed-retirement', label: ja.editLinks.retirement },
-  { stepId: 'detailed-events', label: ja.editLinks.events },
-];
-
 function EditLinks() {
   const mode = useInputStore((s) => s.mode);
+  const input = useInputStore((s) => s.input);
   const editCategory = useInputStore((s) => s.editCategory);
-  const editThoroughStep = useInputStore((s) => s.editThoroughStep);
+  const editThoroughPage = useInputStore((s) => s.editThoroughPage);
   const isThorough = mode === 'thorough';
+
+  // しっかり診断は、入力した特定のステップ（年金だけ・投資額だけ・車購入だけ等）へ
+  // 直接戻れるよう、表示中のページ単位で導線を出す。
+  const thoroughTargets = isThorough && input ? visibleThoroughPages(input).map((p) => ({ pageId: p.pageId, label: p.title })) : [];
 
   return (
     <div className="edit-links">
@@ -209,8 +204,8 @@ function EditLinks() {
       <p className="muted">{ja.result.editLead}</p>
       <div className="edit-links__grid">
         {isThorough
-          ? THOROUGH_EDIT_TARGETS.map((t) => (
-              <button key={t.stepId} className="btn edit-link" onClick={() => editThoroughStep(t.stepId)}>
+          ? thoroughTargets.map((t) => (
+              <button key={t.pageId} className="btn edit-link" onClick={() => editThoroughPage(t.pageId)}>
                 {t.label}
               </button>
             ))

@@ -100,13 +100,17 @@ describe('render smoke (jsdom)', () => {
     expect(side.container.textContent).toContain('FIRE後収入');
   });
 
-  it('thorough result shows all detailed edit categories', () => {
+  it('thorough result shows page-level edit links and hides the deepen link', () => {
     store().loadThoroughSample(true);
     const { container } = render(<App />);
     expect(container.textContent).toContain('条件を変えてみる');
-    expect(container.textContent).toContain('収入を修正');
-    expect(container.textContent).toContain('老後を修正');
-    expect(container.textContent).toContain('ライフイベントを修正');
+    // ページ単位の導線（特定ステップへ直接戻れる）
+    expect(container.textContent).toContain('収入');
+    expect(container.textContent).toContain('老後');
+    expect(container.textContent).toContain('投資（インフレ・現金）');
+    expect(container.textContent).toContain('ライフイベント');
+    // しっかり診断の結果では「もっと正確に見る」は出さない
+    expect(container.textContent).not.toContain('しっかり診断で詳しく見る');
   });
 
   it('result dashboard shows conclusions up-front and keeps details collapsed', () => {
