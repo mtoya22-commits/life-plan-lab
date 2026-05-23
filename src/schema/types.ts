@@ -50,8 +50,14 @@ export type WorkStyle = 'full_retire' | 'work_a_little' | 'undecided';
 export type InvestmentStyle = 'stable' | 'balanced' | 'growth';
 export type FireType = 'full' | 'side' | 'none';
 export type SchoolPath = 'public' | 'private';
-export type UniversityPath = 'none' | 'humanities' | 'science';
-export type UniversityLiving = 'home' | 'away';
+export type UniversityPath =
+  | 'none'
+  | 'public_humanities'
+  | 'public_science'
+  | 'private_humanities'
+  | 'private_science'
+  | 'undecided';
+export type UniversityLiving = 'home' | 'away' | 'undecided';
 export type RateType = 'fixed' | 'variable';
 export type RepayMethod = 'equal_principal' | 'equal_payment';
 
@@ -337,4 +343,6 @@ export interface SimulationResult {
   /** 税制簡略化・計算前提などの中立的な注記 */
   notes: string[];
   suggestions: Suggestion[];
+  /** 再計算の確認用タイムスタンプ（stale result 検出のデバッグ用）。 */
+  calculatedAt: number;
 }

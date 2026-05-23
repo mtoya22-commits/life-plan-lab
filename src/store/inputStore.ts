@@ -220,10 +220,10 @@ const SAMPLE_THOROUGH_FIELDS: [string, string | number | boolean][] = [
   ['retirement.medicalCareReserve', true],
   ['children.0.currentAge', 12],
   ['children.0.highSchool', 'public'],
-  ['children.0.university', 'humanities'],
+  ['children.0.university', 'public_humanities'],
   ['children.1.currentAge', 8],
   ['children.1.highSchool', 'private'],
-  ['children.1.university', 'science'],
+  ['children.1.university', 'private_science'],
   ['children.1.uniLiving', 'away'],
 ];
 

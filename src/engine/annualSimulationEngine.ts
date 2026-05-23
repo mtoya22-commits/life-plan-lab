@@ -132,6 +132,16 @@ export function runSimulation(input: SimulationInput): SimulationResult {
     const cashBeforeNet = cash;
     const net = incomeTotal - expenseTotal - tax;
     cash += net;
+
+    // 2.5) 一度枯渇した後の黒字は、まず累計不足額の返済に充てる（穴を埋めてから資産を再形成）。
+    if (cumulativeShortfall > 0 && cash > 0) {
+      const repay = Math.min(cash, cumulativeShortfall);
+      const ratio = repay / cumulativeShortfall;
+      cumulativeShortfallPresentValue *= 1 - ratio; // PVも比例して減らす
+      cumulativeShortfall -= repay;
+      cash -= repay;
+    }
+
     const cashBeforeInvestmentTransfer = cash;
 
     // 3) 黒字かつ現役期のみ、毎月投資額（または黒字の一部）を現金→投資へ振替。
@@ -221,6 +231,7 @@ export function runSimulation(input: SimulationInput): SimulationResult {
     flags: collectFlags(input),
     notes: buildNotes(input, cashRatioKnown, monthlyInvestKnown),
     suggestions,
+    calculatedAt: Date.now(),
   };
 }
 

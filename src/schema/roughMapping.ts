@@ -9,7 +9,10 @@ import type {
   InvestmentStyle,
   RoughDraft,
   RoughFieldId,
+  SchoolPath,
   SimulationInput,
+  UniversityLiving,
+  UniversityPath,
 } from './types';
 import { ALL_ROUGH_QUESTIONS } from './roughQuestions';
 
@@ -138,12 +141,12 @@ export function applyRoughDraft(base: SimulationInput, draft: RoughDraft): Simul
 // 教育方針 → 各進路の初期値。
 const POLICY_PATHS: Record<
   EducationPolicy,
-  { middle: 'public' | 'private'; high: 'public' | 'private'; uni: 'humanities' | 'science'; living: 'home' | 'away' }
+  { middle: SchoolPath; high: SchoolPath; uni: UniversityPath; living: UniversityLiving }
 > = {
-  public: { middle: 'public', high: 'public', uni: 'humanities', living: 'home' },
-  some_private: { middle: 'public', high: 'private', uni: 'humanities', living: 'home' },
-  education_focused: { middle: 'private', high: 'private', uni: 'science', living: 'away' },
-  undecided: { middle: 'public', high: 'public', uni: 'humanities', living: 'home' },
+  public: { middle: 'public', high: 'public', uni: 'public_humanities', living: 'home' },
+  some_private: { middle: 'public', high: 'private', uni: 'private_humanities', living: 'home' },
+  education_focused: { middle: 'private', high: 'private', uni: 'private_science', living: 'away' },
+  undecided: { middle: 'public', high: 'public', uni: 'undecided', living: 'undecided' },
 };
 
 function makeAssumedChild(policy: EducationPolicy, policySource: FieldSource): ChildInput {

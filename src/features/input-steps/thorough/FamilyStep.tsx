@@ -33,25 +33,14 @@ function childQuestions(i: number): ThoroughQuestion[] {
       recommendedValue: 'public',
       recommendedLabel: '未定（公立で概算）',
     },
-    {
-      path: `children.${i}.university`,
-      label: '大学',
-      kind: 'choice',
-      options: CHILD_UNI_OPTIONS,
-      allowRecommended: true,
-      recommendedValue: 'humanities',
-      recommendedLabel: '未定（文系で概算）',
-    },
-    {
-      path: `children.${i}.uniLiving`,
-      label: '大学時の住まい',
-      kind: 'choice',
-      options: CHILD_LIVING_OPTIONS,
-      allowRecommended: true,
-      recommendedValue: 'home',
-      recommendedLabel: '未定（自宅で概算）',
-    },
+    { path: `children.${i}.university`, label: '大学', kind: 'choice', options: CHILD_UNI_OPTIONS },
+    { path: `children.${i}.uniLiving`, label: '大学時の住まい', kind: 'choice', options: CHILD_LIVING_OPTIONS },
   ];
+}
+
+// 年齢が未入力（仮値）のときは確定値のように見せない。
+function childAgeLabel(child: SimulationInput['children'][number]): string {
+  return child.currentAge.source === 'user_input' ? `${child.currentAge.value}歳` : '年齢未入力';
 }
 
 export function FamilyStep({ input }: { input: SimulationInput }) {
@@ -85,7 +74,7 @@ export function FamilyStep({ input }: { input: SimulationInput }) {
       {input.children.map((child, i) => (
         <details className="collapsible child-card" key={i} open={i === 0}>
           <summary>
-            お子さま{i + 1}（{child.currentAge.value}歳）
+            お子さま{i + 1}（{childAgeLabel(child)}）
           </summary>
           <div className="collapsible__body">
             {childQuestions(i).map((q) => (

@@ -67,6 +67,26 @@ describe('render smoke (jsdom)', () => {
     expect(container.textContent).not.toContain('お子さま1');
   });
 
+  it('thorough family step: university split options + unentered age label', () => {
+    store().setMode('thorough');
+    store().setThoroughChildrenCount(1);
+    store().setThoroughPage('family');
+    const { container } = render(<App />);
+    expect(container.textContent).toContain('国公立文系');
+    expect(container.textContent).toContain('私立理系');
+    expect(container.textContent).toContain('年齢未入力'); // 仮値を確定表示しない
+  });
+
+  it('depleted asset card does not show "95歳時点 0万円" as the headline', () => {
+    store().loadHighIncomeSample(0);
+    const { container } = render(<App />);
+    const card = Array.from(container.querySelectorAll('.detail-card')).find((el) =>
+      el.textContent?.includes('資産推移'),
+    );
+    expect(card?.textContent).toContain('歳ごろ枯渇');
+    expect(card?.textContent).not.toContain('95歳時点 0万円');
+  });
+
   it('shows FIRE-after income only for side FIRE', () => {
     store().setMode('thorough');
     store().setThoroughValue('fire.type', 'full');

@@ -15,12 +15,17 @@ export const EDUCATION_COST = {
   middle: { public: 55, private: 140 }, // 12〜14歳
   high: { public: 60, private: 120 }, // 15〜17歳
   university: {
-    // 18〜21歳
-    humanities: { home: 120, away: 240 },
-    science: { home: 160, away: 280 },
+    // 18〜21歳（万円/年）。国公立/私立 × 文系/理系 × 自宅/一人暮らし。
     none: { home: 0, away: 0 },
+    public_humanities: { home: 90, away: 170 },
+    public_science: { home: 110, away: 190 },
+    private_humanities: { home: 130, away: 230 },
+    private_science: { home: 170, away: 270 },
   },
 } as const;
+
+/** 大学進路が未定のときに使う標準的な仮定（国公立文系・自宅）。 */
+export const UNIVERSITY_UNDECIDED = 'public_humanities' as const;
 
 /** 医療介護予備費（万円/年）の追加額。 */
 export const MEDICAL_CARE_RESERVE = {

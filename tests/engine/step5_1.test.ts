@@ -161,7 +161,7 @@ function makeChild(age: number) {
     ageAssumed: false,
     middleSchool: field('private' as const, 'user_input', '中学', ''),
     highSchool: field('private' as const, 'user_input', '高校', ''),
-    university: field('science' as const, 'user_input', '大学', ''),
+    university: field('private_science' as const, 'user_input', '大学', ''),
     uniLiving: field('away' as const, 'user_input', '住まい', ''),
   };
 }

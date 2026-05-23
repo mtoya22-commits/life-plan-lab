@@ -53,12 +53,16 @@ const schoolOptions: ThoroughChoice[] = [
 ];
 const uniOptions: ThoroughChoice[] = [
   { value: 'none', label: 'なし' },
-  { value: 'humanities', label: '文系' },
-  { value: 'science', label: '理系' },
+  { value: 'public_humanities', label: '国公立文系' },
+  { value: 'public_science', label: '国公立理系' },
+  { value: 'private_humanities', label: '私立文系' },
+  { value: 'private_science', label: '私立理系' },
+  { value: 'undecided', label: '未定' },
 ];
 const livingOptions: ThoroughChoice[] = [
   { value: 'home', label: '自宅' },
   { value: 'away', label: '一人暮らし' },
+  { value: 'undecided', label: '未定' },
 ];
 
 // 質問順: 基本 → 収入 → 毎月固定費 → 毎年変動費 → 家族 → 住宅 → FIRE → 投資 → 老後 → 一時イベント。
@@ -593,8 +597,8 @@ export function makeDetailedChild(): ChildInput {
     ageAssumed: true,
     middleSchool: field('public', 'default_value', '中学', '公立で概算しています。'),
     highSchool: field('public', 'default_value', '高校', '公立で概算しています。'),
-    university: field('humanities', 'default_value', '大学', '文系で概算しています。'),
-    uniLiving: field('home', 'default_value', '大学時の住まい', '自宅通学で概算しています。'),
+    university: field('undecided', 'default_value', '大学', '未定（国公立文系・自宅）で概算しています。'),
+    uniLiving: field('undecided', 'default_value', '大学時の住まい', '未定（自宅）で概算しています。'),
   };
 }
 

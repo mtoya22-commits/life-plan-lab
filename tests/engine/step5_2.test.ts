@@ -74,7 +74,7 @@ describe('STEP5.2 no double counting', () => {
         ageAssumed: false,
         middleSchool: field('public' as const, 'user_input', '中学', ''),
         highSchool: field('public' as const, 'user_input', '高校', ''),
-        university: field('humanities' as const, 'user_input', '大学', ''),
+        university: field('public_humanities' as const, 'user_input', '大学', ''),
         uniLiving: field('home' as const, 'user_input', '住まい', ''),
       },
     ];

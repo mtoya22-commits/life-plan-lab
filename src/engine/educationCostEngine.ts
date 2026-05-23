@@ -1,5 +1,5 @@
-import type { ChildInput } from '../schema/types';
-import { EDUCATION_COST } from './constants';
+import type { ChildInput, UniversityLiving, UniversityPath } from '../schema/types';
+import { EDUCATION_COST, UNIVERSITY_UNDECIDED } from './constants';
 
 // =============================================================================
 // 教育費エンジン（純粋関数）
@@ -19,7 +19,13 @@ export function eduCostForChild(child: ChildInput, ageThisYear: number): number 
   if (ageThisYear <= 11) return EDUCATION_COST.elementary;
   if (ageThisYear <= 14) return EDUCATION_COST.middle[child.middleSchool.value];
   if (ageThisYear <= 17) return EDUCATION_COST.high[child.highSchool.value];
-  if (ageThisYear <= 21) return EDUCATION_COST.university[child.university.value][child.uniLiving.value];
+  if (ageThisYear <= 21) {
+    // 未定は標準的な仮定へ寄せる。
+    const uni: Exclude<UniversityPath, 'undecided'> =
+      child.university.value === 'undecided' ? UNIVERSITY_UNDECIDED : child.university.value;
+    const living: Exclude<UniversityLiving, 'undecided'> = child.uniLiving.value === 'undecided' ? 'home' : child.uniLiving.value;
+    return EDUCATION_COST.university[uni][living];
+  }
   return 0;
 }
 

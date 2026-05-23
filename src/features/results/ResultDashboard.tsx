@@ -38,6 +38,13 @@ export function ResultDashboard() {
   const hasChildren = input.children.length > 0;
   const peakAge = result.indicators.eduPeakResilience.peakAge;
   const mortgage = mortgageCard(input);
+  const depleted = result.indicators.cumulativeShortfall > 0;
+  const assetCardValue = depleted
+    ? `${result.indicators.assetLongevityAge}歳ごろ枯渇`
+    : `95歳時点 ${formatMan(result.indicators.assetsAt95PresentValue)}（現在価値）`;
+  const assetCardCaption = depleted
+    ? `95歳時点は資産枯渇済み・累計不足額 約${formatMan(result.indicators.cumulativeShortfallPresentValue)}（現在価値）`
+    : 'タップで推移を拡大できます。';
 
   return (
     <section className="screen result">
@@ -59,8 +66,8 @@ export function ResultDashboard() {
       {/* コンパクトな詳細カード（詳細はシートへ） */}
       <DetailCard
         title={ja.result.assetCardTitle}
-        value={`95歳時点 ${formatMan(result.indicators.assetsAt95)}`}
-        caption="タップで推移を拡大できます。"
+        value={assetCardValue}
+        caption={assetCardCaption}
         onOpen={() => setSheet('chart')}
         openLabel={ja.result.assetExpand}
       >

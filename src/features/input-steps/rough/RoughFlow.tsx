@@ -5,6 +5,7 @@ import { ROUGH_PAGES, type RoughQuestion } from '../../../schema/roughQuestions'
 import type { RoughCell } from '../../../schema/types';
 import { ProgressHeader } from '../ProgressHeader';
 import { QuestionCard } from '../QuestionCard';
+import { NumberField } from '../NumberField';
 
 // =============================================================================
 // ざっくり診断のステップフロー本体。
@@ -136,24 +137,16 @@ function RoughQuestionView({ q, cell, showHint }: { q: RoughQuestion; cell: Roug
   return (
     <QuestionCard title={q.label} help={q.help}>
       {q.kind === 'number' ? (
-        <div className="field-number">
-          <input
-            className="input"
-            type="number"
-            inputMode="numeric"
-            placeholder={q.placeholder}
-            min={q.min}
-            max={q.max}
-            // おすすめ値も表示し、自由に編集・削除できる（空欄で未入力に戻る）。
-            value={
-              (cell.source === 'user_input' || cell.source === 'recommended_value') && cell.value !== null
-                ? String(cell.value)
-                : ''
-            }
-            onChange={(e) => setRoughValue(q.id, e.target.value === '' ? '' : Number(e.target.value))}
-          />
-          {q.unit && <span className="field-number__unit">{q.unit}</span>}
-        </div>
+        <NumberField
+          placeholder={q.placeholder}
+          unit={q.unit}
+          value={
+            (cell.source === 'user_input' || cell.source === 'recommended_value') && cell.value !== null
+              ? Number(cell.value)
+              : null
+          }
+          onChange={(v) => setRoughValue(q.id, v == null ? '' : v)}
+        />
       ) : (
         <div className="choice-group">
           {q.options?.map((opt) => {

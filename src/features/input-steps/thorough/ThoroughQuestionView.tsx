@@ -1,6 +1,7 @@
 import { useInputStore } from '../../../store/inputStore';
 import { ja } from '../../../strings/ja';
 import { QuestionCard } from '../QuestionCard';
+import { NumberField } from '../NumberField';
 import type { ThoroughQuestion } from '../../../schema/thoroughSteps';
 import type { Field } from '../../../schema/types';
 
@@ -14,24 +15,16 @@ export function ThoroughQuestionView({ q, field }: { q: ThoroughQuestion; field?
   if (!field) return null;
   const source = field.source;
   const filled = source === 'user_input' || source === 'recommended_value';
-  const showVal = filled && field.value != null ? String(field.value) : '';
 
   return (
     <QuestionCard title={q.label} help={q.help}>
       {q.kind === 'number' && (
-        <div className="field-number">
-          <input
-            className="input"
-            type="number"
-            inputMode="numeric"
-            placeholder={q.placeholder}
-            min={q.min}
-            max={q.max}
-            value={showVal}
-            onChange={(e) => setThoroughValue(q.path, e.target.value === '' ? '' : Number(e.target.value))}
-          />
-          {q.unit && <span className="field-number__unit">{q.unit}</span>}
-        </div>
+        <NumberField
+          placeholder={q.placeholder}
+          unit={q.unit}
+          value={filled && field.value != null ? Number(field.value) : null}
+          onChange={(v) => setThoroughValue(q.path, v == null ? '' : v)}
+        />
       )}
 
       {q.kind === 'choice' && (

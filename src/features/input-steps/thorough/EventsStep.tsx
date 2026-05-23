@@ -1,5 +1,6 @@
 import { useInputStore } from '../../../store/inputStore';
 import { field } from '../../../schema/field';
+import { NumberField } from '../NumberField';
 import type { LifeEvent, SimulationInput } from '../../../schema/types';
 
 // ライフイベントの専用ステップ（簡易版）。各テンプレートを「含める」と年齢・金額を入力。
@@ -60,32 +61,15 @@ export function EventsStep({ input }: { input: SimulationInput }) {
               <div className="event-fields">
                 <label className="event-field">
                   <span className="muted">年齢</span>
-                  <div className="field-number">
-                    <input
-                      className="input"
-                      type="number"
-                      inputMode="numeric"
-                      value={String(atAge)}
-                      min={baseAge}
-                      max={95}
-                      onChange={(e) => upsert(makeEvent(t, e.target.value === '' ? baseAge : Number(e.target.value), amountAbs))}
-                    />
-                    <span className="field-number__unit">歳</span>
-                  </div>
+                  <NumberField
+                    unit="歳"
+                    value={atAge}
+                    onChange={(v) => upsert(makeEvent(t, v ?? baseAge, amountAbs))}
+                  />
                 </label>
                 <label className="event-field">
                   <span className="muted">金額</span>
-                  <div className="field-number">
-                    <input
-                      className="input"
-                      type="number"
-                      inputMode="numeric"
-                      value={String(amountAbs)}
-                      min={0}
-                      onChange={(e) => upsert(makeEvent(t, atAge, e.target.value === '' ? 0 : Number(e.target.value)))}
-                    />
-                    <span className="field-number__unit">万円</span>
-                  </div>
+                  <NumberField unit="万円" value={amountAbs} onChange={(v) => upsert(makeEvent(t, atAge, v ?? 0))} />
                 </label>
               </div>
             )}
