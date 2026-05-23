@@ -573,18 +573,7 @@ body {
   line-height: 1.6;
 }
 
-/* 結果: 見直しが効きやすいポイント */
-.risk-factors {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 18px;
-}
-.risk-factors__title {
-  font-weight: 600;
-  margin-bottom: 8px;
-}
+/* 結果: 見直しが効きやすいポイント（折りたたみ内のリスト） */
 .risk-factors__list {
   margin: 0;
   padding-left: 20px;
@@ -594,8 +583,7 @@ body {
   font-size: 0.9rem;
 }
 
-/* 結果: 条件修正導線 */
-.edit-links,
+/* 結果: 条件修正導線（深掘りカードのみ。条件変更は折りたたみ） */
 .deepen {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -603,7 +591,6 @@ body {
   box-shadow: var(--shadow);
   padding: 18px;
 }
-.edit-links__title,
 .deepen__title {
   font-weight: 600;
   margin-bottom: 4px;

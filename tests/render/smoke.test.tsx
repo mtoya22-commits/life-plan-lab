@@ -6,6 +6,12 @@ import { useInputStore } from '../../src/store/inputStore';
 // 実DOM(jsdom)で App が例外なくマウントでき、主要UIが描画されることを確認する。
 const store = () => useInputStore.getState();
 
+function findDetailsBySummary(container: HTMLElement, text: string): HTMLDetailsElement | undefined {
+  return Array.from(container.querySelectorAll<HTMLDetailsElement>('details.collapsible')).find((d) =>
+    d.querySelector('summary')?.textContent?.includes(text),
+  );
+}
+
 function fillAll() {
   store().setMode('rough');
   store().setRoughValue('age', 38);
@@ -111,6 +117,46 @@ describe('render smoke (jsdom)', () => {
     expect(container.textContent).toContain('ライフイベント');
     // しっかり診断の結果では「もっと正確に見る」は出さない
     expect(container.textContent).not.toContain('しっかり診断で詳しく見る');
+  });
+
+  it('risk factors and edit links are collapsed by default and openable', () => {
+    store().loadThoroughSample(true);
+    const { container } = render(<App />);
+    const risk = findDetailsBySummary(container, '見直しが効きやすいポイントを見る');
+    const edit = findDetailsBySummary(container, '条件を変えてみる');
+    expect(risk).toBeDefined();
+    expect(edit).toBeDefined();
+    // 初期状態は閉じている
+    expect(risk!.open).toBe(false);
+    expect(edit!.open).toBe(false);
+    // 開閉インジケータ（矢印）と件数が出る
+    expect(risk!.querySelector('summary')!.textContent).toMatch(/（\d+件）/);
+    // 開くと詳細（修正ボタン・項目）が利用できる
+    edit!.open = true;
+    expect(edit!.querySelectorAll('.edit-link').length).toBeGreaterThan(0);
+    risk!.open = true;
+    expect(risk!.querySelectorAll('.risk-factors__list li').length).toBeGreaterThan(0);
+  });
+
+  it('edit buttons still navigate to the matching step after collapsing', () => {
+    store().loadThoroughSample(true);
+    const { container } = render(<App />);
+    const edit = findDetailsBySummary(container, '条件を変えてみる')!;
+    edit.open = true;
+    const pensionBtn = Array.from(edit.querySelectorAll<HTMLButtonElement>('.edit-link')).find(
+      (b) => b.textContent === '老後',
+    )!;
+    fireEvent.click(pensionBtn);
+    expect(store().phase).toBe('input');
+    expect(store().cameFromResult).toBe(true);
+    expect(store().thoroughPageId).toBe('retirement-1');
+  });
+
+  it('rough result keeps risk/edit collapsible and the deepen link visible', () => {
+    store().loadHighIncomeSample(0);
+    const { container } = render(<App />);
+    expect(findDetailsBySummary(container, '条件を変えてみる')).toBeDefined();
+    expect(container.textContent).toContain('しっかり診断で詳しく見る');
   });
 
   it('result dashboard shows conclusions up-front and keeps details collapsed', () => {

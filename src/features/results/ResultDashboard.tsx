@@ -95,19 +95,21 @@ export function ResultDashboard() {
         onOpen={() => setSheet('mortgage')}
       />
 
-      {/* 見直しが効きやすいポイント（要因が検出されたとき） */}
+      {/* 見直しが効きやすいポイント（折りたたみ・初期は閉じる） */}
       {riskFactors.length > 0 && (
-        <div className="risk-factors">
-          <div className="risk-factors__title">見直しが効きやすいポイント</div>
-          <ol className="risk-factors__list">
-            {riskFactors.map((f, i) => (
-              <li key={i}>{f}</li>
-            ))}
-          </ol>
-        </div>
+        <details className="collapsible">
+          <summary>{ja.result.riskFactorsToggle}（{riskFactors.length}件）</summary>
+          <div className="collapsible__body">
+            <ol className="risk-factors__list">
+              {riskFactors.map((f, i) => (
+                <li key={i}>{f}</li>
+              ))}
+            </ol>
+          </div>
+        </details>
       )}
 
-      {/* 条件変更導線（常時表示） */}
+      {/* 条件変更導線（折りたたみ・初期は閉じる） */}
       <EditLinks />
       {/* しっかり診断の結果では「もっと正確に見る」は出さない（既に詳細なため）。 */}
       {input.meta.mode !== 'thorough' && <DeepenLink />}
@@ -199,23 +201,25 @@ function EditLinks() {
   const thoroughTargets = isThorough && input ? visibleThoroughPages(input).map((p) => ({ pageId: p.pageId, label: p.title })) : [];
 
   return (
-    <div className="edit-links">
-      <div className="edit-links__title">{ja.result.editHeading}</div>
-      <p className="muted">{ja.result.editLead}</p>
-      <div className="edit-links__grid">
-        {isThorough
-          ? thoroughTargets.map((t) => (
-              <button key={t.pageId} className="btn edit-link" onClick={() => editThoroughPage(t.pageId)}>
-                {t.label}
-              </button>
-            ))
-          : ROUGH_EDIT_TARGETS.map((t) => (
-              <button key={t.stepId} className="btn edit-link" onClick={() => editCategory(t.stepId)}>
-                {t.label}
-              </button>
-            ))}
+    <details className="collapsible">
+      <summary>{ja.result.editHeading}</summary>
+      <div className="collapsible__body">
+        <p className="muted">{ja.result.editLead}</p>
+        <div className="edit-links__grid">
+          {isThorough
+            ? thoroughTargets.map((t) => (
+                <button key={t.pageId} className="btn edit-link" onClick={() => editThoroughPage(t.pageId)}>
+                  {t.label}
+                </button>
+              ))
+            : ROUGH_EDIT_TARGETS.map((t) => (
+                <button key={t.stepId} className="btn edit-link" onClick={() => editCategory(t.stepId)}>
+                  {t.label}
+                </button>
+              ))}
+        </div>
       </div>
-    </div>
+    </details>
   );
 }
 

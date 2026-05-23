@@ -463,6 +463,15 @@ function computeIndicators(
       ? rows.find((r) => (r.debug?.skippedInvestmentAmount ?? 0) > 0.5)
       : undefined;
 
+  // 実際に計算へ反映された積立額（満額を計画した現役期）。
+  const plannedRows =
+    monthlyInvestmentPlannedAnnual > 0 ? rows.filter((r) => (r.debug?.plannedInvestmentAmount ?? 0) > 0) : [];
+  const monthlyInvestmentActualFirstYear = plannedRows[0]?.debug?.actualInvestmentAmount ?? 0;
+  const monthlyInvestmentActualAverage =
+    plannedRows.length > 0
+      ? plannedRows.reduce((s, r) => s + (r.debug?.actualInvestmentAmount ?? 0), 0) / plannedRows.length
+      : 0;
+
   return {
     fireAchievementRate: fireAchievementRate(assetsAtFire, input.fire),
     assetLongevityAge: depleted ? depleted.age : null,
@@ -477,6 +486,8 @@ function computeIndicators(
     cumulativeShortfall,
     cumulativeShortfallPresentValue,
     monthlyInvestmentPlannedAnnual,
+    monthlyInvestmentActualFirstYear,
+    monthlyInvestmentActualAverage,
     investmentUnderfundedFromAge: underfunded ? underfunded.age : null,
   };
 }

@@ -312,6 +312,10 @@ export interface Indicators {
   cumulativeShortfallPresentValue: number;
   /** 毎月投資額の満額換算（年額・万円）。未入力なら0。 */
   monthlyInvestmentPlannedAnnual: number;
+  /** 実際に計算へ反映された初年度の積立額（年額・万円）。満額のうち黒字の範囲で振り替えた分。 */
+  monthlyInvestmentActualFirstYear: number;
+  /** 実際に反映された積立額の平均（満額を計画した現役期の年平均・万円）。 */
+  monthlyInvestmentActualAverage: number;
   /** 満額の積立ができなくなる最初の年齢（黒字不足）。常に満額できれば null。毎月投資額が未入力なら null。 */
   investmentUnderfundedFromAge: number | null;
 }

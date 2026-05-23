@@ -21,10 +21,17 @@ export function buildRiskFactors(result: SimulationResult, input: SimulationInpu
   }
 
   // 毎月投資額が家計の黒字を上回り、満額の積立ができていないケースを明示する。
+  // 「入力額」と「実際に計算へ反映された積立額」を併記し、資産が伸びにくい理由を納得できるようにする。
   if (input.investment.monthlyInvestment.source === 'user_input' && ind.investmentUnderfundedFromAge !== null) {
     const m = input.investment.monthlyInvestment.value;
+    const plannedY = Math.round(ind.monthlyInvestmentPlannedAnnual);
+    const firstY = Math.round(ind.monthlyInvestmentActualFirstYear);
+    const firstM = Math.round((ind.monthlyInvestmentActualFirstYear / 12) * 10) / 10;
+    const avgY = Math.round(ind.monthlyInvestmentActualAverage);
     out.push(
-      `毎月投資額（月${m}万円）は家計の黒字を上回るため、${ind.investmentUnderfundedFromAge}歳ごろから満額は積み立てられていません（生活費・住居費を見直すと積立余力が増えます）。`,
+      `毎月投資額は入力上 月${m}万円（年${plannedY}万円）ですが、家計の黒字の範囲で計算するため、` +
+        `実際に反映された積立額は初年度で年${firstY}万円（月約${firstM}万円）、現役期の平均で年${avgY}万円ほどです。` +
+        `${ind.investmentUnderfundedFromAge}歳ごろから満額は積み立てられていません（生活費・住居費を見直すと積立余力が増えます）。`,
     );
   }
 
