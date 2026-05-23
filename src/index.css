@@ -329,6 +329,84 @@ body {
   margin-top: 2px;
 }
 
+/* ---- 結果: 見出し（自分専用感） ---- */
+.result-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.result-head__title {
+  margin: 4px 0 0;
+}
+.result-head__lead {
+  margin: 0;
+}
+
+/* ---- 結果: 人生フェーズ・次の節目（見通しカード） ---- */
+.outlook {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.outlook__phase {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.outlook__phase-tag {
+  font-size: 0.72rem;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 10px;
+}
+.outlook__phase-label {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+.outlook__phase-desc {
+  margin: 0;
+  color: var(--text);
+}
+.outlook__next {
+  background: var(--accent-soft);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.outlook__next-title,
+.outlook__seeahead-title {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.outlook__next-main {
+  margin: 0;
+}
+.outlook__next-main strong {
+  color: var(--accent);
+}
+.outlook__next-rest {
+  margin: 6px 0 0;
+}
+.outlook__seeahead-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+.outlook__seeahead-list li {
+  line-height: 1.6;
+}
+
 /* ---- 結果: 各セクション共通カード ---- */
 .asset-chart,
 .timeline,
@@ -573,14 +651,35 @@ body {
   line-height: 1.6;
 }
 
-/* 結果: 見直しが効きやすいポイント（折りたたみ内のリスト） */
-.risk-factors__list {
+/* 結果: 見直しが効きやすいポイント（折りたたみ内・見出し＋分解） */
+.risk-factors {
+  list-style: none;
   margin: 0;
-  padding-left: 20px;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  font-size: 0.9rem;
+  gap: 14px;
+}
+.risk-factor {
+  border-left: 3px solid var(--accent-soft);
+  padding-left: 12px;
+}
+.risk-factor__title {
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.risk-factor__points {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.88rem;
+  color: var(--text);
+}
+.risk-factor__points li {
+  line-height: 1.6;
 }
 
 /* 結果: 条件修正導線（深掘りカードのみ。条件変更は折りたたみ） */
@@ -937,5 +1036,43 @@ body {
   }
   .edit-links__grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================================================
+   控えめなモーション（意味のある場所だけ）。
+   高級感の手触り程度に留め、常時動く・急かす演出はしない。
+   prefers-reduced-motion を尊重して無効化する。
+   ========================================================================= */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes fade-rise {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  /* 結果カードの登場（一度きりの軽いフェード）。
+     position:fixed のボトムシート（.sheet）には適用しない（含有ブロックの誤生成を避ける）。 */
+  .result > .result-head,
+  .result > .hero,
+  .result > .outlook,
+  .result > .summary,
+  .result > .timeline,
+  .result > .detail-card,
+  .result > .collapsible,
+  .result > .deepen {
+    animation: fade-rise 0.32s ease both;
+  }
+  /* 折りたたみを開いたときの内容のフェード */
+  .collapsible[open] > .collapsible__body {
+    animation: fade-rise 0.2s ease both;
+  }
+  /* ボタン押下の微小な反応 */
+  .btn:active {
+    transform: translateY(1px);
   }
 }

@@ -6,6 +6,7 @@ import type { SimulationInput, StepId } from '../../schema/types';
 import { visibleThoroughPages } from '../../schema/thoroughSteps';
 import { BottomSheet } from '../../components/BottomSheet';
 import { Hero } from './Hero';
+import { Outlook } from './Outlook';
 import { ResultSummary } from './ResultSummary';
 import { DetailCard } from './DetailCard';
 import { TimelineSummary, TimelineFull } from './Timeline';
@@ -51,10 +52,17 @@ export function ResultDashboard() {
 
   return (
     <section className="screen result">
-      <h2 className="section-heading">{ja.result.heading}</h2>
+      <div className="result-head">
+        <h2 className="section-heading result-head__title">{ja.result.heading}</h2>
+        <p className="result-head__lead muted">{ja.result.dashboardLead}</p>
+      </div>
 
       {/* 結論（常時表示） */}
       <Hero result={result} />
+
+      {/* 人生フェーズ・次の節目（常時表示） */}
+      <Outlook result={result} input={input} events={events} />
+
       <ResultSummary result={result} input={input} />
 
       {/* 主な節目の要約（常時表示） */}
@@ -100,11 +108,18 @@ export function ResultDashboard() {
         <details className="collapsible">
           <summary>{ja.result.riskFactorsToggle}（{riskFactors.length}件）</summary>
           <div className="collapsible__body">
-            <ol className="risk-factors__list">
+            <ul className="risk-factors">
               {riskFactors.map((f, i) => (
-                <li key={i}>{f}</li>
+                <li className="risk-factor" key={i}>
+                  <div className="risk-factor__title">{f.title}</div>
+                  <ul className="risk-factor__points">
+                    {f.points.map((p, j) => (
+                      <li key={j}>{p}</li>
+                    ))}
+                  </ul>
+                </li>
               ))}
-            </ol>
+            </ul>
           </div>
         </details>
       )}

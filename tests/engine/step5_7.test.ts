@@ -70,11 +70,13 @@ describe('STEP5.7 surfaces the actually-reflected investment amount', () => {
 
   it('risk factor explains input vs actually-reflected amount', () => {
     const factors = buildRiskFactors(run(caseInput()), applyRecommendedValues(caseInput()));
-    const inv = factors.find((f) => f.includes('毎月投資額') && f.includes('満額'));
+    const text = (f: { title: string; points: string[] }) => [f.title, ...f.points].join(' ');
+    const inv = factors.find((f) => text(f).includes('積立') && text(f).includes('満額'));
     expect(inv).toBeDefined();
-    expect(inv!).toContain('入力上');
-    expect(inv!).toContain('実際に反映された積立額');
-    expect(inv!).toContain('初年度');
-    expect(inv!).toContain('年240万円'); // 入力満額（年額）
+    const t = text(inv!);
+    expect(t).toContain('入力は'); // 入力額
+    expect(t).toContain('実際に反映された積立額');
+    expect(t).toContain('初年度');
+    expect(t).toContain('年240万円'); // 入力満額（年額）
   });
 });

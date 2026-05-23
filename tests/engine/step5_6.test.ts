@@ -98,7 +98,8 @@ describe('STEP5.6 monthly investment is capped at the household surplus', () => 
   it('lists an actionable risk factor about underfunded investment', () => {
     const input = applyRecommendedValues(caseInput());
     const factors = buildRiskFactors(run(caseInput()), input);
-    expect(factors.some((f) => f.includes('満額') && f.includes('毎月投資額'))).toBe(true);
+    const text = (f: { title: string; points: string[] }) => [f.title, ...f.points].join(' ');
+    expect(factors.some((f) => text(f).includes('満額') && text(f).includes('積立'))).toBe(true);
   });
 
   it('does not flag underfunding when monthly investment is not entered', () => {

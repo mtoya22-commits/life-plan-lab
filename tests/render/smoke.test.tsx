@@ -135,7 +135,7 @@ describe('render smoke (jsdom)', () => {
     edit!.open = true;
     expect(edit!.querySelectorAll('.edit-link').length).toBeGreaterThan(0);
     risk!.open = true;
-    expect(risk!.querySelectorAll('.risk-factors__list li').length).toBeGreaterThan(0);
+    expect(risk!.querySelectorAll('.risk-factor').length).toBeGreaterThan(0);
   });
 
   it('edit buttons still navigate to the matching step after collapsing', () => {
@@ -175,6 +175,60 @@ describe('render smoke (jsdom)', () => {
     expect(container.textContent).toContain('税制は簡略化');
     // 通常表示にコンパクトな資産推移グラフ（Recharts コンテナ）がある
     expect(container.querySelector('.asset-rc')).not.toBeNull();
+  });
+
+  it('shows the life-phase outlook card with phase and next milestone', () => {
+    store().loadThoroughSample(true);
+    const { container } = render(<App />);
+    // 自分専用感の見出し
+    expect(container.textContent).toContain('あなたの人生ダッシュボード');
+    // 人生フェーズ
+    const outlook = container.querySelector('.outlook');
+    expect(outlook).not.toBeNull();
+    expect(outlook!.querySelector('.outlook__phase-label')!.textContent).toMatch(/期$/);
+    // 次の節目（煽らない静かな見出し）
+    expect(container.textContent).toContain('次に確認したい節目');
+    expect(container.textContent).toContain('次の大きな節目は');
+  });
+
+  it('emphasizes end-in-sight info: education peak and mortgage payoff', () => {
+    store().loadThoroughSample(true);
+    const { container } = render(<App />);
+    const seeahead = container.querySelector('.outlook__seeahead')!;
+    expect(seeahead).not.toBeNull();
+    expect(seeahead.textContent).toContain('教育費');
+    expect(seeahead.textContent).toContain('ピーク');
+    expect(seeahead.textContent).toContain('住宅ローン');
+    expect(seeahead.textContent).toContain('完済');
+  });
+
+  it('shows the main always-visible cards in both rough and thorough', () => {
+    fillAll();
+    store().submitRough();
+    let r = render(<App />);
+    expect(r.container.querySelector('.hero')).not.toBeNull();
+    expect(r.container.querySelector('.outlook')).not.toBeNull();
+    expect(r.container.textContent).toContain('資産推移');
+    expect(r.container.textContent).toContain('住宅ローン');
+    cleanup();
+
+    store().loadThoroughSample(true);
+    r = render(<App />);
+    expect(r.container.querySelector('.hero')).not.toBeNull();
+    expect(r.container.querySelector('.outlook')).not.toBeNull();
+    expect(r.container.textContent).toContain('資産推移');
+  });
+
+  it('renders structured risk factors (title + decomposed points) inside the collapsible', () => {
+    store().loadThoroughSample(true);
+    const { container } = render(<App />);
+    const risk = findDetailsBySummary(container, '見直しが効きやすいポイントを見る')!;
+    risk.open = true;
+    const items = risk.querySelectorAll('.risk-factor');
+    expect(items.length).toBeGreaterThan(0);
+    // 各ポイントが見出し＋分解された箇条書きを持つ
+    expect(items[0].querySelector('.risk-factor__title')!.textContent!.length).toBeGreaterThan(0);
+    expect(items[0].querySelectorAll('.risk-factor__points li').length).toBeGreaterThan(0);
   });
 
   it('opens the expanded asset chart in a bottom sheet (lazy-loaded)', async () => {

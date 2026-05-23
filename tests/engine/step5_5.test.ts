@@ -129,9 +129,10 @@ describe('STEP5.5 risk factors (見直しが効きやすいポイント)', () =>
   it('lists actionable factors for the depleting case', () => {
     const r = run(caseInput());
     const factors = buildRiskFactors(r, applyRecommendedValues(caseInput()));
+    const text = (f: { title: string; points: string[] }) => [f.title, ...f.points].join(' ');
     expect(factors.length).toBeGreaterThan(0);
     expect(factors.length).toBeLessThanOrEqual(5);
-    expect(factors.some((f) => f.includes('尽きる'))).toBe(true);
-    expect(factors.some((f) => f.includes('教育費'))).toBe(true);
+    expect(factors.some((f) => text(f).includes('尽きる'))).toBe(true);
+    expect(factors.some((f) => text(f).includes('教育費'))).toBe(true);
   });
 });

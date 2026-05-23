@@ -49,7 +49,8 @@ export const ja = {
     fresh: '最初から始める',
   },
   result: {
-    heading: '今回の試算結果',
+    heading: 'あなたの人生ダッシュボード',
+    dashboardLead: '今回の条件で見た、これからの暮らしの見通しです。',
     summaryHeading: '今回のポイント',
     assumptionsHeading: '今回の試算条件',
     assumptionsToggle: '今回の試算条件を見る',
