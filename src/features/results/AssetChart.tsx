@@ -1,4 +1,15 @@
-import { Area, AreaChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import {
+  Area,
+  CartesianGrid,
+  ComposedChart,
+  Legend,
+  Line,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import type { YearRow } from '../../schema/types';
 import type { LifeEventEntry, LifeEventType } from './lifeEvents';
 import { formatMan } from '../../lib/format';
@@ -16,14 +27,23 @@ const COLORS = {
   depletion: '#a8736b',
 };
 
+const COLORS_PV = '#3b5b76'; // 現在価値（主線）
+const COLORS_NOMINAL = '#9a9a93'; // 将来額（補助線）
+
 interface ChartPoint {
   age: number;
   year: number;
-  assets: number;
+  assets: number; // 将来額（名目）
+  assetsPV: number; // 現在価値
 }
 
 function toChartData(rows: YearRow[]): ChartPoint[] {
-  return rows.map((r) => ({ age: r.age, year: r.year, assets: Math.round(r.endAssets) }));
+  return rows.map((r) => ({
+    age: r.age,
+    year: r.year,
+    assets: Math.round(r.endAssets),
+    assetsPV: Math.round(r.endAssets * (r.debug?.presentValueFactor ?? 1)),
+  }));
 }
 
 function buildTicks(startAge: number): number[] {
@@ -56,7 +76,7 @@ function ChartFallback() {
   return <p className="muted">グラフを表示するには追加条件が必要です。</p>;
 }
 
-/** 通常表示（コンパクト）。主要イベントのみ、ラベルは控えめ、ツールチップなし。 */
+/** 通常表示（コンパクト）。現在価値ベース1本。主要イベントのみ、ツールチップなし。 */
 export function AssetChartMini({ rows, events }: { rows: YearRow[]; events: LifeEventEntry[] }) {
   const data = toChartData(rows);
   if (data.length < 2) return <ChartFallback />;
@@ -69,11 +89,11 @@ export function AssetChartMini({ rows, events }: { rows: YearRow[]; events: Life
   return (
     <div className="asset-rc asset-rc--compact">
       <ResponsiveContainer width="100%" height={120}>
-        <AreaChart data={data} margin={{ top: 6, right: 8, left: 0, bottom: 0 }}>
+        <ComposedChart data={data} margin={{ top: 6, right: 8, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="assetFillMini" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={COLORS.line} stopOpacity={0.18} />
-              <stop offset="100%" stopColor={COLORS.line} stopOpacity={0.02} />
+              <stop offset="0%" stopColor={COLORS_PV} stopOpacity={0.18} />
+              <stop offset="100%" stopColor={COLORS_PV} stopOpacity={0.02} />
             </linearGradient>
           </defs>
           <XAxis
@@ -98,14 +118,14 @@ export function AssetChartMini({ rows, events }: { rows: YearRow[]; events: Life
             />
           ))}
           <Area
-            dataKey="assets"
-            stroke={COLORS.line}
+            dataKey="assetsPV"
+            stroke={COLORS_PV}
             strokeWidth={2}
             fill="url(#assetFillMini)"
             dot={false}
             isAnimationActive={false}
           />
-        </AreaChart>
+        </ComposedChart>
       </ResponsiveContainer>
     </div>
   );
@@ -130,14 +150,14 @@ export function AssetChartFull({ rows, events }: { rows: YearRow[]; events: Life
   return (
     <div className="asset-rc">
       <p className="muted chart-axis-note">
-        縦軸：資産（万円・将来額）／横軸：年齢　※現在価値は下の表と結果カードに表示（現在価値グラフは今後対応）
+        縦軸：資産（万円）／横軸：年齢。将来額はインフレを反映した金額、現在価値は今のお金に割り戻した目安です。
       </p>
-      <ResponsiveContainer width="100%" height={260}>
-        <AreaChart data={data} margin={{ top: 16, right: 14, left: 0, bottom: 0 }}>
+      <ResponsiveContainer width="100%" height={280}>
+        <ComposedChart data={data} margin={{ top: 16, right: 14, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="assetFillFull" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={COLORS.line} stopOpacity={0.2} />
-              <stop offset="100%" stopColor={COLORS.line} stopOpacity={0.03} />
+              <stop offset="0%" stopColor={COLORS_PV} stopOpacity={0.18} />
+              <stop offset="100%" stopColor={COLORS_PV} stopOpacity={0.02} />
             </linearGradient>
           </defs>
           <CartesianGrid stroke={COLORS.grid} vertical={false} />
@@ -151,6 +171,7 @@ export function AssetChartFull({ rows, events }: { rows: YearRow[]; events: Life
           />
           <YAxis domain={yDomain} width={46} tickFormatter={formatYTick} tick={{ fontSize: 10, fill: COLORS.muted }} />
           <Tooltip content={(props) => <ChartTooltip {...props} eventsByAge={eventsByAge} />} />
+          <Legend wrapperStyle={{ fontSize: 12 }} />
           {events.map((e) => (
             <ReferenceLine
               key={`${e.type}-${e.age}`}
@@ -160,15 +181,26 @@ export function AssetChartFull({ rows, events }: { rows: YearRow[]; events: Life
               strokeWidth={1}
             />
           ))}
-          <Area
+          {/* 将来額（補助線）と現在価値（主線・塗り） */}
+          <Line
             dataKey="assets"
-            stroke={COLORS.line}
+            name="将来額"
+            stroke={COLORS_NOMINAL}
+            strokeWidth={1.5}
+            strokeDasharray="4 3"
+            dot={false}
+            isAnimationActive={false}
+          />
+          <Area
+            dataKey="assetsPV"
+            name="現在価値"
+            stroke={COLORS_PV}
             strokeWidth={2}
             fill="url(#assetFillFull)"
             dot={false}
             isAnimationActive={false}
           />
-        </AreaChart>
+        </ComposedChart>
       </ResponsiveContainer>
 
       <ul className="chart-markers">
@@ -201,7 +233,8 @@ function ChartTooltip(props: {
       <div className="rc-tooltip__head">
         {d.age}歳（{d.year}年）
       </div>
-      <div>資産：{formatMan(d.assets)}</div>
+      <div>現在価値：{formatMan(d.assetsPV)}</div>
+      <div className="muted">将来額：{formatMan(d.assets)}</div>
       {evs?.map((t, i) => (
         <div className="rc-tooltip__event" key={i}>
           ● {t}

@@ -134,8 +134,11 @@ describe('render smoke (jsdom)', () => {
     fireEvent.click(screen.getByText(/グラフを拡大/));
     expect(document.querySelector('.sheet')).not.toBeNull();
     // Recharts は遅延読み込みのため、解決を待ってから内容を確認する
-    await screen.findByText(/縦軸：資産/);
+    const note = await screen.findByText(/縦軸：資産/);
     expect(document.querySelector('.sheet .asset-rc')).not.toBeNull();
+    // 将来額と現在価値の両方を扱う旨が示される
+    expect(note.textContent).toContain('将来額');
+    expect(note.textContent).toContain('現在価値');
   });
 
   it('closes a bottom sheet via the close button', () => {

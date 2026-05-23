@@ -80,6 +80,8 @@ export function runSimulation(input: SimulationInput): SimulationResult {
 
   for (let age = startAge; age <= SIM.endAge; age++) {
     const offset = age - startAge;
+    const beginningCashAssets = cash;
+    const beginningInvestmentAssets = invest;
     const startAssets = cash + invest;
     const inflationFactor = Math.pow(1 + inflation, offset); // 支出側の増加率
     const presentValueFactor = 1 / inflationFactor; // 将来額 → 現在価値
@@ -134,12 +136,13 @@ export function runSimulation(input: SimulationInput): SimulationResult {
     cash += net;
 
     // 2.5) 一度枯渇した後の黒字は、まず累計不足額の返済に充てる（穴を埋めてから資産を再形成）。
+    let shortfallRepaid = 0;
     if (cumulativeShortfall > 0 && cash > 0) {
-      const repay = Math.min(cash, cumulativeShortfall);
-      const ratio = repay / cumulativeShortfall;
+      shortfallRepaid = Math.min(cash, cumulativeShortfall);
+      const ratio = shortfallRepaid / cumulativeShortfall;
       cumulativeShortfallPresentValue *= 1 - ratio; // PVも比例して減らす
-      cumulativeShortfall -= repay;
-      cash -= repay;
+      cumulativeShortfall -= shortfallRepaid;
+      cash -= shortfallRepaid;
     }
 
     const cashBeforeInvestmentTransfer = cash;
@@ -165,14 +168,15 @@ export function runSimulation(input: SimulationInput): SimulationResult {
     // 4) 現金がマイナスなら投資資産から取り崩す。なお足りなければ累計不足額へ。
     //    現金・投資はマイナスにしない（負の複利を防ぐ）。
     let withdrawalFromInvestment = 0;
+    let shortfallAdded = 0;
     if (cash < 0) {
       const need = -cash;
       withdrawalFromInvestment = Math.min(Math.max(0, invest), need);
       invest -= withdrawalFromInvestment;
-      const stillShort = need - withdrawalFromInvestment;
-      if (stillShort > 0) {
-        cumulativeShortfall += stillShort;
-        cumulativeShortfallPresentValue += stillShort * presentValueFactor; // 各年の不足額を現在価値で割り戻して累計
+      shortfallAdded = need - withdrawalFromInvestment;
+      if (shortfallAdded > 0) {
+        cumulativeShortfall += shortfallAdded;
+        cumulativeShortfallPresentValue += shortfallAdded * presentValueFactor; // 各年の不足額を現在価値で割り戻して累計
       }
       cash = 0;
     }
@@ -180,6 +184,8 @@ export function runSimulation(input: SimulationInput): SimulationResult {
     const withdrawalFromCash = net < 0 ? Math.min(-net, Math.max(0, cashBeforeNet)) : 0;
 
     const endAssets = cash + invest; // 0未満にはならない
+    // 貸借一致: 当年末 = 前年末 + 運用益 + 年間収支 − 不足返済 + 不足追加
+    const reconciliationDiff = endAssets - (startAssets + investmentReturn + net - shortfallRepaid + shortfallAdded);
 
     rows.push({
       age,
@@ -215,6 +221,15 @@ export function runSimulation(input: SimulationInput): SimulationResult {
         cumulativeShortfallPresentValue,
         annualExpenseTotalPresentValue: expenseTotal * presentValueFactor,
         livingCostPresentValue: living * presentValueFactor,
+        beginningCashAssets,
+        beginningInvestmentAssets,
+        beginningTotalAssets: startAssets,
+        oneTimeIncome: retirementIncome + lifeEventIncome,
+        oneTimeExpense: lifeEventExpense,
+        netCashflowBeforeShortfallRepayment: net,
+        shortfallRepaid,
+        shortfallAdded,
+        reconciliationDiff,
       },
     });
   }
@@ -304,7 +319,8 @@ function buildNotes(input: SimulationInput, cashRatioKnown: boolean, monthlyInve
   );
 
   if (input.housing.type.value !== 'rent') {
-    notes.push(`住宅ローン完済後も、持ち家維持費として年${HOME_MAINTENANCE_ANNUAL}万円を仮定しています。`);
+    notes.push(`住宅費は毎月返済額×12（完済年齢まで）＋完済後の持ち家維持費（年${HOME_MAINTENANCE_ANNUAL}万円）で計算しています。`);
+    notes.push('住宅ローンの残高・金利・固定/変動・返済方式・ボーナス払いは現時点では記録用で、住宅費の精密計算には未反映です。');
   }
 
   if (input.retirement.medicalCareReserve.value) {

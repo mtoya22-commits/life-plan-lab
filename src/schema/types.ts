@@ -277,6 +277,16 @@ export interface YearDebug {
   cumulativeShortfallPresentValue: number;
   annualExpenseTotalPresentValue: number;
   livingCostPresentValue: number;
+  // 貸借一致（reconciliation）用
+  beginningCashAssets: number;
+  beginningInvestmentAssets: number;
+  beginningTotalAssets: number;
+  oneTimeIncome: number;
+  oneTimeExpense: number;
+  netCashflowBeforeShortfallRepayment: number;
+  shortfallRepaid: number;
+  shortfallAdded: number;
+  reconciliationDiff: number; // 原則0（丸め誤差のみ）
 }
 
 export interface Indicators {
