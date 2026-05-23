@@ -395,8 +395,8 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
     questions: [
       {
         path: 'fire.postFireLiving',
-        label: 'FIRE後生活費',
-        help: 'FIRE開始〜65歳ごろの生活費です（65歳以降は老後生活費を使います）。未入力なら現在生活費の90%で概算します。',
+        label: 'FIRE後生活費（日常生活費のみ）',
+        help: 'FIRE開始〜65歳ごろの日常生活費です。住居費・教育費・保険・特別費・旅行・車関連費は別で加算されます。65歳以降は老後生活費を使用。未入力なら現在生活費の90%で概算します。',
         kind: 'number',
         unit: '万円',
         min: 0,
@@ -524,8 +524,8 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
       },
       {
         path: 'retirement.retirementLiving',
-        label: '老後生活費',
-        help: '65歳以降の年間生活費です（FIRE後生活費とは別。65歳以降はこちらを使います）。未入力なら現在生活費の85%で概算します。',
+        label: '老後生活費（日常生活費のみ）',
+        help: '65歳以降の日常生活費です。住居費・保険・特別費・旅行・車関連費は別で加算されます（FIRE後生活費とは別、65歳以降はこちら）。未入力なら現在生活費の85%で概算します。',
         kind: 'number',
         unit: '万円',
         min: 0,

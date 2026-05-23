@@ -37,6 +37,7 @@ describe('repro: edit retirement -> recompute', () => {
       inputPension: store().input!.retirement.pension.value,
     });
 
-    expect(after66Pension).toBe(500);
+    // 年金は現在価値入力をインフレ補正するため、66歳の名目額は500より大きい。
+    expect(after66Pension).toBeGreaterThan(500);
   });
 });

@@ -60,6 +60,7 @@ describe('STEP5.1 invariants', () => {
     const without = run(base());
     expect(without.rows.find((r) => r.age === 66)!.income.pension).toBe(0);
     const i = base();
+    i.investment.inflationRate = field(0, 'user_input', 'インフレ', '', '%'); // 名目で確認
     i.retirement.pension = field(180, 'user_input', '年金', '', '万円');
     const withp = run(i);
     expect(withp.rows.find((r) => r.age === 64)!.income.pension).toBe(0);
@@ -68,6 +69,7 @@ describe('STEP5.1 invariants', () => {
 
   it('no labor after FIRE; side income stops at workUntilAge; investment keeps running', () => {
     const i = base();
+    i.investment.inflationRate = field(0, 'user_input', 'インフレ', '', '%');
     i.fire.type = field('side', 'user_input', 'FIREタイプ', '');
     i.fire.targetAge = field(55, 'user_input', '希望年齢', '', '歳');
     i.fire.postFireIncome = field(240, 'user_input', 'FIRE後収入', '', '万円');

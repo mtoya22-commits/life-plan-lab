@@ -23,6 +23,7 @@ const at = (i: SimulationInput, age: number) => run(i).rows.find((r) => r.age ==
 describe('STEP5.4 age/timing boundaries', () => {
   it('pension applies from exactly age 65 (inclusive)', () => {
     const i = thoroughBase();
+    i.investment.inflationRate = field(0, 'user_input', 'インフレ', '', '%'); // 名目で確認
     i.retirement.pension = field(200, 'user_input', '年金', '', '万円');
     expect(at(i, 64).income.pension).toBe(0);
     expect(at(i, 65).income.pension).toBe(200);
@@ -38,6 +39,7 @@ describe('STEP5.4 age/timing boundaries', () => {
 
   it('retirement lump sum is paid in the FIRE/retirement year only', () => {
     const i = thoroughBase();
+    i.investment.inflationRate = field(0, 'user_input', 'インフレ', '', '%');
     i.fire.type = field('side', 'user_input', 'FIRE', '');
     i.fire.targetAge = field(55, 'user_input', '希望年齢', '', '歳');
     i.income.retirementLumpSum = field(500, 'user_input', '退職金', '', '万円');

@@ -8,6 +8,7 @@ import { Hero } from './Hero';
 import { ResultSummary } from './ResultSummary';
 import { DetailCard } from './DetailCard';
 import { TimelineSummary, TimelineFull } from './Timeline';
+import { buildRiskFactors } from './riskFactors';
 
 // Recharts は重いため、入力フローには含めず結果画面到達時に遅延読み込みする。
 const AssetChartMini = lazy(() => import('./AssetChart').then((m) => ({ default: m.AssetChartMini })));
@@ -38,6 +39,7 @@ export function ResultDashboard() {
   const hasChildren = input.children.length > 0;
   const peakAge = result.indicators.eduPeakResilience.peakAge;
   const mortgage = mortgageCard(input);
+  const riskFactors = buildRiskFactors(result, input);
   const depleted = result.indicators.cumulativeShortfall > 0;
   const assetCardValue = depleted
     ? `${result.indicators.assetLongevityAge}歳ごろ枯渇`
@@ -91,6 +93,18 @@ export function ResultDashboard() {
         caption={mortgage.caption}
         onOpen={() => setSheet('mortgage')}
       />
+
+      {/* 見直しが効きやすいポイント（要因が検出されたとき） */}
+      {riskFactors.length > 0 && (
+        <div className="risk-factors">
+          <div className="risk-factors__title">見直しが効きやすいポイント</div>
+          <ol className="risk-factors__list">
+            {riskFactors.map((f, i) => (
+              <li key={i}>{f}</li>
+            ))}
+          </ol>
+        </div>
+      )}
 
       {/* 条件変更導線（常時表示） */}
       <EditLinks />

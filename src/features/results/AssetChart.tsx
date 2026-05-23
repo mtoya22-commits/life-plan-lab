@@ -38,12 +38,22 @@ interface ChartPoint {
 }
 
 function toChartData(rows: YearRow[]): ChartPoint[] {
-  return rows.map((r) => ({
+  if (rows.length === 0) return [];
+  // 先頭は「現在」＝入力した現在資産（年初）。以降は各年の年末資産。
+  const first = rows[0];
+  const current: ChartPoint = {
+    age: first.age,
+    year: first.year,
+    assets: Math.round(first.startAssets),
+    assetsPV: Math.round(first.startAssets * (first.debug?.presentValueFactor ?? 1)),
+  };
+  const rest = rows.slice(1).map((r) => ({
     age: r.age,
     year: r.year,
     assets: Math.round(r.endAssets),
     assetsPV: Math.round(r.endAssets * (r.debug?.presentValueFactor ?? 1)),
   }));
+  return [current, ...rest];
 }
 
 function buildTicks(startAge: number): number[] {
@@ -245,10 +255,13 @@ function ChartTooltip(props: {
 }
 
 function YearlyTable({ rows, eventsByAge }: { rows: YearRow[]; eventsByAge: Map<number, string[]> }) {
+  const startAge = rows[0]?.age;
   const picked = rows.filter((r, i) => i % 5 === 0 || eventsByAge.has(r.age));
+  // 各行は「その年齢時点」の資産。先頭(現在)は入力した現在資産＝年初、それ以外は年末。
+  const assetAt = (r: YearRow) => (r.age === startAge ? r.startAssets : r.endAssets);
   return (
     <table className="yearly-table">
-      <caption className="yearly-table__caption">年ごとの資産と主なイベント（5年ごと）</caption>
+      <caption className="yearly-table__caption">年齢ごとの資産と主なイベント（5年ごと）</caption>
       <thead>
         <tr>
           <th>年齢</th>
@@ -261,10 +274,10 @@ function YearlyTable({ rows, eventsByAge }: { rows: YearRow[]; eventsByAge: Map<
       <tbody>
         {picked.map((r) => (
           <tr key={r.age}>
-            <td>{r.age}歳</td>
+            <td>{r.age === startAge ? `${r.age}歳（現在）` : `${r.age}歳`}</td>
             <td>{r.year}</td>
-            <td>{formatMan(r.endAssets)}</td>
-            <td>{formatMan(r.endAssets * (r.debug?.presentValueFactor ?? 1))}</td>
+            <td>{formatMan(assetAt(r))}</td>
+            <td>{formatMan(assetAt(r) * (r.debug?.presentValueFactor ?? 1))}</td>
             <td className="yearly-table__event">{eventsByAge.get(r.age)?.join('・') ?? ''}</td>
           </tr>
         ))}

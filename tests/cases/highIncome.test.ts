@@ -74,8 +74,9 @@ describe('verification case: high income, side-FIRE at 55', () => {
   it('stops main labor income at FIRE but keeps side income (no double income)', () => {
     expect(at(54).income.labor).toBeGreaterThan(0);
     expect(at(56).income.labor).toBe(0); // FIRE後は労働収入0
-    expect(at(56).income.postFire).toBeCloseTo(20 * 12, 5); // サイド収入 月20万×12
-    expect(at(66).income.postFire).toBe(0); // 65歳の就労終了後は0
+    // サイド収入は現在価値240万をインフレ補正した将来額（>240）。65歳の就労終了後は0。
+    expect(at(56).income.postFire).toBeCloseTo(20 * 12 * Math.pow(1.02, 56 - 38), 3);
+    expect(at(66).income.postFire).toBe(0);
   });
 
   it('applies inflation to the expense side', () => {

@@ -72,6 +72,7 @@ describe('STEP5 reflection', () => {
 
   it('7. pension is added from age 65 when entered', () => {
     const i = base();
+    i.investment.inflationRate = field(0, 'user_input', 'インフレ', '', '%'); // 名目で確認
     i.retirement.pension = field(180, 'user_input', '年金見込み', '', '万円');
     expect(at(i, 64).income.pension).toBe(0);
     expect(at(i, 66).income.pension).toBe(180);
@@ -79,6 +80,7 @@ describe('STEP5 reflection', () => {
 
   it('8. retirement lump sum is a one-time income at FIRE/retirement age', () => {
     const i = base(); // fire full, targetAge 60 → fireStartAge 60
+    i.investment.inflationRate = field(0, 'user_input', 'インフレ', '', '%');
     i.income.retirementLumpSum = field(500, 'user_input', '退職金', '', '万円');
     expect(at(i, 60).income.other).toBe(500);
     expect(at(i, 61).income.other).toBe(0);
@@ -93,6 +95,7 @@ describe('STEP5 reflection', () => {
 
   it('10. life events apply at the given age (cost and inheritance inflow)', () => {
     const i = base();
+    i.investment.inflationRate = field(0, 'user_input', 'インフレ', '', '%');
     const reform: LifeEvent = {
       id: 'reform',
       label: field('リフォーム', 'user_input', 'リフォーム', ''),
@@ -112,6 +115,7 @@ describe('STEP5 reflection', () => {
 
   it('11+12. no labor after FIRE; side income stops at workUntilAge', () => {
     const i = base();
+    i.investment.inflationRate = field(0, 'user_input', 'インフレ', '', '%');
     i.fire.type = field('side', 'user_input', 'FIREタイプ', '');
     i.fire.targetAge = field(55, 'user_input', 'FIRE希望年齢', '', '歳');
     i.fire.postFireIncome = field(240, 'user_input', 'FIRE後収入', '', '万円');

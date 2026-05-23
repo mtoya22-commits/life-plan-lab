@@ -573,6 +573,27 @@ body {
   line-height: 1.6;
 }
 
+/* 結果: 見直しが効きやすいポイント */
+.risk-factors {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+}
+.risk-factors__title {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.risk-factors__list {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+
 /* 結果: 条件修正導線 */
 .edit-links,
 .deepen {

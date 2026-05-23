@@ -94,12 +94,14 @@ export function runSimulation(input: SimulationInput): SimulationResult {
     const investmentAfterReturn = invest;
 
     // ---- 収入（手取りベース。現役期は昇給を反映。FIRE後は労働収入0）----
+    // 収入も「現在価値入力」とみなし、支出と同じインフレ率で将来額へ換算する
+    //（収入だけ名目固定にすると、長期で実質収入が目減りし過度に厳しくなるため）。
     const working = age < fireStartAge && age < retirementAge;
     const labor = working ? householdTakeHome * Math.pow(1 + raiseRate, offset) : 0;
-    const postFire = postFireIncomeForAge(input.fire, age);
-    const pension = age >= SIM.pensionStartAge ? input.retirement.pension.value : 0;
-    const lifeEventIncome = sumLifeEventInflows(input, age);
-    const retirementIncome = age === fireStartAge ? input.income.retirementLumpSum.value : 0;
+    const postFire = postFireIncomeForAge(input.fire, age) * inflationFactor;
+    const pension = (age >= SIM.pensionStartAge ? input.retirement.pension.value : 0) * inflationFactor;
+    const lifeEventIncome = sumLifeEventInflows(input, age) * inflationFactor;
+    const retirementIncome = (age === fireStartAge ? input.income.retirementLumpSum.value : 0) * inflationFactor;
     const other = lifeEventIncome + retirementIncome;
     const incomeTotal = labor + postFire + pension + other;
 
@@ -294,9 +296,28 @@ function buildNotes(input: SimulationInput, cashRatioKnown: boolean, monthlyInve
   const { method } = computeTakeHome(input);
   notes.push(TAKE_HOME_METHOD_NOTE[method]);
 
-  // FIRE後生活費は現在価値で入力され、支出インフレで将来額に換算している旨。
-  if (input.fire.type.value !== 'none') {
-    notes.push('FIRE後生活費は現在価値で入力され、支出インフレを反映して将来額に換算しています。');
+  // 収入も現在価値入力としてインフレ補正している旨（収入と支出の前提を揃える）。
+  notes.push(
+    'FIRE後収入・年金・退職金は現在価値で入力し、支出と同じインフレ率で将来額に換算しています（収入だけ名目固定にしません）。',
+  );
+
+  // FIRE後生活費・老後生活費は日常生活費のみ（住居費・教育費・保険・特別費等は別加算）。
+  notes.push(
+    'FIRE後生活費・老後生活費は日常生活費のみです。住居費・教育費・保険料・年間特別費・旅行費・車関連費は別途加算されます。',
+  );
+
+  // 特別費・旅行費・車関連費は老後まで毎年継続する旨。
+  if (
+    input.expense.annualSpecial.value > 0 ||
+    input.expense.travelCost.value > 0 ||
+    input.expense.carCost.value > 0
+  ) {
+    notes.push('年間特別費・旅行費・車関連費は、老後を含め毎年継続する前提です（老後に減らす場合は値を調整してください）。');
+  }
+
+  // 暴落シナリオは現時点では未反映（記録用）。
+  if (input.investment.crashScenario.value) {
+    notes.push('暴落シナリオは現時点の試算には反映していません（記録用）。');
   }
 
   // 年金未入力の明示（誤解防止・資産寿命への影響を案内）。
@@ -314,7 +335,7 @@ function buildNotes(input: SimulationInput, cashRatioKnown: boolean, monthlyInve
 
   notes.push(
     monthlyInvestKnown
-      ? `毎月投資額を現金から投資への新規投入として反映しています（収支への二重加算なし）。`
+      ? `毎月投資額は家計の黒字の範囲で現金から投資へ振り替えます（黒字を超える分は投資されません）。総資産を直接増やすものではありません。`
       : `毎月投資額は未入力のため、年間黒字の一部のみを投資に回す保守的な仮定です。`,
   );
 
