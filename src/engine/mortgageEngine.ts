@@ -35,6 +35,9 @@ export function annualHousingCost(housing: HousingGroup, age: number, baseAge: n
 export function mortgageEvents(housing: HousingGroup, baseAge: number): LifeEventMarker[] {
   const events: LifeEventMarker[] = [];
 
+  // 賃貸では住宅ローン関連のイベントを出さない（持ち家→賃貸に変更した際の古い値が漏れないように）。
+  if (housing.type.value === 'rent') return events;
+
   // 変動金利の場合は固定終了の概念がないため、タイムラインに出さない。
   if (housing.rateType.value !== 'variable' && housing.fixedEndAge.value > 0) {
     events.push({

@@ -82,7 +82,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
       {
         path: 'basic.spouseAge',
         label: '配偶者年齢',
-        help: '配偶者がいる場合のみ。分からなければスキップできます。',
+        help: '配偶者がいる場合のみ。現在は記録用で、計算には未反映です（今後の配偶者年金・退職時期の精密化に使います）。分からなければ未入力で進めます。',
         kind: 'number',
         unit: '歳',
         min: 18,
@@ -293,7 +293,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
       {
         path: 'housing.balance',
         label: 'ローン残高',
-        help: '銀行アプリ、返済予定表、残高証明書などで確認できます。',
+        help: '銀行アプリ、返済予定表、残高証明書などで確認できます。現在は記録用で、住宅費は毎月返済額×残年数で簡易反映します。',
         kind: 'number',
         unit: '万円',
         min: 0,

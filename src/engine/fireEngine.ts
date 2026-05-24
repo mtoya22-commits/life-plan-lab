@@ -9,7 +9,9 @@ import type { FireGroup } from '../schema/types';
 
 /** 4%ルールに基づく必要資産（万円）。マイナスは0にクランプ。 */
 export function neededAssets(fire: FireGroup): number {
-  const annualGap = fire.postFireLiving.value - fire.postFireIncome.value;
+  // FIRE後収入はサイドFIREのときだけ差し引く（完全FIREでは古い入力値を効かせない）。
+  const sideIncome = fire.type.value === 'side' ? fire.postFireIncome.value : 0;
+  const annualGap = fire.postFireLiving.value - sideIncome;
   return Math.max(0, annualGap) * 25;
 }
 
