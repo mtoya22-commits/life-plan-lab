@@ -73,6 +73,69 @@ body {
 .disclaimer {
   margin-top: 8px;
 }
+.disclaimer__lead {
+  margin: 0;
+}
+.disclaimer__full {
+  margin: 6px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+/* 入口の補足・短い免責 */
+.top-note {
+  margin: 12px 0 0;
+}
+.top-disclaimer {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+/* キーボード操作時のフォーカス可視化（アクセシビリティ） */
+:where(button, a, summary, input, .mode-card):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* 試算条件: 前提の扱い（反映済み/簡略反映/記録用） */
+.assumptions__handling {
+  margin: 0 0 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.handling__group {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+}
+.handling__group dd {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.6;
+}
+.handling__label {
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.handling__label--direct {
+  color: var(--band-stable);
+  background: var(--accent-soft);
+}
+.handling__label--simple {
+  color: var(--band-realistic);
+  background: var(--accent-soft);
+}
+.handling__label--record {
+  color: var(--band-needs);
+  background: var(--accent-soft);
+}
 
 /* ---- モード選択（入口） ---- */
 .top-hero {

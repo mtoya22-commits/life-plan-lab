@@ -1,0 +1,71 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, render } from '@testing-library/react';
+import App from '../../src/App';
+import { useInputStore } from '../../src/store/inputStore';
+
+// STEP7: 公開前MVP仕上げ。開発用要素の本番非表示・免責・試算前提の明示を確認する。
+const store = () => useInputStore.getState();
+
+describe('STEP7 production readiness', () => {
+  beforeEach(() => store().reset());
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    cleanup();
+  });
+
+  it('hides the dev menu when not in DEV (production build)', () => {
+    vi.stubEnv('DEV', false);
+    const { container } = render(<App />);
+    expect(container.textContent).not.toContain('開発用メニュー');
+    // 通常導線（モードカード）はもちろん残る
+    expect(container.textContent).toContain('ざっくり診断');
+    expect(container.textContent).toContain('しっかり診断');
+  });
+
+  it('shows the dev menu only in DEV', () => {
+    vi.stubEnv('DEV', true);
+    const { container } = render(<App />);
+    expect(container.textContent).toContain('開発用メニュー');
+  });
+
+  it('top screen carries an intro note and a short disclaimer', () => {
+    const { container } = render(<App />);
+    expect(container.textContent).toContain('まずは概算で');
+    expect(container.textContent).toContain('投資助言でもありません');
+  });
+
+  it('result shows the full disclaimer (no guarantee / not investment advice / consult a pro)', () => {
+    store().loadThoroughSample(true);
+    const { container } = render(<App />);
+    expect(container.textContent).toContain('将来の結果を保証するものではなく');
+    expect(container.textContent).toContain('投資判断や金融商品の推奨を行うものではありません');
+    expect(container.textContent).toContain('専門家へご確認ください');
+  });
+
+  it('assumptions group the reflection handling (direct / simplified / record-only)', () => {
+    store().loadThoroughSample(true);
+    const { container } = render(<App />);
+    expect(container.textContent).toContain('反映済み');
+    expect(container.textContent).toContain('簡略反映');
+    expect(container.textContent).toContain('記録用（未反映）');
+    // 記録用に住宅ローンの金利/固定変動などが明示される
+    expect(container.textContent).toContain('固定/変動');
+    expect(container.textContent).toContain('NISA');
+  });
+
+  it('assumptions notes state the monthly-investment reflection window', () => {
+    store().loadThoroughSample(true);
+    const { container } = render(<App />);
+    expect(container.textContent).toContain('前年まで'); // 就労を終える◯歳の前年まで
+  });
+
+  it('the result assumptions section is collapsed by default (lighter first view)', () => {
+    store().loadThoroughSample(true);
+    const { container } = render(<App />);
+    const assumptions = Array.from(container.querySelectorAll<HTMLDetailsElement>('details.collapsible')).find((d) =>
+      d.querySelector('summary')?.textContent?.includes('今回の試算条件'),
+    );
+    expect(assumptions).toBeDefined();
+    expect(assumptions!.open).toBe(false);
+  });
+});

@@ -51,6 +51,9 @@ export function ModeSelect() {
         </button>
       </div>
 
+      <p className="top-note muted">{m.note}</p>
+      <p className="top-disclaimer muted">{ja.common.disclaimerShort}</p>
+
       {/* 開発用: 手入力せずに画面遷移・結果反映を確認する導線（本番では非表示・控えめに格納）。 */}
       {import.meta.env.DEV && (
         <details className="collapsible dev-menu">

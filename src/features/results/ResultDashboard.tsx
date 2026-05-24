@@ -156,7 +156,10 @@ export function ResultDashboard() {
         </div>
       </details>
 
-      <p className="muted disclaimer">{ja.result.disclaimer}</p>
+      <div className="disclaimer">
+        <p className="muted disclaimer__lead">{ja.result.disclaimerLead}</p>
+        <p className="muted disclaimer__full">{ja.common.disclaimer}</p>
+      </div>
 
       <div className="step-actions">
         <button className="btn" onClick={reset}>
