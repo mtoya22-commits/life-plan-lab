@@ -35,6 +35,40 @@ describe('render smoke (jsdom)', () => {
     expect(container.textContent).toContain('しっかり診断');
   });
 
+  it('top screen shows the life-dashboard framing and mode card details', () => {
+    const { container } = render(<App />);
+    expect(container.querySelector('.top-hero')).not.toBeNull();
+    expect(container.textContent).toContain('生活設計ダッシュボード'); // eyebrow
+    expect(container.textContent).toContain('まずは、見たい詳しさを選んでください'); // 柔らかい見出し
+    expect(container.textContent).toContain('30〜60秒'); // ざっくりの目安時間
+    expect(container.textContent).toContain('約5〜8分'); // しっかりの目安時間
+    expect(container.querySelectorAll('.mode-card').length).toBe(2);
+  });
+
+  it('starts the rough flow from its mode card', () => {
+    render(<App />);
+    fireEvent.click(screen.getByText('ざっくり診断').closest('button')!);
+    expect(store().mode).toBe('rough');
+    expect(store().phase).toBe('input');
+  });
+
+  it('starts the thorough flow from its mode card', () => {
+    render(<App />);
+    fireEvent.click(screen.getByText('しっかり診断').closest('button')!);
+    expect(store().mode).toBe('thorough');
+    expect(store().phase).toBe('input');
+  });
+
+  it('keeps dev sample links tucked into a collapsed dev menu (DEV only)', () => {
+    const { container } = render(<App />);
+    const dev = Array.from(container.querySelectorAll<HTMLDetailsElement>('details.collapsible')).find((d) =>
+      d.querySelector('summary')?.textContent?.includes('開発用メニュー'),
+    );
+    expect(dev).toBeDefined();
+    expect(dev!.open).toBe(false); // 初期は閉じている＝世界観を壊さない
+    expect(dev!.querySelectorAll('.dev-sample').length).toBeGreaterThan(0);
+  });
+
   it('depleted Hero shows 資産は枯渇済み + 累計不足額 (not just 0万円)', () => {
     store().loadHighIncomeSample(0); // 年金未入力で枯渇するケース
     const { container } = render(<App />);

@@ -61,16 +61,6 @@ body {
   gap: 14px;
 }
 
-.app-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  margin: 8px 0 0;
-}
-.app-subtitle {
-  color: var(--muted);
-  margin: 0 0 8px;
-}
 .section-heading {
   font-size: 1.1rem;
   font-weight: 600;
@@ -84,7 +74,52 @@ body {
   margin-top: 8px;
 }
 
-/* ---- モード選択 ---- */
+/* ---- モード選択（入口） ---- */
+.top-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 22px 20px;
+  margin-bottom: 4px;
+  background: linear-gradient(157deg, #edf3ed 0%, var(--surface) 60%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+.top-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--brass) 30%, var(--brass) 70%, transparent);
+  opacity: 0.7;
+}
+.top-hero__eyebrow {
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  font-weight: 600;
+}
+.top-hero__title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin: 2px 0 0;
+  color: var(--text);
+}
+.top-hero__lead {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.7;
+}
+.mode-select__heading {
+  margin-top: 14px;
+}
 .mode-cards {
   display: grid;
   gap: 14px;
@@ -92,27 +127,70 @@ body {
 .mode-card {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   text-align: left;
-  padding: 20px;
+  padding: 18px 18px 16px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   cursor: pointer;
-  transition: transform 0.12s ease, border-color 0.12s ease;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .mode-card:hover {
   transform: translateY(-1px);
   border-color: var(--accent);
+  box-shadow: var(--shadow-raised);
+}
+.mode-card:active {
+  transform: translateY(0);
+}
+.mode-card__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
 }
 .mode-card__title {
   font-weight: 700;
-  font-size: 1.05rem;
+  font-size: 1.1rem;
+  color: var(--accent);
+}
+.mode-card__meta {
+  font-size: 0.74rem;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 10px;
+  white-space: nowrap;
+}
+.mode-card__badge {
+  align-self: flex-start;
+  font-size: 0.72rem;
+  color: var(--band-stable);
+  background: var(--accent-soft);
+  border-radius: 999px;
+  padding: 2px 10px;
 }
 .mode-card__desc {
-  color: var(--muted);
+  color: var(--text);
   font-size: 0.9rem;
+  line-height: 1.6;
+}
+.mode-card__points {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.mode-card__cta {
+  margin-top: 4px;
+  color: var(--link);
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
 /* ---- 進捗 ---- */
@@ -1091,16 +1169,23 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
-/* 開発用サンプル導線 */
-.dev-links {
+/* 開発用サンプル導線（DEV時のみ・控えめに折りたたみ） */
+.dev-menu {
+  margin-top: 18px;
+  opacity: 0.85;
+}
+.dev-menu > summary {
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+.dev-menu__body {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  margin-top: 6px;
 }
 .dev-sample {
   align-self: flex-start;
-  opacity: 0.7;
 }
 
 /* しっかり診断：子どもカード / ライフイベント */
@@ -1162,7 +1247,9 @@ body {
   .result > .timeline,
   .result > .detail-card,
   .result > .collapsible,
-  .result > .deepen {
+  .result > .deepen,
+  .mode-select > .top-hero,
+  .mode-cards > .mode-card {
     animation: fade-rise 0.32s ease both;
   }
   /* 折りたたみを開いたときの内容のフェード */
