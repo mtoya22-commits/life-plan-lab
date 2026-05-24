@@ -157,7 +157,7 @@ body {
   color: var(--accent);
 }
 .mode-card__meta {
-  font-size: 0.74rem;
+  font-size: 0.78rem;
   color: var(--muted);
   border: 1px solid var(--border);
   border-radius: 999px;
