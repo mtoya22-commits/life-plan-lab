@@ -243,6 +243,41 @@ body {
   font-size: 0.84rem;
   line-height: 1.6;
 }
+/* このページで確認する項目の概要（スクロール前に全体量を把握） */
+.step-overview {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+/* 入力画面は「見通し・効率」優先で、結果画面よりやや密度を上げる */
+.step-layout {
+  gap: 10px;
+}
+.step-layout .question-card {
+  padding: 14px 16px;
+}
+/* 単純な数値入力をまとめる1枚カード（行を細い区切りで詰める） */
+.group-card {
+  padding: 2px 16px;
+}
+.field-row {
+  padding: 13px 0;
+  border-top: 1px solid var(--border);
+}
+.field-row:first-child {
+  border-top: none;
+}
+.field-row__title {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.group-card .field-actions {
+  margin-top: 8px;
+}
+
 /* ライフイベントの種別タグ（一時支出/一時収入） */
 .event-tag {
   margin-left: 8px;

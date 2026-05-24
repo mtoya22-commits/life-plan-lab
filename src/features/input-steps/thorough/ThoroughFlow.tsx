@@ -3,10 +3,13 @@ import { useInputStore } from '../../../store/inputStore';
 import { ja } from '../../../strings/ja';
 import { visibleThoroughPages } from '../../../schema/thoroughSteps';
 import { getFieldByPath } from '../../../schema/fieldPath';
+import type { ReactNode } from 'react';
 import { ProgressHeader } from '../ProgressHeader';
-import { ThoroughQuestionView } from './ThoroughQuestionView';
+import { ThoroughQuestionView, ThoroughFieldRow } from './ThoroughQuestionView';
 import { FamilyStep } from './FamilyStep';
 import { EventsStep } from './EventsStep';
+import type { SimulationInput } from '../../../schema/types';
+import type { ThoroughPage, ThoroughQuestion } from '../../../schema/thoroughSteps';
 
 // =============================================================================
 // しっかり診断のステップフロー。ざっくり診断と同じ操作感（進捗・目的説明・下部固定ナビ）。
@@ -56,14 +59,13 @@ export function ThoroughFlow() {
         <p className="step-purpose muted">{page.purpose}</p>
       </div>
 
+      <StepOverview page={page} input={thoroughInput} />
+
       {!cameFromResult && idx === 0 && <p className="step-reassure">{ja.nav.reassure}</p>}
 
       {page.kind === 'family' && <FamilyStep input={thoroughInput} />}
       {page.kind === 'events' && <EventsStep input={thoroughInput} />}
-      {page.kind === 'fields' &&
-        page.questions
-          ?.filter((q) => !q.showIf || q.showIf(thoroughInput))
-          .map((q) => <ThoroughQuestionView key={q.path} q={q} field={getFieldByPath(thoroughInput, q.path)} />)}
+      {page.kind === 'fields' && renderFieldGroups(visibleQuestions(page, thoroughInput), thoroughInput)}
 
       <div className="bottom-nav-spacer" />
 
@@ -95,5 +97,62 @@ export function ThoroughFlow() {
         </div>
       </nav>
     </section>
+  );
+}
+
+/** 表示すべき質問（showIf 適用後）。 */
+function visibleQuestions(page: ThoroughPage, input: SimulationInput): ThoroughQuestion[] {
+  return (page.questions ?? []).filter((q) => !q.showIf || q.showIf(input));
+}
+
+// 連続する単純な数値入力は1枚のまとめカードに（スクロール削減）。
+// 選択・判断が必要な項目（choice / toggle）は従来どおり単独カードで丁寧に見せる。
+function renderFieldGroups(questions: ThoroughQuestion[], input: SimulationInput): ReactNode[] {
+  const out: ReactNode[] = [];
+  let run: ThoroughQuestion[] = [];
+
+  const flush = (key: string) => {
+    if (run.length === 0) return;
+    if (run.length === 1) {
+      const q = run[0];
+      out.push(<ThoroughQuestionView key={q.path} q={q} field={getFieldByPath(input, q.path)} />);
+    } else {
+      out.push(
+        <div className="question-card group-card" key={key}>
+          {run.map((q) => (
+            <ThoroughFieldRow key={q.path} q={q} field={getFieldByPath(input, q.path)} />
+          ))}
+        </div>,
+      );
+    }
+    run = [];
+  };
+
+  questions.forEach((q, i) => {
+    if (q.kind === 'number') {
+      run.push(q);
+    } else {
+      flush(`grp-${i}`);
+      out.push(<ThoroughQuestionView key={q.path} q={q} field={getFieldByPath(input, q.path)} />);
+    }
+  });
+  flush('grp-last');
+  return out;
+}
+
+// このページで確認する項目の概要（件数＋項目名）。スクロール前に全体量を把握できるように。
+function StepOverview({ page, input }: { page: ThoroughPage; input: SimulationInput }) {
+  if (page.kind === 'family') {
+    return <p className="step-overview muted">お子さまの人数と、進学の見通しを確認します。</p>;
+  }
+  if (page.kind === 'events') {
+    return <p className="step-overview muted">含めたい一時的な出費・収入だけ選びます（未選択でも進めます）。</p>;
+  }
+  const labels = visibleQuestions(page, input).map((q) => q.label);
+  if (labels.length === 0) return null;
+  return (
+    <p className="step-overview muted">
+      確認する項目（{labels.length}）：{labels.join('・')}
+    </p>
   );
 }

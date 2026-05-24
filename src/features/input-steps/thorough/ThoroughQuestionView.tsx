@@ -1,23 +1,26 @@
 import { useInputStore } from '../../../store/inputStore';
 import { ja } from '../../../strings/ja';
 import { QuestionCard } from '../QuestionCard';
+import { HelpTooltip } from '../HelpTooltip';
 import { NumberField } from '../NumberField';
 import type { ThoroughQuestion } from '../../../schema/thoroughSteps';
 import type { Field } from '../../../schema/types';
 
 // しっかり診断の1項目。SimulationInput の Field を path 経由で編集する。
 // 表示は number / choice / toggle。Recommended / Skip / Help を配置し source を保持する。
-export function ThoroughQuestionView({ q, field }: { q: ThoroughQuestion; field?: Field<unknown> }) {
+// 単純な数値入力をまとめられるよう、見た目（カード or 行）と中身（コントロール）を分離する。
+
+/** タイトルなしのコントロール群（入力欄・補足・おすすめ/未入力・状態）。 */
+export function ThoroughControls({ q, field }: { q: ThoroughQuestion; field: Field<unknown> }) {
   const setThoroughValue = useInputStore((s) => s.setThoroughValue);
   const useThoroughRecommended = useInputStore((s) => s.useThoroughRecommended);
   const skipThorough = useInputStore((s) => s.skipThorough);
 
-  if (!field) return null;
   const source = field.source;
   const filled = source === 'user_input' || source === 'recommended_value';
 
   return (
-    <QuestionCard title={q.label} help={q.help}>
+    <>
       {q.kind === 'number' && (
         <>
           <NumberField
@@ -95,6 +98,30 @@ export function ThoroughQuestionView({ q, field }: { q: ThoroughQuestion; field?
       )}
 
       {source === 'skipped' && <p className="field-status muted">{ja.field.skipped}</p>}
+    </>
+  );
+}
+
+/** 単独カード表示（選択・判断が必要な項目や、単独の数値項目に使う）。 */
+export function ThoroughQuestionView({ q, field }: { q: ThoroughQuestion; field?: Field<unknown> }) {
+  if (!field) return null;
+  return (
+    <QuestionCard title={q.label} help={q.help}>
+      <ThoroughControls q={q} field={field} />
     </QuestionCard>
+  );
+}
+
+/** まとめカード内の1行表示（単純な数値入力を縦に詰めてスクロールを減らす）。 */
+export function ThoroughFieldRow({ q, field }: { q: ThoroughQuestion; field?: Field<unknown> }) {
+  if (!field) return null;
+  return (
+    <div className="field-row">
+      <div className="field-row__title">
+        {q.label}
+        {q.help && <HelpTooltip text={q.help} />}
+      </div>
+      <ThoroughControls q={q} field={field} />
+    </div>
   );
 }

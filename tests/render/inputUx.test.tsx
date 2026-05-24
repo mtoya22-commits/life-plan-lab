@@ -59,6 +59,45 @@ describe('STEP6.2 input UX copy', () => {
     expect(container.textContent).toContain('相続は指定年齢の一時収入');
   });
 
+  it('shows a per-page item overview so the page length is predictable', () => {
+    store().setMode('thorough');
+    store().setThoroughPage('expense-monthly');
+    const { container } = render(<App />);
+    expect(container.textContent).toContain('確認する項目（2）');
+    expect(container.textContent).toContain('毎月生活費');
+    expect(container.textContent).toContain('保険料');
+  });
+
+  it('groups consecutive number inputs into a single compact card', () => {
+    store().setMode('thorough');
+    store().setThoroughPage('expense-annual'); // 年間特別費・旅行費・車関連費（すべて数値）
+    const { container } = render(<App />);
+    const groups = container.querySelectorAll('.group-card');
+    expect(groups.length).toBe(1);
+    expect(groups[0].querySelectorAll('.field-row').length).toBe(3);
+  });
+
+  it('keeps decision (choice/toggle) items as their own cards, not grouped', () => {
+    store().setMode('thorough');
+    store().setThoroughValue('housing.type', 'own');
+    store().setThoroughValue('housing.rateType', 'fixed');
+    store().setThoroughPage('housing-3'); // rate(数値) / 固定変動(選択) / 固定終了(数値)
+    const { container } = render(<App />);
+    // 選択肢が独立カードになるため、数値がまとまった group-card は作られない（各数値は単独）
+    expect(container.querySelector('.choice-group')).not.toBeNull();
+    expect(container.querySelectorAll('.group-card').length).toBe(0);
+  });
+
+  it('grouped fields still save values and source correctly', () => {
+    store().setMode('thorough');
+    store().setThoroughPage('expense-annual');
+    render(<App />);
+    store().setThoroughValue('expense.travelCost', 33);
+    store().skipThorough('expense.carCost');
+    expect(store().thoroughInput!.expense.travelCost).toMatchObject({ value: 33, source: 'user_input' });
+    expect(store().thoroughInput!.expense.carCost.source).toBe('skipped');
+  });
+
   it('softens the thorough progress eta wording', () => {
     store().setMode('thorough');
     const { container } = render(<App />);
