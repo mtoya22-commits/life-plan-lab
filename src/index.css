@@ -99,50 +99,67 @@ body {
   border-radius: 8px;
 }
 
-/* 結果: 慎重シナリオ（折りたたみ内） */
+/* 結果: 慎重シナリオ（折りたたみ内・標準と縦並びで比較） */
 .cautious__lead {
-  margin: 0 0 10px;
+  margin: 0 0 12px;
 }
-.cautious__premise {
-  margin: 0 0 10px;
+.scenario-compare {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 10px;
 }
-.cautious__row {
+.scenario-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.scenario-card--cautious {
+  background: var(--accent-soft);
+  border-color: var(--accent-soft);
+}
+.scenario-card__label {
+  font-weight: 700;
+  color: var(--accent);
+}
+.scenario-card__premise {
+  margin-top: 2px;
+  font-size: 0.8rem;
+}
+.scenario-card__metrics {
+  margin: 10px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.scenario-card__metrics > div {
   display: flex;
   gap: 10px;
   align-items: baseline;
 }
-.cautious__row dt {
-  flex: 0 0 64px;
+.scenario-card__metrics dt {
+  flex: 0 0 72px;
   font-size: 0.78rem;
   color: var(--muted);
 }
-.cautious__row dd {
+.scenario-card__metrics dd {
   margin: 0;
   font-size: 0.9rem;
-}
-.cautious__result {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 12px 14px;
-  background: var(--accent-soft);
-  border-radius: 10px;
-}
-.cautious__result-label {
-  font-size: 0.78rem;
-  color: var(--muted);
-}
-.cautious__result-value {
-  font-weight: 700;
-  color: var(--accent);
+  font-weight: 600;
 }
 .cautious__note {
-  margin: 10px 0 0;
+  margin: 12px 0 0;
   font-size: 0.78rem;
   line-height: 1.6;
+}
+
+/* 広い幅では標準/慎重を横並びに */
+@media (min-width: 560px) {
+  .scenario-compare {
+    flex-direction: row;
+  }
+  .scenario-card {
+    flex: 1 1 0;
+  }
 }
 
 /* 試算条件: 前提の扱い（反映済み/簡略反映/記録用） */

@@ -69,7 +69,15 @@ describe('STEP7 production readiness', () => {
     expect(cautious!.open).toBe(false); // 初期は閉じ（標準結果の邪魔をしない）
     expect(cautious!.textContent).toContain('標準条件');
     expect(cautious!.textContent).toContain('慎重条件');
-    expect(cautious!.textContent).toContain('前提を変えた場合の確認用');
+    // 標準/慎重を同じ表現で比較（資産寿命・95歳時点・現在価値）
+    expect(cautious!.textContent).toContain('資産寿命');
+    expect(cautious!.textContent).toContain('95歳時点');
+    expect(cautious!.textContent).toContain('現在価値');
+    expect(cautious!.textContent).toContain('前提を変えた確認用');
+    // 暴落との違いを明記
+    expect(cautious!.textContent).toContain('暴落シナリオは一時的');
+    // 枯渇ケースでも「0万円」を主表示にしない（累計不足額で示す）
+    expect(cautious!.querySelector('.scenario-card__metrics dd')!.textContent).not.toBe('0万円');
   });
 
   it('the result assumptions section is collapsed by default (lighter first view)', () => {

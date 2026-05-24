@@ -112,7 +112,7 @@ export function ResultDashboard() {
       />
 
       {/* 慎重条件（折りたたみ・初期は閉じる）。標準結果は変えない。 */}
-      <CautiousScenario input={input} />
+      <CautiousScenario input={input} result={result} />
 
       {/* 見直しが効きやすいポイント（折りたたみ・初期は閉じる） */}
       {riskFactors.length > 0 && (
