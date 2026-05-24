@@ -39,9 +39,10 @@
 body {
   margin: 0;
   background-color: var(--bg);
-  /* ごく薄い深緑のモヤ（森の気配）。派手にしない。 */
+  /* ごく薄い深緑のモヤ（森の気配）。派手にしない。
+     iframe/iOS での描画を安定させるため background-attachment は使わない。 */
   background-image: radial-gradient(1200px 420px at 50% -160px, rgba(45, 74, 62, 0.05), transparent 70%);
-  background-attachment: fixed;
+  background-repeat: no-repeat;
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', 'Segoe UI', sans-serif;
   line-height: 1.7;
@@ -1191,6 +1192,12 @@ body {
 }
 
 /* 年次テーブル（シート内） */
+/* 横長になりうる表は内部で横スクロール（iframe/375pxで画面外へはみ出さない） */
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
 .yearly-table {
   width: 100%;
   border-collapse: collapse;

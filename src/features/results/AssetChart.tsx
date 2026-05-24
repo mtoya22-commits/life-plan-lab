@@ -260,6 +260,7 @@ function YearlyTable({ rows, eventsByAge }: { rows: YearRow[]; eventsByAge: Map<
   // 各行は「その年齢時点」の資産。先頭(現在)は入力した現在資産＝年初、それ以外は年末。
   const assetAt = (r: YearRow) => (r.age === startAge ? r.startAssets : r.endAssets);
   return (
+    <div className="table-scroll">
     <table className="yearly-table">
       <caption className="yearly-table__caption">年齢ごとの資産と主なイベント（5年ごと＋イベント年）</caption>
       <thead>
@@ -283,5 +284,6 @@ function YearlyTable({ rows, eventsByAge }: { rows: YearRow[]; eventsByAge: Map<
         ))}
       </tbody>
     </table>
+    </div>
   );
 }
