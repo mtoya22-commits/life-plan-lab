@@ -59,6 +59,19 @@ describe('STEP7 production readiness', () => {
     expect(container.textContent).toContain('前年まで'); // 就労を終える◯歳の前年まで
   });
 
+  it('offers a collapsed cautious-scenario view with its premises', () => {
+    store().loadThoroughSample(true);
+    const { container } = render(<App />);
+    const cautious = Array.from(container.querySelectorAll<HTMLDetailsElement>('details.collapsible')).find((d) =>
+      d.querySelector('summary')?.textContent?.includes('慎重条件で見る'),
+    );
+    expect(cautious).toBeDefined();
+    expect(cautious!.open).toBe(false); // 初期は閉じ（標準結果の邪魔をしない）
+    expect(cautious!.textContent).toContain('標準条件');
+    expect(cautious!.textContent).toContain('慎重条件');
+    expect(cautious!.textContent).toContain('前提を変えた場合の確認用');
+  });
+
   it('the result assumptions section is collapsed by default (lighter first view)', () => {
     store().loadThoroughSample(true);
     const { container } = render(<App />);

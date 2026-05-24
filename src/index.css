@@ -99,6 +99,52 @@ body {
   border-radius: 8px;
 }
 
+/* 結果: 慎重シナリオ（折りたたみ内） */
+.cautious__lead {
+  margin: 0 0 10px;
+}
+.cautious__premise {
+  margin: 0 0 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cautious__row {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+}
+.cautious__row dt {
+  flex: 0 0 64px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.cautious__row dd {
+  margin: 0;
+  font-size: 0.9rem;
+}
+.cautious__result {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  background: var(--accent-soft);
+  border-radius: 10px;
+}
+.cautious__result-label {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.cautious__result-value {
+  font-weight: 700;
+  color: var(--accent);
+}
+.cautious__note {
+  margin: 10px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
 /* 試算条件: 前提の扱い（反映済み/簡略反映/記録用） */
 .assumptions__handling {
   margin: 0 0 14px;

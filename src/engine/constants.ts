@@ -68,6 +68,16 @@ export const CRASH_SCENARIO = {
   dropRate: 0.3,
 } as const;
 
+/**
+ * 慎重シナリオ（長期前提を厳しめに見る）。暴落（一時下落）とは別物。
+ * 利回りを下げ（下限0%）、インフレ率を上げて再計算する。
+ */
+export const CAUTIOUS_SCENARIO = {
+  returnDelta: -2, // 想定利回り −2%（下限0%）
+  returnFloor: 0,
+  inflationDelta: 1, // インフレ率 +1%
+} as const;
+
 /** 投資スタイル → 想定（名目）利回り（%）。 */
 export const RETURN_RATE_BY_STYLE = {
   stable: 3,

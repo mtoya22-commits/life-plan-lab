@@ -12,6 +12,7 @@ import { fireAchievementRate, postFireIncomeForAge } from './fireEngine';
 import { buildSuggestions, judge } from './judgmentEngine';
 import {
   CAPTURE_NOTE,
+  CAUTIOUS_SCENARIO,
   CRASH_SCENARIO,
   DEFAULT_CASH_RATIO,
   DEFAULT_INVEST_FRACTION,
@@ -280,6 +281,26 @@ export function runSimulation(input: SimulationInput): SimulationResult {
 
 function clamp01(v: number): number {
   return Math.max(0, Math.min(1, v));
+}
+
+/**
+ * 慎重シナリオ用の入力を返す（純粋関数）。
+ * 利回りを下げ（下限0%）、インフレ率を上げる。暴落など他の条件はそのまま引き継ぐ。
+ * これを runSimulation に渡すと、長期前提を厳しめに見た結果が得られる。
+ */
+export function cautiousScenarioInput(input: SimulationInput): SimulationInput {
+  const next = structuredClone(input);
+  const r = input.investment.returnRate.value;
+  const inf = input.investment.inflationRate.value;
+  next.investment.returnRate = {
+    ...next.investment.returnRate,
+    value: Math.max(CAUTIOUS_SCENARIO.returnFloor, r + CAUTIOUS_SCENARIO.returnDelta),
+  };
+  next.investment.inflationRate = {
+    ...next.investment.inflationRate,
+    value: inf + CAUTIOUS_SCENARIO.inflationDelta,
+  };
+  return next;
 }
 
 /** 手取り年収を優先順位（直接 > 夫婦別 > 世帯）で求める。 */

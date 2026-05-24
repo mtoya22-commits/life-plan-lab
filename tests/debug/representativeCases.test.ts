@@ -1,7 +1,7 @@
 import { describe, it } from 'vitest';
 import { createDefaultInput } from '../../src/schema/defaultValues';
 import { applyRecommendedValues } from '../../src/schema/recommendedValues';
-import { runSimulation } from '../../src/engine/annualSimulationEngine';
+import { runSimulation, cautiousScenarioInput } from '../../src/engine/annualSimulationEngine';
 import { field } from '../../src/schema/field';
 import type { ChildInput, LifeEvent, SimulationInput } from '../../src/schema/types';
 
@@ -47,6 +47,11 @@ function report(name: string, i: SimulationInput) {
       `eduPeakAge=${ind.eduPeakResilience.peakAge} eduPeakCost=${r0(eduPeakRow.expense.education)} ` +
       `payoff=${payoff?.age ?? '-'} fire=${fire?.age ?? '-'} crash=${crash?.age ?? '-'}\n` +
       `monthlyInvest planned/firstActual/avg=${r0(ind.monthlyInvestmentPlannedAnnual)}/${r0(ind.monthlyInvestmentActualFirstYear)}/${r0(ind.monthlyInvestmentActualAverage)}`,
+  );
+  const cau = runSimulation(cautiousScenarioInput(applyRecommendedValues(i))).indicators;
+  // eslint-disable-next-line no-console
+  console.log(
+    `   慎重: longevity=${cau.assetLongevityAge ?? '95+'} assetsAt95(PV)=${r0(cau.assetsAt95PresentValue)} shortfallPV=${r0(cau.cumulativeShortfallPresentValue)}`,
   );
 }
 

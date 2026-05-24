@@ -7,6 +7,7 @@ import { visibleThoroughPages } from '../../schema/thoroughSteps';
 import { BottomSheet } from '../../components/BottomSheet';
 import { Hero } from './Hero';
 import { Outlook } from './Outlook';
+import { CautiousScenario } from './CautiousScenario';
 import { ResultSummary } from './ResultSummary';
 import { DetailCard } from './DetailCard';
 import { TimelineSummary, TimelineFull } from './Timeline';
@@ -109,6 +110,9 @@ export function ResultDashboard() {
         caption={mortgage.caption}
         onOpen={() => setSheet('mortgage')}
       />
+
+      {/* 慎重条件（折りたたみ・初期は閉じる）。標準結果は変えない。 */}
+      <CautiousScenario input={input} />
 
       {/* 見直しが効きやすいポイント（折りたたみ・初期は閉じる） */}
       {riskFactors.length > 0 && (
