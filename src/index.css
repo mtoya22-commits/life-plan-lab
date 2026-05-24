@@ -227,6 +227,35 @@ body {
   margin: 10px 0 0;
   font-size: 0.82rem;
 }
+/* 入力欄直下の短い補足（月額/年額・単位・今のお金の感覚で 等）。読みやすく控えめに。 */
+.field-note {
+  margin: 6px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+/* 入力中の安心感（冒頭で一度だけ）。セージの淡い面に深緑文字で静かに。 */
+.step-reassure {
+  margin: 0;
+  padding: 10px 14px;
+  background: var(--accent-soft);
+  border-radius: 10px;
+  color: var(--accent);
+  font-size: 0.84rem;
+  line-height: 1.6;
+}
+/* ライフイベントの種別タグ（一時支出/一時収入） */
+.event-tag {
+  margin-left: 8px;
+  font-size: 0.72rem;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--muted);
+  vertical-align: middle;
+}
+.event-tag--income {
+  color: var(--band-stable);
+}
 
 /* ---- ボタン ---- */
 .btn {

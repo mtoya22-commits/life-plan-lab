@@ -9,13 +9,14 @@ interface Template {
   id: string;
   label: string;
   sign: 1 | -1;
+  note?: string;
 }
 
 const TEMPLATES: Template[] = [
-  { id: 'car', label: '車の購入', sign: 1 },
-  { id: 'reform', label: 'リフォーム', sign: 1 },
-  { id: 'parent', label: '親の支援', sign: 1 },
-  { id: 'inherit', label: '相続見込み', sign: -1 },
+  { id: 'car', label: '車の購入', sign: 1, note: '車の維持費は毎年の支出、車購入は一時支出として扱います。' },
+  { id: 'reform', label: 'リフォーム', sign: 1, note: '指定した年齢に一時支出として反映します。' },
+  { id: 'parent', label: '親の支援', sign: 1, note: '指定した年齢に一時支出として反映します。' },
+  { id: 'inherit', label: '相続見込み', sign: -1, note: '相続は指定年齢の一時収入として扱います。' },
   { id: 'other', label: 'その他の一時支出', sign: 1 },
 ];
 
@@ -45,7 +46,9 @@ export function EventsStep({ input }: { input: SimulationInput }) {
           <div className="question-card" key={t.id}>
             <div className="question-card__title">
               {t.label}
-              {t.sign < 0 && <span className="muted">（収入）</span>}
+              <span className={`event-tag${t.sign < 0 ? ' event-tag--income' : ''}`}>
+                {t.sign < 0 ? '一時収入' : '一時支出'}
+              </span>
             </div>
             <div className="field-actions">
               <button
@@ -57,6 +60,7 @@ export function EventsStep({ input }: { input: SimulationInput }) {
                 {enabled ? '✓ 含める' : '含める'}
               </button>
             </div>
+            {t.note && <p className="field-note muted">{t.note}</p>}
             {enabled && (
               <div className="event-fields">
                 <label className="event-field">
@@ -76,7 +80,7 @@ export function EventsStep({ input }: { input: SimulationInput }) {
           </div>
         );
       })}
-      <p className="field-status muted">指定した年齢に、その金額を反映します（相続は収入として扱います）。</p>
+      <p className="field-status muted">「含める」を選ぶと、指定した年齢にその金額を反映します。あとから変更できます。</p>
     </>
   );
 }

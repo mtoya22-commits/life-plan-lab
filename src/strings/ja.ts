@@ -20,8 +20,8 @@ export const ja = {
   common: {
     next: '次へ',
     back: '戻る',
-    skip: 'スキップ',
-    useRecommended: 'おすすめ値を使う',
+    skip: '未入力で進む',
+    useRecommended: 'おすすめを使う',
     seeResult: '結果を見る',
     redo: '最初からやり直す',
     close: '閉じる',
@@ -33,13 +33,14 @@ export const ja = {
     backToResult: '結果へ戻る',
     recompute: '再計算して結果へ',
     // 未回答時の、止めない・煽らない案内
-    incompleteHint: '未回答の項目があります。おすすめ値やスキップも使えます。',
+    incompleteHint: '未入力の項目があります。おすすめ値や「未入力で進む」も使えます。',
+    // 入力中の安心感（控えめに、冒頭などで一度だけ）
+    reassure: '分かる範囲で大丈夫です。未入力でも概算でき、あとから変えて再計算できます。',
   },
   field: {
-    hintNumber: '入力すると、より正確に計算できます。分からなければスキップやおすすめ値も使えます。',
-    hintChoice: 'ひとつ選ぶと、より正確に計算できます。',
-    skipped: '未入力のまま、標準値で試算します。',
-    recommended: 'おすすめ値を使用します。',
+    hintNumber: '入力すると、より正確になります。分からなければ「未入力で進む」やおすすめ値も使えます。',
+    hintChoice: 'ひとつ選ぶと、より正確になります。',
+    skipped: '未入力のまま、標準値で概算します。あとから変更できます。',
     childrenAgeNote: 'お子さまの年齢は、ざっくり診断では仮の値で試算します（結果画面に明示します）。',
   },
   resume: {

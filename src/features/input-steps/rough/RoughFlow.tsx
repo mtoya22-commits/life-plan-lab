@@ -80,6 +80,8 @@ export function RoughFlow() {
         <p className="step-purpose muted">{page.purpose}</p>
       </div>
 
+      {!cameFromResult && roughPage === 0 && <p className="step-reassure">{ja.nav.reassure}</p>}
+
       {visible.map((q) => (
         <div id={`q-${q.id}`} key={q.id}>
           <RoughQuestionView q={q} cell={draft[q.id]} showHint={attempted && !isComplete(draft[q.id])} />
@@ -186,14 +188,13 @@ function RoughQuestionView({ q, cell, showHint }: { q: RoughQuestion; cell: Roug
               className={`btn btn--skip${cell.source === 'skipped' ? ' is-active' : ''}`}
               onClick={() => skipRough(q.id)}
             >
-              {cell.source === 'skipped' ? '✓ スキップ済み' : ja.common.skip}
+              {cell.source === 'skipped' ? `✓ ${ja.common.skip}` : ja.common.skip}
             </button>
           )}
         </div>
       )}
 
       {cell.source === 'skipped' && <p className="field-status muted">{ja.field.skipped}</p>}
-      {cell.source === 'recommended_value' && <p className="field-status muted">{ja.field.recommended}</p>}
 
       {showHint && (
         <p className="field-hint">{q.kind === 'number' ? ja.field.hintNumber : ja.field.hintChoice}</p>

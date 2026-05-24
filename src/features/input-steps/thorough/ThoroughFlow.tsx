@@ -37,7 +37,7 @@ export function ThoroughFlow() {
   const isLast = idx === total - 1;
   const remaining = total - (idx + 1);
   const etaText =
-    remaining <= 0 ? 'まもなく完了' : `残り${remaining}ステップ・あと約${Math.max(1, Math.ceil(remaining * 0.6))}分`;
+    remaining <= 0 ? 'まもなく完了' : `あと約${Math.max(1, Math.ceil(remaining * 0.6))}分（のこり${remaining}ステップ）`;
 
   const advance = () => {
     nextThoroughPage(); // スクロールは thoroughPageId 変更を検知する useEffect が担当
@@ -55,6 +55,8 @@ export function ThoroughFlow() {
         <h2 className="section-heading">{page.title}</h2>
         <p className="step-purpose muted">{page.purpose}</p>
       </div>
+
+      {!cameFromResult && idx === 0 && <p className="step-reassure">{ja.nav.reassure}</p>}
 
       {page.kind === 'family' && <FamilyStep input={thoroughInput} />}
       {page.kind === 'events' && <EventsStep input={thoroughInput} />}

@@ -59,9 +59,10 @@ describe('render smoke (jsdom)', () => {
     expect(container.textContent).toContain('本人年齢');
     expect(container.textContent).toContain('配偶者年齢');
     expect(container.textContent).toContain('世帯年収');
-    expect(container.textContent).toContain('スキップ'); // 任意項目のスキップ
+    expect(container.textContent).toContain('未入力で進む'); // 任意項目の「未入力で進む」（旧スキップ）
     expect(container.querySelector('.help')).not.toBeNull(); // Help（？）
     expect(container.querySelector('.bottom-nav')).not.toBeNull();
+    expect(container.textContent).toContain('分かる範囲で大丈夫です'); // 冒頭の安心感
   });
 
   it('thorough family step hides per-child cards when there are 0 children', () => {

@@ -19,12 +19,15 @@ export function ThoroughQuestionView({ q, field }: { q: ThoroughQuestion; field?
   return (
     <QuestionCard title={q.label} help={q.help}>
       {q.kind === 'number' && (
-        <NumberField
-          placeholder={q.placeholder}
-          unit={q.unit}
-          value={filled && field.value != null ? Number(field.value) : null}
-          onChange={(v) => setThoroughValue(q.path, v == null ? '' : v)}
-        />
+        <>
+          <NumberField
+            placeholder={q.placeholder}
+            unit={q.unit}
+            value={filled && field.value != null ? Number(field.value) : null}
+            onChange={(v) => setThoroughValue(q.path, v == null ? '' : v)}
+          />
+          {q.inputNote && <p className="field-note muted">{q.inputNote}</p>}
+        </>
       )}
 
       {q.kind === 'choice' && (
@@ -85,14 +88,13 @@ export function ThoroughQuestionView({ q, field }: { q: ThoroughQuestion; field?
               className={`btn btn--skip${source === 'skipped' ? ' is-active' : ''}`}
               onClick={() => skipThorough(q.path)}
             >
-              {source === 'skipped' ? '✓ スキップ済み' : ja.common.skip}
+              {source === 'skipped' ? `✓ ${ja.common.skip}` : ja.common.skip}
             </button>
           )}
         </div>
       )}
 
       {source === 'skipped' && <p className="field-status muted">{ja.field.skipped}</p>}
-      {source === 'recommended_value' && <p className="field-status muted">{ja.field.recommended}</p>}
     </QuestionCard>
   );
 }

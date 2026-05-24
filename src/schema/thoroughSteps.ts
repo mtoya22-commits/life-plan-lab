@@ -19,6 +19,8 @@ export interface ThoroughQuestion {
   help?: string;
   kind: 'number' | 'choice' | 'toggle';
   unit?: string;
+  /** 入力欄の直下に出す短い補足（月額/年額・単位・「今のお金の感覚で」など）。 */
+  inputNote?: string;
   placeholder?: string;
   options?: ThoroughChoice[];
   min?: number;
@@ -115,7 +117,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
     pageId: 'income',
     stepId: 'detailed-income',
     title: '収入',
-    purpose: '収入の内訳と退職予定です。すべて任意です。',
+    purpose: '収入の内訳と退職の予定を確認します。',
     kind: 'fields',
     questions: [
       {
@@ -162,7 +164,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
     pageId: 'expense-monthly',
     stepId: 'detailed-expense',
     title: '毎月の固定費',
-    purpose: '毎月かかる生活費です。',
+    purpose: '毎月かかる生活費を確認します。',
     kind: 'fields',
     questions: [
       {
@@ -171,6 +173,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
         help: '食費・日用品・光熱費・通信費などの毎月の生活費です。住居費・教育費・投資額・保険料は別で入力するため含めません。',
         kind: 'number',
         unit: '万円',
+        inputNote: '月額・万円で入力',
         min: 0,
         placeholder: '例：25',
         allowSkip: true,
@@ -181,6 +184,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
         help: '生命保険・医療保険などの年間保険料です。毎月生活費に含めた場合は入力不要です。',
         kind: 'number',
         unit: '万円',
+        inputNote: '年額・万円で入力',
         min: 0,
         allowSkip: true,
       },
@@ -192,7 +196,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
     pageId: 'expense-annual',
     stepId: 'detailed-expense',
     title: '毎年の変動費',
-    purpose: '毎月ではない年間の支出です。重複しないよう、別項目は除いてください。',
+    purpose: '毎月ではない年間の支出を確認します。',
     kind: 'fields',
     questions: [
       {
@@ -201,6 +205,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
         help: '家電・帰省・冠婚葬祭・臨時出費など、毎月ではない支出です。旅行費・車関連費・車購入・リフォームを別で入力する場合は含めません。',
         kind: 'number',
         unit: '万円',
+        inputNote: '年額・万円で入力',
         min: 0,
         allowSkip: true,
       },
@@ -210,6 +215,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
         help: '年間の旅行・レジャー費です。年間特別費に含めた場合は入力不要です。',
         kind: 'number',
         unit: '万円',
+        inputNote: '年額・万円で入力',
         min: 0,
         allowSkip: true,
       },
@@ -219,6 +225,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
         help: '車検・保険・税金・ガソリンなどの毎年の維持費です。車本体の購入費はライフイベントで入力してください。',
         kind: 'number',
         unit: '万円',
+        inputNote: '年額・万円で入力（車の購入はライフイベントへ）',
         min: 0,
         allowSkip: true,
       },
@@ -258,6 +265,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
         help: '毎月生活費とは別に、住居費として計算します。',
         kind: 'number',
         unit: '万円',
+        inputNote: '月額・万円で入力',
         min: 0,
         allowSkip: true,
         showIf: isRent,
@@ -268,7 +276,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
     pageId: 'housing-2',
     stepId: 'detailed-housing',
     title: '住宅ローン',
-    purpose: 'ローンの状況です。分かる範囲で大丈夫です。',
+    purpose: '毎月返済額と残年数を中心に反映します。',
     kind: 'fields',
     showIf: hasLoan,
     questions: [
@@ -278,6 +286,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
         help: '毎月のローン返済額です。ボーナス払いも含めて月額に均してください。住居費はこれを優先して計算します。',
         kind: 'number',
         unit: '万円',
+        inputNote: '月額・万円で入力',
         min: 0,
         allowSkip: true,
       },
@@ -297,7 +306,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
     pageId: 'housing-3',
     stepId: 'detailed-housing',
     title: '住宅ローン（金利）',
-    purpose: '金利の条件です。',
+    purpose: '金利の条件です（現在は記録用）。',
     kind: 'fields',
     showIf: hasLoan,
     questions: [
@@ -340,7 +349,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
     pageId: 'housing-4',
     stepId: 'detailed-housing',
     title: '住宅ローン（返済方式）',
-    purpose: '返済方式です。',
+    purpose: '返済方式です（現在は記録用）。',
     kind: 'fields',
     showIf: hasLoan,
     questions: [
@@ -391,7 +400,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
     pageId: 'fire-2',
     stepId: 'detailed-fire',
     title: 'FIRE後の暮らし',
-    purpose: 'FIRE後の生活費と収入です。',
+    purpose: 'FIRE後の生活費と収入を確認します。',
     kind: 'fields',
     questions: [
       {
@@ -400,15 +409,17 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
         help: 'FIRE開始〜65歳ごろの日常生活費です。住居費・教育費・保険・特別費・旅行・車関連費は別で加算されます。65歳以降は老後生活費を使用。未入力なら現在生活費の90%で概算します。',
         kind: 'number',
         unit: '万円',
+        inputNote: '年額・万円（日常生活費のみ／今のお金の感覚で）',
         min: 0,
         allowSkip: true,
       },
       {
         path: 'fire.postFireIncome',
         label: 'FIRE後収入',
-        help: 'サイドFIREで少し働く場合の年間収入です。',
+        help: 'サイドFIREで少し働く場合の年間収入です。今のお金の感覚で入力すると、将来額はインフレ率を反映して試算します。',
         kind: 'number',
         unit: '万円',
+        inputNote: '年額・万円（今のお金の感覚で）',
         min: 0,
         allowSkip: true,
         allowRecommended: true,
@@ -437,15 +448,16 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
     pageId: 'investment-1',
     stepId: 'detailed-investment',
     title: '投資',
-    purpose: '資産の増え方の前提です。',
+    purpose: 'これからの運用前提を確認します。',
     kind: 'fields',
     questions: [
       {
         path: 'investment.monthlyInvestment',
         label: '毎月投資額',
-        help: '毎月の新規積立額です。現金から投資へ振り替える額として扱い、収支に二重加算しません。',
+        help: '毎月の新規積立額です。現金から投資へ振り替える額として扱い、収支に二重加算しません。家計の黒字を超える分は投資されません。',
         kind: 'number',
         unit: '万円',
+        inputNote: '月額・万円（家計の黒字の範囲で反映）',
         min: 0,
         allowSkip: true,
       },
@@ -511,7 +523,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
     pageId: 'retirement-1',
     stepId: 'detailed-retirement',
     title: '老後',
-    purpose: '年金と老後の生活費です。',
+    purpose: '65歳以降の収入と暮らし方を確認します。',
     kind: 'fields',
     questions: [
       {
@@ -520,6 +532,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
         help: 'ねんきんネットの将来見込額（年額）を参考にしてください。65歳以降の収入に反映します。未入力なら0円で試算し結果に明示します。',
         kind: 'number',
         unit: '万円',
+        inputNote: '年額・万円（今のお金の感覚で／将来額はインフレを反映）',
         min: 0,
         allowSkip: true,
       },
@@ -529,6 +542,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
         help: '65歳以降の日常生活費です。住居費・保険・特別費・旅行・車関連費は別で加算されます（FIRE後生活費とは別、65歳以降はこちら）。未入力なら現在生活費の85%で概算します。',
         kind: 'number',
         unit: '万円',
+        inputNote: '年額・万円（日常生活費のみ）',
         min: 0,
         allowSkip: true,
       },
@@ -553,6 +567,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
         help: '退職金の見込みです。退職／FIRE開始の年に一時収入として反映します。未入力なら0円で試算します。',
         kind: 'number',
         unit: '万円',
+        inputNote: '一時収入として、退職／FIREの年に反映',
         min: 0,
         allowSkip: true,
         allowRecommended: true,
@@ -567,7 +582,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
     pageId: 'events',
     stepId: 'detailed-events',
     title: 'ライフイベント',
-    purpose: '大きな出費・収入の予定です（一時的なもの）。維持費など毎年の費用は前のステップで入力してください。',
+    purpose: '一時的な大きな出費・収入の予定を確認します。',
     kind: 'events',
   },
 ];
