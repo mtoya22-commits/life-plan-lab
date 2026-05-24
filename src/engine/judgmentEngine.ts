@@ -31,7 +31,7 @@ function scoreAssetsAt95(assets: number): ScoreItem {
   const t = JUDGE.assetsAt95;
   let points = 0;
   let note = '0円未満：要改善';
-  if (assets >= t.ample) ((points = 3), (note = '3000万円以上：かなり余裕'));
+  if (assets >= t.ample) ((points = 3), (note = '3000万円以上：かなり安定寄り'));
   else if (assets >= t.stable) ((points = 2), (note = '1000〜3000万円：安定'));
   else if (assets >= t.caution) ((points = 1), (note = '0〜1000万円：やや注意'));
   return { key: 'assetsAt95', label: '95歳時点残資産', points, note };

@@ -365,8 +365,8 @@ function buildNotes(input: SimulationInput, cashRatioKnown: boolean, monthlyInve
   const contributionEndAge = contributionEndAgeOf(input);
   notes.push(
     monthlyInvestKnown
-      ? `毎月投資額は${contributionEndAge}歳（就労終了）まで、家計の黒字の範囲で現金から投資へ振り替えます（黒字を超える分・赤字の年は積み立てません）。サイドFIRE中も就労終了まで継続します。`
-      : `毎月投資額は未入力のため、就労終了（${contributionEndAge}歳）まで年間黒字の一部のみを投資に回す保守的な仮定です。`,
+      ? `毎月投資額は、就労を終える${contributionEndAge}歳の前年まで、家計の黒字の範囲で現金から投資へ振り替えます（黒字を超える分・赤字の年は積み立てません）。サイドFIRE中も同様に継続します。`
+      : `毎月投資額は未入力のため、就労を終える${contributionEndAge}歳の前年まで、年間黒字の一部のみを投資に回す保守的な仮定です。`,
   );
 
   if (input.housing.type.value !== 'rent') {

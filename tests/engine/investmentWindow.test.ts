@@ -74,8 +74,8 @@ describe('STEP6.2 monthly investment reflection window', () => {
     expect(r.rows.find((x) => x.age === 61)!.debug!.plannedInvestmentAmount).toBe(0);
   });
 
-  it('notes state the contribution period (work-until age) and the surplus cap', () => {
+  it('notes state the contribution period (before work-until age) and the surplus cap', () => {
     const notes = run(sideSurplus()).notes;
-    expect(notes.some((n) => n.includes('65歳（就労終了）まで') && n.includes('黒字の範囲'))).toBe(true);
+    expect(notes.some((n) => n.includes('65歳の前年まで') && n.includes('黒字の範囲'))).toBe(true);
   });
 });
