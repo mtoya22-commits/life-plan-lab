@@ -41,6 +41,20 @@ describe('thorough steps definition', () => {
     expect(visibleThoroughPages(input).map((p) => p.pageId)).toContain('housing-2');
   });
 
+  it('keeps the visible step count (progress denominator) consistent with housing', () => {
+    const input = createDefaultInput('thorough');
+    input.housing.type.value = 'rent';
+    expect(visibleThoroughPages(input).length).toBe(14); // 賃貸はローン関連2ページを非表示
+    input.housing.type.value = 'own';
+    expect(visibleThoroughPages(input).length).toBe(16); // 持ち家は金利・返済方式を1ページに統合済み
+  });
+
+  it('keeps the two record-only mortgage detail pages merged into one', () => {
+    const loanPages = THOROUGH_PAGES.filter((p) => p.stepId === 'detailed-housing');
+    // 住まい / ローン / 金利・返済方式 の3ページ（金利と返済方式は1ページに統合）
+    expect(loanPages.map((p) => p.pageId)).toEqual(['housing-1', 'housing-2', 'housing-3']);
+  });
+
   it('maps rough result categories to detailed steps', () => {
     expect(ROUGH_TO_DETAILED.basic).toBe('detailed-basic');
     expect(ROUGH_TO_DETAILED.family).toBe('detailed-family');

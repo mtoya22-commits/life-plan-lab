@@ -53,7 +53,7 @@ function caseInput(): SimulationInput {
   i.investment.monthlyInvestment = field(20, 'user_input', '', '', '万円');
   i.investment.returnRate = field(5, 'user_input', '', '', '%');
   i.investment.inflationRate = field(2, 'user_input', '', '', '%');
-  i.investment.crashScenario = field(true, 'user_input', '', '');
+  i.investment.crashScenario = field(false, 'user_input', '', ''); // 暴落は別テストで検証（ここは収入インフレの検証）
   i.retirement.pension = field(240, 'user_input', '', '', '万円');
   i.retirement.retirementLiving = field(255, 'user_input', '', '', '万円');
   i.lifeEvents = [ev('car', 45, 500), ev('reform', 50, 200)];
@@ -71,11 +71,10 @@ describe('STEP5.5 income is inflated like expenses (present-value input)', () =>
     expect(side56).toBeCloseTo(400 * Math.pow(1.02, 18), 1);
   });
 
-  it('notes explain income inflation, daily-only living, and crash being record-only', () => {
+  it('notes explain income inflation and daily-only living', () => {
     const notes = run(caseInput()).notes;
     expect(notes.some((n) => n.includes('FIRE後収入・年金・退職金は現在価値'))).toBe(true);
     expect(notes.some((n) => n.includes('日常生活費のみ'))).toBe(true);
-    expect(notes.some((n) => n.includes('暴落シナリオは現時点の試算には反映していません'))).toBe(true);
   });
 
   it('current assets are the chart/table starting point (38歳=入力値)', () => {

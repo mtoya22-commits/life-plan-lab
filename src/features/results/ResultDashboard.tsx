@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useInputStore } from '../../store/inputStore';
 import { ja } from '../../strings/ja';
 import { formatMan } from '../../lib/format';
@@ -32,6 +32,13 @@ export function ResultDashboard() {
   const input = useInputStore((s) => s.input);
   const reset = useInputStore((s) => s.reset);
   const [sheet, setSheet] = useState<SheetId>(null);
+
+  // 結果画面に切り替わった（または再計算した）直後は、必ず最上部から表示する。
+  // calculatedAt は submit / recompute のたびに更新されるため、編集→再計算でも先頭へ戻る。
+  const calculatedAt = result?.calculatedAt;
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }, [calculatedAt]);
 
   if (!result || !input) return null;
 

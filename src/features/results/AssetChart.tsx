@@ -77,7 +77,7 @@ function formatYTick(v: number): string {
 }
 
 function markerColor(type: LifeEventType): string {
-  if (type === 'depletion') return COLORS.depletion;
+  if (type === 'depletion' || type === 'crash') return COLORS.depletion;
   if (type === 'now' || type === 'horizon') return COLORS.line;
   return COLORS.muted;
 }

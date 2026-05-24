@@ -305,8 +305,8 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
   {
     pageId: 'housing-3',
     stepId: 'detailed-housing',
-    title: '住宅ローン（金利）',
-    purpose: '金利の条件です（現在は記録用）。',
+    title: '住宅ローン（金利・返済方式）',
+    purpose: '金利と返済方式です（現在は記録用）。',
     kind: 'fields',
     showIf: hasLoan,
     questions: [
@@ -343,16 +343,6 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
         allowSkip: true,
         showIf: (i) => i.housing.rateType.value !== 'variable',
       },
-    ],
-  },
-  {
-    pageId: 'housing-4',
-    stepId: 'detailed-housing',
-    title: '住宅ローン（返済方式）',
-    purpose: '返済方式です（現在は記録用）。',
-    kind: 'fields',
-    showIf: hasLoan,
-    questions: [
       {
         path: 'housing.repayMethod',
         label: '返済方式',

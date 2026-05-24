@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import App from '../../src/App';
 import { useInputStore } from '../../src/store/inputStore';
@@ -151,6 +151,34 @@ describe('render smoke (jsdom)', () => {
     expect(store().phase).toBe('input');
     expect(store().cameFromResult).toBe(true);
     expect(store().thoroughPageId).toBe('retirement-1');
+  });
+
+  it('scrolls to the top of the result screen on submit and on recompute (rough & thorough)', () => {
+    const spy = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+
+    // ざっくり: 入力完了 → 結果は最上部から（behavior:auto で確実に先頭へ）
+    fillAll();
+    store().submitRough();
+    render(<App />);
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ top: 0, behavior: 'auto' }));
+    cleanup();
+
+    // しっかり: サンプルで結果へ → 最上部
+    spy.mockClear();
+    store().loadThoroughSample(true);
+    render(<App />);
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ top: 0, behavior: 'auto' }));
+    cleanup();
+
+    // 結果から編集 → 再計算して戻る → 再び最上部（calculatedAt 更新で発火）
+    spy.mockClear();
+    store().editThoroughPage('retirement-1');
+    store().setThoroughValue('retirement.pension', 300);
+    store().submitThorough();
+    render(<App />);
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ top: 0, behavior: 'auto' }));
+
+    spy.mockRestore();
   });
 
   it('rough result keeps risk/edit collapsible and the deepen link visible', () => {

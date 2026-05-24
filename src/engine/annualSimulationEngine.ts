@@ -12,6 +12,7 @@ import { fireAchievementRate, postFireIncomeForAge } from './fireEngine';
 import { buildSuggestions, judge } from './judgmentEngine';
 import {
   CAPTURE_NOTE,
+  CRASH_SCENARIO,
   DEFAULT_CASH_RATIO,
   DEFAULT_INVEST_FRACTION,
   HOME_MAINTENANCE_ANNUAL,
@@ -72,6 +73,10 @@ export function runSimulation(input: SimulationInput): SimulationResult {
   const monthlyInvestKnown = input.investment.monthlyInvestment.source === 'user_input';
   const monthlyInvestAnnual = input.investment.monthlyInvestment.value * 12;
 
+  // 暴落シナリオ（簡易）: 「あり」のとき、現在年齢＋N年に投資資産を一度だけ下落させる。
+  const crashEnabled = input.investment.crashScenario.value === true;
+  const crashAge = startAge + CRASH_SCENARIO.yearsFromNow;
+
   const rows: YearRow[] = [];
   const baseEvents = mortgageEvents(input.housing, startAge);
 
@@ -92,6 +97,11 @@ export function runSimulation(input: SimulationInput): SimulationResult {
     const investmentReturn = Math.max(0, invest) * returnRate;
     invest += investmentReturn;
     const investmentAfterReturn = invest;
+
+    // 1.5) 暴落シナリオ（簡易）: 該当年に投資資産のみを一度だけ下落させる（現金には適用しない）。
+    //      下落後は通常の名目利回りで運用を継続（回復）する。
+    const crashLoss = crashEnabled && age === crashAge ? Math.max(0, invest) * CRASH_SCENARIO.dropRate : 0;
+    invest -= crashLoss;
 
     // ---- 収入（手取りベース。現役期は昇給を反映。FIRE後は労働収入0）----
     // 収入も「現在価値入力」とみなし、支出と同じインフレ率で将来額へ換算する
@@ -186,8 +196,9 @@ export function runSimulation(input: SimulationInput): SimulationResult {
     const withdrawalFromCash = net < 0 ? Math.min(-net, Math.max(0, cashBeforeNet)) : 0;
 
     const endAssets = cash + invest; // 0未満にはならない
-    // 貸借一致: 当年末 = 前年末 + 運用益 + 年間収支 − 不足返済 + 不足追加
-    const reconciliationDiff = endAssets - (startAssets + investmentReturn + net - shortfallRepaid + shortfallAdded);
+    // 貸借一致: 当年末 = 前年末 + 運用益 − 暴落損 + 年間収支 − 不足返済 + 不足追加
+    const reconciliationDiff =
+      endAssets - (startAssets + investmentReturn - crashLoss + net - shortfallRepaid + shortfallAdded);
 
     rows.push({
       age,
@@ -206,6 +217,7 @@ export function runSimulation(input: SimulationInput): SimulationResult {
         investmentAssets: invest,
         investmentBeforeReturn,
         investmentAfterReturn,
+        crashLoss,
         homeMaintenanceCost,
         lifeEventIncome,
         lifeEventExpense,
@@ -322,9 +334,12 @@ function buildNotes(input: SimulationInput, cashRatioKnown: boolean, monthlyInve
     notes.push('年間特別費・旅行費・車関連費は、老後を含め毎年継続する前提です（老後に減らす場合は値を調整してください）。');
   }
 
-  // 暴落シナリオは現時点では未反映（記録用）。
+  // 暴落シナリオ（簡易反映）。投資資産に一時的な下落として反映する。
   if (input.investment.crashScenario.value) {
-    notes.push('暴落シナリオは現時点の試算には反映していません（記録用）。');
+    const crashAge = input.basic.age.value + CRASH_SCENARIO.yearsFromNow;
+    notes.push(
+      `暴落シナリオは、${crashAge}歳ごろに投資資産を約${Math.round(CRASH_SCENARIO.dropRate * 100)}%下落させる簡易反映です（現金資産は対象外、その後は通常の利回りで回復を試算）。`,
+    );
   }
 
   // 年金未入力の明示（誤解防止・資産寿命への影響を案内）。
@@ -413,6 +428,9 @@ function eventsForAge(
 ): LifeEventMarker[] {
   const out: LifeEventMarker[] = baseEvents.filter((e) => e.age === age);
 
+  if (input.investment.crashScenario.value === true && age === input.basic.age.value + CRASH_SCENARIO.yearsFromNow) {
+    out.push({ age, kind: 'market_crash', label: '暴落シナリオ（投資資産の一時下落）' });
+  }
   if (age === fireStartAge) {
     out.push({
       age,

@@ -14,6 +14,7 @@ export type LifeEventType =
   | 'mortgage'
   | 'pension'
   | 'fixed_rate_end'
+  | 'crash'
   | 'depletion'
   | 'horizon'
   | 'custom';
@@ -97,6 +98,17 @@ export function buildLifeEvents(result: SimulationResult, input: SimulationInput
             description: '金利が変わる可能性があります。',
             relatedStepId: 'housing',
             major: false,
+          });
+          break;
+        case 'market_crash':
+          events.push({
+            age: e.age,
+            year: r.year,
+            type: 'crash',
+            title: '暴落シナリオ',
+            description: '投資資産が一時的に下落する想定です（その後は回復を試算）。',
+            relatedStepId: 'investment',
+            major: true,
           });
           break;
         case 'pension_start':

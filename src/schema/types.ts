@@ -219,6 +219,7 @@ export interface LifeEventMarker {
     | 'education_peak'
     | 'child_university'
     | 'asset_depletion'
+    | 'market_crash'
     | 'custom';
   label: string;
 }
@@ -259,6 +260,7 @@ export interface YearDebug {
   investmentAssets: number;
   investmentBeforeReturn: number;
   investmentAfterReturn: number;
+  crashLoss: number; // 暴落シナリオによる投資資産の一時下落額（なし/非該当年は0）
   homeMaintenanceCost: number;
   lifeEventIncome: number;
   lifeEventExpense: number;

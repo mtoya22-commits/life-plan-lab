@@ -58,6 +58,16 @@ export const DEFAULT_CASH_RATIO = 0.2;
 /** 毎月投資額が未入力のとき、年間黒字のうち投資へ回す保守的な割合。 */
 export const DEFAULT_INVEST_FRACTION = 0.5;
 
+/**
+ * 暴落シナリオ（簡易モデル）。
+ * 「あり」のとき、現在年齢＋yearsFromNow の年に投資資産を dropRate だけ一度だけ下落させる。
+ * 現金資産には適用せず、下落後は通常の名目利回りで運用を継続（回復）する。
+ */
+export const CRASH_SCENARIO = {
+  yearsFromNow: 5,
+  dropRate: 0.3,
+} as const;
+
 /** 投資スタイル → 想定（名目）利回り（%）。 */
 export const RETURN_RATE_BY_STYLE = {
   stable: 3,
