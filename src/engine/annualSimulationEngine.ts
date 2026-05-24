@@ -77,6 +77,11 @@ export function runSimulation(input: SimulationInput): SimulationResult {
   const crashEnabled = input.investment.crashScenario.value === true;
   const crashAge = startAge + CRASH_SCENARIO.yearsFromNow;
 
+  // 毎月投資額の積立を反映する期間の終わり（就労終了年齢）。
+  // サイドFIRE: 働き方を軽くしても就労終了(workUntilAge)まで黒字の範囲で継続。
+  // 完全FIRE: FIRE開始で停止。FIREなし: 退職予定年齢で停止。
+  const contributionEndAge = contributionEndAgeOf(input);
+
   const rows: YearRow[] = [];
   const baseEvents = mortgageEvents(input.housing, startAge);
 
@@ -159,14 +164,16 @@ export function runSimulation(input: SimulationInput): SimulationResult {
 
     const cashBeforeInvestmentTransfer = cash;
 
-    // 3) 現役期のみ、毎月投資額（満額の意図）を現金→投資へ振替。
+    // 3) 就労終了年齢まで、毎月投資額（満額の意図）を現金→投資へ振替。
+    //    サイドFIRE中も就労終了(workUntilAge)までは黒字があれば積立を継続する。
     //    ただし実際に回せるのは「その年の家計の黒字」かつ「手元現金」の範囲まで。
     //    満額に届かない分（黒字不足・赤字）は積み立てられず skipped として記録する。
     //    毎月投資額が未入力のときは、黒字の一定割合を控えめに積み立てる仮定。
+    const contributing = age < contributionEndAge;
     let plannedInvestmentAmount = 0;
     let actualInvestmentAmount = 0;
     let skippedInvestmentAmount = 0;
-    if (working) {
+    if (contributing) {
       plannedInvestmentAmount = monthlyInvestKnown
         ? monthlyInvestAnnual
         : Math.max(0, net) * DEFAULT_INVEST_FRACTION;
@@ -355,10 +362,11 @@ function buildNotes(input: SimulationInput, cashRatioKnown: boolean, monthlyInve
       : `現金比率は未入力のため${Math.round(DEFAULT_CASH_RATIO * 100)}%を仮定し、投資資産にのみ利回りを適用しています。`,
   );
 
+  const contributionEndAge = contributionEndAgeOf(input);
   notes.push(
     monthlyInvestKnown
-      ? `毎月投資額は家計の黒字の範囲で現金から投資へ振り替えます（黒字を超える分は投資されません）。総資産を直接増やすものではありません。`
-      : `毎月投資額は未入力のため、年間黒字の一部のみを投資に回す保守的な仮定です。`,
+      ? `毎月投資額は${contributionEndAge}歳（就労終了）まで、家計の黒字の範囲で現金から投資へ振り替えます（黒字を超える分・赤字の年は積み立てません）。サイドFIRE中も就労終了まで継続します。`
+      : `毎月投資額は未入力のため、就労終了（${contributionEndAge}歳）まで年間黒字の一部のみを投資に回す保守的な仮定です。`,
   );
 
   if (input.housing.type.value !== 'rent') {
@@ -392,6 +400,15 @@ function buildNotes(input: SimulationInput, cashRatioKnown: boolean, monthlyInve
 }
 
 // ---- 補助関数 --------------------------------------------------------------
+
+/** 毎月投資額の積立を反映する終わりの年齢（就労終了年齢）。 */
+function contributionEndAgeOf(input: SimulationInput): number {
+  const retirementAge = input.income.retirementAge.value;
+  const fireType = input.fire.type.value;
+  if (fireType === 'side') return input.fire.workUntilAge.value;
+  if (fireType === 'full') return input.fire.targetAge.value;
+  return retirementAge;
+}
 
 function livingCostForAge(input: SimulationInput, age: number, fireStartAge: number): number {
   if (age >= SIM.pensionStartAge) return input.retirement.retirementLiving.value;

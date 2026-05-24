@@ -81,12 +81,14 @@ describe('STEP5.6 monthly investment is capped at the household surplus', () => 
     expect(deficit.skippedInvestmentAmount).toBe(240);
   });
 
-  it('stops planning new investment once FIRE/retirement begins', () => {
-    const r = run(caseInput());
-    const postFire = r.rows.find((x) => x.age === 56)!.debug!;
-    expect(postFire.plannedInvestmentAmount).toBe(0);
-    expect(postFire.actualInvestmentAmount).toBe(0);
-    expect(postFire.skippedInvestmentAmount).toBe(0);
+  it('keeps the investment window open through side-FIRE working years, stops after full retirement', () => {
+    const r = run(caseInput()); // サイドFIRE55・就労65
+    const at56 = r.rows.find((x) => x.age === 56)!.debug!; // サイドFIRE中（就労65歳まで反映対象）
+    expect(at56.plannedInvestmentAmount).toBe(240); // 反映対象内（停止しない）
+    expect(at56.actualInvestmentAmount).toBe(0); // ただしこの年は黒字なし → 積立0
+    const at66 = r.rows.find((x) => x.age === 66)!.debug!; // 就労終了後
+    expect(at66.plannedInvestmentAmount).toBe(0);
+    expect(at66.actualInvestmentAmount).toBe(0);
   });
 
   it('surfaces the planned annual amount and the first underfunded age', () => {
