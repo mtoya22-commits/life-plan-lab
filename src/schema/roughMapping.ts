@@ -115,7 +115,7 @@ export function applyRoughDraft(base: SimulationInput, draft: RoughDraft): Simul
     const s = style.value as InvestmentStyle;
     input.investment.returnRate = withResolved(input.investment.returnRate, returnRateForStyle(s), style.source, {
       user: `投資スタイル（${s}）に基づく利回りを使用しています。`,
-      recommended: `おすすめの投資スタイルに基づく利回りを使用しています。`,
+      recommended: `投資スタイルに基づく利回り（標準例）を使用しています。`,
     });
   }
 

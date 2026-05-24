@@ -27,14 +27,14 @@ export function applyRecommendedValues(input: SimulationInput): SimulationInput 
   if (next.fire.postFireLiving.source !== 'user_input') {
     next.fire.postFireLiving.value = Math.round(currentAnnualLiving * RATIOS.postFireLivingFromCurrent);
     next.fire.postFireLiving.source = 'recommended_value';
-    next.fire.postFireLiving.assumptionText = '現在生活費の90%をおすすめ値として使用しています。';
+    next.fire.postFireLiving.assumptionText = '現在生活費の90%を概算の初期値として使用しています。';
   }
 
   // 老後生活費が未確定なら、現在生活費の85%をおすすめ値にする。
   if (next.retirement.retirementLiving.source !== 'user_input') {
     next.retirement.retirementLiving.value = Math.round(currentAnnualLiving * RATIOS.retirementLivingFromCurrent);
     next.retirement.retirementLiving.source = 'recommended_value';
-    next.retirement.retirementLiving.assumptionText = '現在生活費の85%をおすすめ値として使用しています。';
+    next.retirement.retirementLiving.assumptionText = '現在生活費の85%を概算の初期値として使用しています。';
   }
 
   // 手取り年収が未確定なら、年収帯ごとの簡易手取り率で概算する。

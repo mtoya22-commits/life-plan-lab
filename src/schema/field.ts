@@ -40,7 +40,7 @@ export function withResolved<T>(
       source,
       assumptionText:
         (isUser ? texts?.user : texts?.recommended) ??
-        `${isUser ? '入力された値' : 'おすすめ値'}（${formatValue(value)}${unit}）を使用しています。`,
+        `${isUser ? '入力された値' : '標準例'}（${formatValue(value)}${unit}）を使用しています。`,
     };
   }
   return {

@@ -39,8 +39,8 @@ export function createDefaultInput(mode: Mode): SimulationInput {
 
     investment: {
       monthlyInvestment: field(0, 'skipped', '毎月投資額', '未入力のため0円で試算しています。', '万円'),
-      returnRate: field(5, 'recommended_value', '想定利回り', '迷った方向けのおすすめ値5%を使用しています。', '%'),
-      inflationRate: field(2, 'recommended_value', 'インフレ率', 'おすすめ値2%を使用しています。', '%'),
+      returnRate: field(5, 'recommended_value', '想定利回り', '試算用の標準例5%を使用しています。', '%'),
+      inflationRate: field(2, 'recommended_value', 'インフレ率', '試算用の標準例2%を使用しています。', '%'),
       crashScenario: field(false, 'default_value', '暴落シナリオ', '織り込まずに試算しています。'),
       style: field('balanced', 'recommended_value', '投資スタイル', 'バランス型を想定しています。'),
     },
@@ -49,7 +49,7 @@ export function createDefaultInput(mode: Mode): SimulationInput {
       type: field('side', 'recommended_value', 'FIREタイプ', '少し働くサイドFIREを想定しています。'),
       targetAge: field(55, 'default_value', 'FIRE希望年齢', '標準値55歳で試算しています。', '歳'),
       reduceWorkAge: field(55, 'default_value', '仕事を減らす年齢', '標準値55歳で試算しています。', '歳'),
-      postFireLiving: field(0, 'recommended_value', 'FIRE後生活費', '現在生活費の90%をおすすめ値として使用します。', '万円'),
+      postFireLiving: field(0, 'recommended_value', 'FIRE後生活費', '現在生活費の90%を概算の初期値として使用します。', '万円'),
       postFireIncome: field(0, 'skipped', 'FIRE後収入', '未入力のため0円で試算しています。', '万円'),
       workUntilAge: field(65, 'default_value', '何歳まで働くか', '標準値65歳で試算しています。', '歳'),
     },
@@ -62,7 +62,7 @@ export function createDefaultInput(mode: Mode): SimulationInput {
       rent: field(10, 'default_value', '家賃', '標準値10万円で試算しています。', '万円'),
       balance: field(0, 'skipped', 'ローン残高', '未入力のため残高推移は表示しません。', '万円'),
       remainingYears: field(0, 'skipped', '残年数', '未入力です。', '年'),
-      rate: field(1.0, 'recommended_value', '金利', '不明な場合のおすすめ値1.0%を使用しています。', '%'),
+      rate: field(1.0, 'recommended_value', '金利', '不明な場合の入力例1.0%を使用しています。', '%'),
       rateType: field('variable', 'default_value', '金利タイプ', '標準値（変動）で試算しています。'),
       fixedEndAge: field(0, 'skipped', '固定終了年齢', '未入力です。', '歳'),
       repayMethod: field('equal_payment', 'default_value', '返済方式', '標準値（元利均等）で試算しています。'),
@@ -71,7 +71,7 @@ export function createDefaultInput(mode: Mode): SimulationInput {
 
     retirement: {
       pension: field(0, 'skipped', '年金見込み', '未入力のため0円で試算しています。', '万円'),
-      retirementLiving: field(0, 'recommended_value', '老後生活費', '現在生活費の80〜90%をおすすめ値として使用します。', '万円'),
+      retirementLiving: field(0, 'recommended_value', '老後生活費', '現在生活費の80〜90%を概算の初期値として使用します。', '万円'),
       medicalCareReserve: field(false, 'default_value', '医療介護予備費', '初期は織り込まずに試算しています。'),
     },
 

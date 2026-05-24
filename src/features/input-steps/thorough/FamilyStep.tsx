@@ -66,7 +66,7 @@ export function FamilyStep({ input }: { input: SimulationInput }) {
         </div>
         {count > 0 && (
           <p className="field-status muted">
-            各お子さまの詳細は下のカードで設定できます（未定はおすすめ値で概算します）。
+            各お子さまの詳細は下のカードで設定できます（未定は標準例で概算します）。
           </p>
         )}
       </div>

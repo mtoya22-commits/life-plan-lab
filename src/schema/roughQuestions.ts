@@ -119,7 +119,7 @@ export const ROUGH_PAGES: RoughPage[] = [
         allowSkip: true,
         allowRecommended: true,
         recommendedValue: 30,
-        recommendedLabel: 'おすすめ（30年）',
+        recommendedLabel: '例（30年）を入れる',
         showIf: (d) => {
           const t = housingTypeOf(d);
           return t === 'own' || t === 'considering';
@@ -200,7 +200,7 @@ export const ROUGH_PAGES: RoughPage[] = [
       {
         id: 'reduceWorkAge',
         label: '仕事を減らしたい年齢',
-        help: 'フルタイムをセーブしたい年齢の目安です。迷ったらおすすめ値が使えます。',
+        help: 'フルタイムをセーブしたい年齢の目安です。迷ったら入力例が使えます。',
         kind: 'number',
         unit: '歳',
         placeholder: '例：55',
@@ -209,7 +209,7 @@ export const ROUGH_PAGES: RoughPage[] = [
         allowSkip: true,
         allowRecommended: true,
         recommendedValue: 55,
-        recommendedLabel: 'おすすめ（55歳）',
+        recommendedLabel: '例（55歳）を入れる',
       },
     ],
   },
@@ -239,7 +239,7 @@ export const ROUGH_PAGES: RoughPage[] = [
         allowSkip: true,
         allowRecommended: true,
         recommendedValue: 10,
-        recommendedLabel: 'おすすめ（月10万円）',
+        recommendedLabel: '例（月10万円）を入れる',
         showIf: (d) => workStyleOf(d) !== 'full_retire',
       },
     ],
@@ -252,7 +252,7 @@ export const ROUGH_PAGES: RoughPage[] = [
       {
         id: 'investmentStyle',
         label: '投資のスタイル',
-        help: '安定重視ほど利回りは控えめ、成長重視ほど高めで試算します。迷ったらバランス型がおすすめです。',
+        help: '安定重視ほど利回りは控えめ、成長重視ほど高めで試算します。迷ったらバランス型が無難です。',
         kind: 'choice',
         options: [
           { value: 'stable', label: '安定重視' },
@@ -262,7 +262,7 @@ export const ROUGH_PAGES: RoughPage[] = [
         allowSkip: true,
         allowRecommended: true,
         recommendedValue: 'balanced',
-        recommendedLabel: 'おすすめ（バランス型）',
+        recommendedLabel: '標準例（バランス型）',
       },
     ],
   },
