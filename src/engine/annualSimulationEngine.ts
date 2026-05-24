@@ -370,7 +370,7 @@ function buildNotes(input: SimulationInput, cashRatioKnown: boolean, monthlyInve
   );
 
   if (input.housing.type.value !== 'rent') {
-    notes.push(`住宅費は毎月返済額×12（完済年齢まで）＋完済後の持ち家維持費（年${HOME_MAINTENANCE_ANNUAL}万円）で計算しています。`);
+    notes.push(`住宅費は毎月返済額×12（完済年齢まで）＋完済後の持ち家維持費（年${HOME_MAINTENANCE_ANNUAL}万円）で計算しています。維持費は固定資産税・修繕・火災保険などをまとめた概算です。`);
     notes.push('住宅ローンの残高・金利・固定/変動・返済方式・ボーナス払いは現時点では記録用で、住宅費の精密計算には未反映です。');
   }
 
@@ -448,7 +448,8 @@ function eventsForAge(
   if (input.investment.crashScenario.value === true && age === input.basic.age.value + CRASH_SCENARIO.yearsFromNow) {
     out.push({ age, kind: 'market_crash', label: '暴落シナリオ（投資資産の一時下落）' });
   }
-  if (age === fireStartAge) {
+  // FIRE開始イベントは FIRE を選んだ場合のみ。FIREなし（通常の退職）では出さない。
+  if (input.fire.type.value !== 'none' && age === fireStartAge) {
     out.push({
       age,
       kind: input.fire.type.value === 'side' ? 'side_fire_start' : 'fire_start',

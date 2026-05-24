@@ -52,7 +52,8 @@ function buildHighlights(result: SimulationResult, input: SimulationInput): stri
       out.push('年金が未入力のため、65歳以降の収入を0円としています。年金を入力すると資産寿命が大きく変わる可能性があります。');
     }
   } else if (payoff && payoff.age > fireStartAge) {
-    out.push('住宅ローンはFIRE後も残る見込みです。ゆとりをみておくと良さそうです。');
+    const after = input.fire.type.value !== 'none' ? 'FIRE後' : '退職後';
+    out.push(`住宅ローンは${after}も残る見込みです。ゆとりをみておくと良さそうです。`);
   } else {
     out.push('今回の条件では、95歳ごろまで資産が持つ見込みです。');
   }

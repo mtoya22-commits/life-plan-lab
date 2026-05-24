@@ -61,11 +61,13 @@ export function buildRiskFactors(result: SimulationResult, input: SimulationInpu
 
   const payoff = rows.flatMap((r) => r.events).find((e) => e.kind === 'mortgage_payoff');
   if (payoff && payoff.age > fireStartAge) {
+    const isFire = input.fire.type.value !== 'none';
+    const after = isFire ? 'FIRE後' : '退職後';
     out.push({
       title: '住宅ローン',
       points: [
-        `住宅ローンがFIRE後（${payoff.age}歳ごろ完済）まで残ります。`,
-        'FIRE後の収入が下がる時期に返済が重なります。',
+        `住宅ローンが${after}（${payoff.age}歳ごろ完済）まで残ります。`,
+        `${after}は収入が下がりやすい時期に返済が重なります。`,
         '完済年齢・毎月返済額を見直すと、負担の山が変わります。',
       ],
     });
