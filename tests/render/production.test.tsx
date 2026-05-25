@@ -95,6 +95,23 @@ describe('STEP7 production readiness', () => {
     expect(hero.querySelector('.hero__metrics')).toBeNull();
   });
 
+  it('orders/weights the collapsibles by meaning: 見直し(primary) → 条件変更 → 慎重(muted)', () => {
+    store().loadThoroughSample(true);
+    const { container } = render(<App />);
+    const all = Array.from(container.querySelectorAll('details.collapsible'));
+    const idx = (text: string) =>
+      all.findIndex((d) => d.querySelector('summary')?.textContent?.includes(text));
+    const risk = idx('見直しが効きやすいポイント');
+    const edit = idx('条件を変えてみる');
+    const cautious = idx('慎重条件で見る');
+    expect(risk).toBeGreaterThanOrEqual(0);
+    expect(risk).toBeLessThan(edit); // 見直し → 条件変更
+    expect(edit).toBeLessThan(cautious); // 条件変更 → 慎重
+    // weight/tone の差
+    expect(all[risk].classList.contains('collapsible--primary')).toBe(true);
+    expect(all[cautious].classList.contains('collapsible--muted')).toBe(true);
+  });
+
   it('the result assumptions section is collapsed by default (lighter first view)', () => {
     store().loadThoroughSample(true);
     const { container } = render(<App />);

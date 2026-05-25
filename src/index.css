@@ -1123,6 +1123,21 @@ body {
 .collapsible[open] > summary::after {
   transform: rotate(180deg);
 }
+
+/* 折りたたみの階層感（重要→操作→参考）。構造は変えず weight/tone だけで差を出す。 */
+/* 最重要: 見直しポイント — わずかに視線を集める（CTA未満） */
+.collapsible--primary > summary {
+  color: var(--accent);
+}
+.collapsible--primary > summary::after {
+  color: var(--accent);
+}
+/* 参考: 慎重条件 — 補助感（muted・やや小さめ） */
+.collapsible--muted > summary {
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 0.95rem;
+}
 .collapsible__body {
   padding-bottom: 14px;
 }
@@ -1140,8 +1155,18 @@ body {
 }
 .asset-rc--compact {
   /* 人生の流れを眺める主役要素として、カード内でやや広く・呼吸を持たせる */
-  margin: 10px -8px 2px;
+  margin: 12px -8px 12px;
   width: calc(100% + 16px);
+  padding: 8px 4px 2px;
+  border-radius: 12px;
+  /* ほぼ知覚できないレベルの空気感（上から淡く沈む） */
+  background: linear-gradient(180deg, rgba(45, 74, 62, 0.03) 0%, rgba(45, 74, 62, 0) 60%);
+}
+/* 拡大グラフの表示領域（超薄グラデの静かなパネル） */
+.asset-rc__panel {
+  border-radius: 12px;
+  padding: 6px 2px 2px;
+  background: linear-gradient(180deg, rgba(45, 74, 62, 0.03) 0%, rgba(45, 74, 62, 0) 60%);
 }
 .asset-rc .recharts-surface {
   overflow: visible;

@@ -54,7 +54,7 @@ export function CautiousScenario({ input, result }: { input: SimulationInput; re
   const cautious = useMemo(() => runSimulation(cIn), [cIn]);
 
   return (
-    <details className="collapsible cautious">
+    <details className="collapsible cautious collapsible--muted">
       <summary>{ja.result.cautiousToggle}</summary>
       <div className="collapsible__body">
         <p className="muted cautious__lead">{ja.result.cautiousLead}</p>

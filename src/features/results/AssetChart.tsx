@@ -22,8 +22,9 @@ import { formatMan } from '../../lib/format';
 
 const COLORS = {
   line: '#2f5246', // 深い青緑（メイン）
-  grid: '#efebe1', // ごく薄いウォームグレー（主張を抑える）
+  grid: '#f1ede4', // ほとんど見えないグリッド
   muted: '#8c918a',
+  axis: '#a7aa9f', // 軸ラベル（主張を抑える）
   depletion: '#8a6749', // 落ち着いたブラウン（赤は使わない）
 };
 
@@ -98,8 +99,8 @@ export function AssetChartMini({ rows, events }: { rows: YearRow[]; events: Life
 
   return (
     <div className="asset-rc asset-rc--compact">
-      <ResponsiveContainer width="100%" height={150}>
-        <ComposedChart data={data} margin={{ top: 6, right: 8, left: 0, bottom: 0 }}>
+      <ResponsiveContainer width="100%" height={200}>
+        <ComposedChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 2 }}>
           <defs>
             <linearGradient id="assetFillMini" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={COLORS_PV} stopOpacity={0.18} />
@@ -112,7 +113,7 @@ export function AssetChartMini({ rows, events }: { rows: YearRow[]; events: Life
             domain={[startAge, 95]}
             ticks={ticks}
             tickFormatter={(a) => `${a}`}
-            tick={{ fontSize: 10, fill: COLORS.muted }}
+            tick={{ fontSize: 10, fill: COLORS.axis }}
             tickLine={false}
             axisLine={{ stroke: COLORS.grid }}
             interval="preserveStartEnd"
@@ -128,6 +129,7 @@ export function AssetChartMini({ rows, events }: { rows: YearRow[]; events: Life
             />
           ))}
           <Area
+            type="monotone"
             dataKey="assetsPV"
             stroke={COLORS_PV}
             strokeWidth={2}
@@ -159,11 +161,10 @@ export function AssetChartFull({ rows, events }: { rows: YearRow[]; events: Life
 
   return (
     <div className="asset-rc">
-      <p className="muted chart-axis-note">
-        縦軸：資産（万円）／横軸：年齢。将来額はインフレを反映した金額、現在価値は今のお金に割り戻した目安です。
-      </p>
-      <ResponsiveContainer width="100%" height={320}>
-        <ComposedChart data={data} margin={{ top: 20, right: 16, left: 0, bottom: 4 }}>
+      <p className="muted chart-axis-note">将来額（インフレ反映）と現在価値（今のお金に割り戻した目安）。</p>
+      <div className="asset-rc__panel">
+      <ResponsiveContainer width="100%" height={360}>
+        <ComposedChart data={data} margin={{ top: 22, right: 16, left: 0, bottom: 6 }}>
           <defs>
             <linearGradient id="assetFillFull" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={COLORS_PV} stopOpacity={0.18} />
@@ -177,9 +178,18 @@ export function AssetChartFull({ rows, events }: { rows: YearRow[]; events: Life
             domain={[startAge, 95]}
             ticks={ticks}
             tickFormatter={(a) => `${a}歳`}
-            tick={{ fontSize: 11, fill: COLORS.muted }}
+            tick={{ fontSize: 11, fill: COLORS.axis }}
+            tickLine={false}
+            axisLine={{ stroke: COLORS.grid }}
           />
-          <YAxis domain={yDomain} width={46} tickFormatter={formatYTick} tick={{ fontSize: 10, fill: COLORS.muted }} />
+          <YAxis
+            domain={yDomain}
+            width={46}
+            tickFormatter={formatYTick}
+            tick={{ fontSize: 10, fill: COLORS.axis }}
+            tickLine={false}
+            axisLine={false}
+          />
           <Tooltip content={(props) => <ChartTooltip {...props} eventsByAge={eventsByAge} />} />
           <Legend wrapperStyle={{ fontSize: 12 }} />
           {events.map((e) => (
@@ -193,6 +203,7 @@ export function AssetChartFull({ rows, events }: { rows: YearRow[]; events: Life
           ))}
           {/* 将来額（補助線）と現在価値（主線・塗り） */}
           <Line
+            type="monotone"
             dataKey="assets"
             name="将来額"
             stroke={COLORS_NOMINAL}
@@ -202,6 +213,7 @@ export function AssetChartFull({ rows, events }: { rows: YearRow[]; events: Life
             isAnimationActive={false}
           />
           <Area
+            type="monotone"
             dataKey="assetsPV"
             name="現在価値"
             stroke={COLORS_PV}
@@ -212,6 +224,7 @@ export function AssetChartFull({ rows, events }: { rows: YearRow[]; events: Life
           />
         </ComposedChart>
       </ResponsiveContainer>
+      </div>
 
       <ul className="chart-markers">
         {events.map((e) => (

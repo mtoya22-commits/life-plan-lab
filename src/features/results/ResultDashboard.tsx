@@ -111,12 +111,12 @@ export function ResultDashboard() {
         onOpen={() => setSheet('mortgage')}
       />
 
-      {/* 慎重条件（折りたたみ・初期は閉じる）。標準結果は変えない。 */}
-      <CautiousScenario input={input} result={result} />
+      {/* 階層順（重要→操作→参考）: 見直し → 条件変更 → 慎重条件。
+          構造は変えず、順序と weight/tone で意味の差を出す。 */}
 
-      {/* 見直しが効きやすいポイント（折りたたみ・初期は閉じる） */}
+      {/* 1) 見直しが効きやすいポイント（最重要・やや視線を集める） */}
       {riskFactors.length > 0 && (
-        <details className="collapsible">
+        <details className="collapsible collapsible--primary">
           <summary>{ja.result.riskFactorsToggle}（{riskFactors.length}件）</summary>
           <div className="collapsible__body">
             <ul className="risk-factors">
@@ -135,10 +135,13 @@ export function ResultDashboard() {
         </details>
       )}
 
-      {/* 条件変更導線（折りたたみ・初期は閉じる） */}
+      {/* 2) 条件変更導線（操作系・中立） */}
       <EditLinks />
       {/* しっかり診断の結果では「もっと正確に見る」は出さない（既に詳細なため）。 */}
       {input.meta.mode !== 'thorough' && <DeepenLink />}
+
+      {/* 3) 慎重条件（補助・参考・muted）。標準結果は変えない。 */}
+      <CautiousScenario input={input} result={result} />
 
       {/* 見直しのヒント（折りたたみ） */}
       {result.suggestions.length > 0 && (
