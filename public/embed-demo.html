@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>埋め込み確認 | 生活設計シミュレーター</title>
+    <style>
+      :root { --ink: #2a2c27; --muted: #6e736a; --line: #e4e0d6; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', 'Segoe UI', sans-serif;
+        color: var(--ink);
+        background: #ffffff;
+        line-height: 1.7;
+      }
+      /* WordPress 固定ページの本文幅を模した枠（PCで中央寄せ） */
+      .page { max-width: 820px; margin: 0 auto; padding: 24px 16px 60px; }
+      h1 { font-size: 1.3rem; margin: 0 0 4px; }
+      .lead { color: var(--muted); margin: 0 0 8px; font-size: 0.95rem; }
+      .note { color: var(--muted); font-size: 0.82rem; border-left: 3px solid var(--line); padding-left: 10px; margin: 12px 0 18px; }
+      .controls { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 12px; }
+      .controls button {
+        appearance: none; border: 1px solid var(--line); background: #fff; color: var(--ink);
+        border-radius: 999px; padding: 6px 12px; font-size: 0.82rem; cursor: pointer;
+      }
+      .controls button[aria-pressed='true'] { border-color: #2d4a3e; color: #2d4a3e; font-weight: 600; }
+      .frame-wrap { margin: 0 auto; }
+      iframe { width: 100%; min-height: 1000px; border: 0; background: transparent; display: block; }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <h1>生活設計シミュレーター（埋め込み確認用）</h1>
+      <p class="lead">
+        住宅ローン・教育費・投資・FIRE・老後資金を、ひとつの人生の流れとして確認できます。まずは「ざっくり診断」から試せます。
+      </p>
+      <p class="note">
+        本シミュレーションは入力条件に基づく概算です。将来の結果を保証するものではなく、投資判断や金融商品の推奨を行うものではありません。税制・社会保険・住宅ローン控除・NISA/iDeCoなどは一部簡略化しています。
+      </p>
+
+      <!-- 表示幅の切替（375px スマホ幅 / 本文幅フル）。実機確認の補助。 -->
+      <div class="controls" role="group" aria-label="表示幅の切替">
+        <button data-w="375" aria-pressed="true">スマホ幅 375px</button>
+        <button data-w="full" aria-pressed="false">本文幅フル</button>
+      </div>
+
+      <div class="frame-wrap" id="wrap" style="max-width: 375px;">
+        <!-- 本番では src を公開URLに差し替え。ここでは同梱の index.html を相対参照。 -->
+        <iframe src="./index.html" title="生活設計シミュレーター" loading="lazy"></iframe>
+      </div>
+    </main>
+
+    <script>
+      const wrap = document.getElementById('wrap');
+      document.querySelectorAll('.controls button').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.controls button').forEach((b) => b.setAttribute('aria-pressed', 'false'));
+          btn.setAttribute('aria-pressed', 'true');
+          wrap.style.maxWidth = btn.dataset.w === 'full' ? 'none' : '375px';
+        });
+      });
+    </script>
+  </body>
+</html>

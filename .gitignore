@@ -141,3 +141,7 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# tsc -b emitted artifacts from the composite node config
+vite.config.js
+vite.config.d.ts
