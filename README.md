@@ -602,3 +602,82 @@ npm run build   # → dist/ に index.html + assets/（相対パス ./assets/...
 | 5 老後重視 | 95+ / 約9,400万 | 95+ / 約1,970万 |
 
 標準では4/5ケースが95歳維持だが、慎重条件では余力が大きく縮む（ケース1は79歳で枯渇）。「標準ではこう・慎重ではこう」を見せることで楽観寄りの誤解を緩和する。
+
+## 実環境への試験配置・WordPress埋め込み（STEP10）
+
+アプリを「載せられる設計」から「実際に動く」へ。配信は **GitHub Pages（自動）** か **Xserver（手動アップロード）** の iframe 埋め込みを想定。
+
+> このリポジトリ内でできること（自動化・確認）と、利用者の操作が要ること（実サーバー/WordPress 配置）を分けて記載。SSH鍵・パスワードはチャットに貼らない方針のため、サーバー認証を伴う作業は利用者側で実施。
+
+### 方式A：GitHub Pages（自動デプロイ）
+
+`.github/workflows/deploy-pages.yml` を同梱。手動実行（Actions → Run workflow）または `main` への push でビルドして Pages へ配置する（フィーチャーブランチの push では動かない）。
+
+初回のみの手動設定：
+1. リポジトリ **Settings → Pages → Build and deployment → Source = "GitHub Actions"** を選択。
+2. `main` にマージ、または Actions タブで **Deploy to GitHub Pages** を Run workflow。
+3. 公開URLは `https://mtoya22-commits.github.io/life-plan-lab/`（プロジェクトページ）。`base: './'` のため配下でも資産が解決する。
+4. 動作確認用に **`/embed-demo.html`**（`https://mtoya22-commits.github.io/life-plan-lab/embed-demo.html`）を同梱（iframe + 幅切替で表示確認できる）。
+
+### 方式B：Xserver（手動アップロード）
+
+1. `npm run build` → `dist/` を生成。
+2. `dist/` の中身（`index.html` / `assets/` / `embed-demo.html`）を、公開ディレクトリのサブフォルダ（例：`/lifeplan-v2/`）へFTP/ファイルマネージャでアップロード。
+3. `https://（ドメイン）/lifeplan-v2/` で表示。`base: './'` 相対のためサブディレクトリでもOK。
+
+### WordPress 固定ページへの iframe 埋め込み
+
+カスタムHTMLブロックに（`src` を実URLへ差し替え）：
+
+```html
+<iframe
+  src="https://mtoya22-commits.github.io/life-plan-lab/"
+  title="生活設計シミュレーター"
+  style="width:100%; min-height:1000px; border:0; background:transparent;"
+  loading="lazy"
+></iframe>
+```
+
+### WordPress テーマ（Lightning 等）との干渉メモ
+
+固定ページの本文幅が狭いと窮屈になるため、必要に応じて固定ページ限定でCSS（カスタムHTML内 `<style>` か追加CSS）を：
+
+```html
+<style>
+  /* iframe を本文幅いっぱい〜画面いっぱいに。固定ページ限定で適用すること。 */
+  .lifeplan-embed { width: 100%; }
+  .lifeplan-embed iframe { width: 100%; border: 0; display: block; }
+  /* 本文の左右パディングが強い場合のフルブリード（テーマにより調整） */
+  @media (max-width: 782px) {
+    .lifeplan-embed { margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); }
+  }
+</style>
+<div class="lifeplan-embed">
+  <iframe src="（公開URL）" title="生活設計シミュレーター" style="min-height:1000px;" loading="lazy"></iframe>
+</div>
+```
+
+- iframe 既定の枠線・余白は `border:0; display:block` で消える。
+- 背景はウォームアイボリー固定。テーマが白基調なら自然に馴染む。
+- 下部固定ナビ・グラフ拡大 Bottom Sheet は iframe ビューポート基準で完結（親ページには影響しない）。
+
+### iframe 高さの方針
+
+- まずは `min-height: 1000px` 固定で運用（結果画面まで概ね収まる目安）。
+- 余白が気になる/結果が長い場合は、将来 postMessage による auto-resize を検討（STEP9で候補化）。最初から入れる必要はない。
+
+### この STEP で確認済み（コンテナ内）
+
+- `npm run build` 成功・`dist/` に `index.html` / `assets/` / `embed-demo.html`。
+- ビルド成果物の preview 配信で、`/`・`/embed-demo.html` ともに 200、資産は相対 `./assets/...`。
+- 本番ビルド（DEV=false）で開発用メニュー非表示（テスト）。
+- 全テスト通過。
+
+### 利用者側で実施・確認（実サーバー/実機）
+
+- [ ] Pages を有効化 or Xserver へ `dist/` をアップロード（実URL発行）
+- [ ] WordPress 固定ページに iframe で表示（`src` を実URLへ）
+- [ ] スマホ実機：トップ→ざっくり/しっかり→結果→修正→再計算が動く
+- [ ] 375px で横スクロールが出ない／下部ナビがキーボードと干渉しすぎない
+- [ ] グラフ拡大・慎重条件・免責が読める
+- [ ] iframe 高さ（min-height）不足やテーマ余白の喧嘩がないか

@@ -25,4 +25,13 @@ describe('STEP9 deploy/embed config', () => {
     expect(readme).toContain('min-height');
     expect(readme).toContain("base: './'");
   });
+
+  it('ships a GitHub Pages workflow and an iframe embed-demo harness', () => {
+    const wf = read('.github/workflows/deploy-pages.yml');
+    expect(wf).toContain('actions/deploy-pages');
+    expect(wf).toContain('workflow_dispatch'); // 手動実行できる
+    const demo = read('public/embed-demo.html');
+    expect(demo).toContain('<iframe');
+    expect(demo).toContain('./index.html'); // 同梱アプリを相対参照
+  });
 });
