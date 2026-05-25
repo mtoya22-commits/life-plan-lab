@@ -80,6 +80,21 @@ describe('STEP7 production readiness', () => {
     expect(cautious!.querySelector('.scenario-card__metrics dd')!.textContent).not.toBe('0万円');
   });
 
+  it('Hero reads as a calm summary: 資産寿命 is the focus, FIRE準備率 demoted to a footnote', () => {
+    store().loadThoroughSample(true);
+    const { container } = render(<App />);
+    const hero = container.querySelector('.hero')!;
+    const primary = hero.querySelector('.hero__primary-value')!;
+    expect(primary.textContent).toMatch(/歳ごろ|維持/); // 資産寿命が主役
+    expect(hero.querySelector('.hero__primary-label')!.textContent).toBe('資産寿命');
+    // FIRE準備率は脚注（目安）に下げる
+    const foot = hero.querySelector('.hero__foot')!;
+    expect(foot.textContent).toContain('FIRE準備率');
+    expect(foot.textContent).toContain('目安');
+    // 旧来の3指標グリッドは廃止
+    expect(hero.querySelector('.hero__metrics')).toBeNull();
+  });
+
   it('the result assumptions section is collapsed by default (lighter first view)', () => {
     store().loadThoroughSample(true);
     const { container } = render(<App />);

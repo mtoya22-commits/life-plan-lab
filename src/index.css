@@ -9,15 +9,16 @@
   --surface: #fffdf7; /* 温かい白〜薄アイボリーのカード */
   --text: #2a2c27; /* 深い墨色（わずかに温かい） */
   --muted: #6e736a; /* 読みやすいグレー（やや緑寄り） */
-  --border: #e4e0d6; /* 薄い境界線 */
+  --border: #ebe7dd; /* 薄い境界線（箱感を弱め、面で区切る） */
   --accent: #2d4a3e; /* メイン: 青みを含んだ深緑（フォレスト） */
   --accent-strong: #233f33; /* 押下・濃いめ */
   --accent-soft: #e7ede8; /* セージ系の淡い面 */
   --link: #3c5a52; /* リンク: 深緑寄りのブルーグレー */
   --brass: #a98b5d; /* サテンブラス（細い差し色限定） */
   --radius: 14px;
-  --shadow: 0 1px 2px rgba(35, 50, 42, 0.035), 0 8px 22px rgba(35, 50, 42, 0.045);
-  --shadow-raised: 0 1px 2px rgba(35, 50, 42, 0.05), 0 14px 32px rgba(35, 50, 42, 0.07);
+  /* 常時は気配程度の影。浮きはホバー時に --shadow-raised で。 */
+  --shadow: 0 1px 2px rgba(35, 50, 42, 0.03);
+  --shadow-raised: 0 1px 2px rgba(35, 50, 42, 0.04), 0 10px 26px rgba(35, 50, 42, 0.06);
 
   /* source タグの色（控えめ） */
   --tag-user: #2d4a3e;
@@ -573,8 +574,8 @@ body {
   background: linear-gradient(157deg, #edf3ed 0%, var(--surface) 58%);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-raised);
-  padding: 22px 20px;
+  box-shadow: var(--shadow);
+  padding: 24px 22px;
   overflow: hidden;
 }
 /* 細いサテンブラスの差し色（上端）。面で使わず線で上質感を出す。 */
@@ -607,28 +608,34 @@ body {
   font-size: 0.85rem;
   font-weight: 500;
 }
-.hero__metrics {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
+.hero__primary {
   margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
-.hero__shortfall {
-  margin: 12px 0 0;
-  font-size: 0.85rem;
-  color: var(--band-needs);
-}
-.metric__label {
-  font-size: 0.8rem;
+.hero__primary-label {
+  font-size: 0.82rem;
   color: var(--muted);
 }
-.metric__value {
-  font-size: 1.15rem;
+.hero__primary-value {
+  font-size: 1.7rem;
   font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
 }
-.metric__sub {
-  font-size: 0.72rem;
-  margin-top: 2px;
+.hero__support {
+  margin: 10px 0 0;
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+.hero__foot {
+  margin: 6px 0 0;
+  font-size: 0.78rem;
+}
+/* 結果画面はセクション間を少し広めにして呼吸感を出す（カード内paddingは維持） */
+.result {
+  gap: 18px;
 }
 
 /* ---- 結果: 見出し（自分専用感） ---- */
@@ -649,7 +656,7 @@ body {
   background: linear-gradient(157deg, #f0f4ef 0%, var(--surface) 62%);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-raised);
+  box-shadow: var(--shadow);
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -1132,7 +1139,9 @@ body {
   width: 100%;
 }
 .asset-rc--compact {
-  margin-top: 4px;
+  /* 人生の流れを眺める主役要素として、カード内でやや広く・呼吸を持たせる */
+  margin: 10px -8px 2px;
+  width: calc(100% + 16px);
 }
 .asset-rc .recharts-surface {
   overflow: visible;
@@ -1347,9 +1356,6 @@ body {
 }
 
 @media (max-width: 480px) {
-  .hero__metrics {
-    grid-template-columns: 1fr;
-  }
   .edit-links__grid {
     grid-template-columns: 1fr;
   }
