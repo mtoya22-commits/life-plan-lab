@@ -128,6 +128,21 @@ describe('render smoke (jsdom)', () => {
     expect(card?.textContent).not.toContain('95歳時点 0万円');
   });
 
+  it('asset card carries a plain-language hint for present value & future amount', () => {
+    store().loadHighIncomeSample(330);
+    const { container } = render(<App />);
+    const card = Array.from(container.querySelectorAll('.detail-card')).find((el) =>
+      el.textContent?.includes('資産推移'),
+    )!;
+    // 通常表示にも生活言語の短いヒントを添える（拡大グラフへの導線）
+    expect(card.querySelector('.asset-card__hint')!.textContent).toContain('今のお金の感覚');
+    expect(card.querySelector('.asset-card__hint')!.textContent).toContain('グラフを拡大');
+    // 結果画面のユーザー向け文字列に専門語を出さない
+    expect(container.textContent).not.toContain('割り戻');
+    expect(container.textContent).not.toContain('実質価値');
+    expect(container.textContent).not.toContain('名目額');
+  });
+
   it('shows FIRE-after income only for side FIRE', () => {
     store().setMode('thorough');
     store().setThoroughValue('fire.type', 'full');
@@ -298,7 +313,7 @@ describe('render smoke (jsdom)', () => {
     fillAll();
     store().submitRough();
     render(<App />);
-    fireEvent.click(screen.getByText(/グラフを拡大/));
+    fireEvent.click(screen.getByRole('button', { name: /グラフを拡大/ }));
     expect(document.querySelector('.sheet')).not.toBeNull();
     // Recharts は遅延読み込みのため、解決を待ってから内容を確認する
     const note = await screen.findByText(/その年に表示される額面/);

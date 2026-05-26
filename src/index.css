@@ -1095,6 +1095,12 @@ body {
   margin-top: 10px;
   display: inline-block;
 }
+/* 資産推移カード下の短い案内（拡大グラフ内の折りたたみ説明への導線） */
+.asset-card__hint {
+  margin: 6px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
 
 /* 主な節目の要約内リンク */
 .timeline .link-btn {

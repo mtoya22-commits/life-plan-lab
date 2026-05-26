@@ -93,6 +93,9 @@ export function ResultDashboard() {
         <Suspense fallback={<div className="asset-rc asset-rc--compact" aria-hidden />}>
           <AssetChartMini rows={result.rows} events={events} />
         </Suspense>
+        <p className="asset-card__hint muted">
+          現在価値は「今のお金の感覚」で見た金額です。将来の額面はグラフを拡大して比較できます。
+        </p>
       </DetailCard>
 
       {hasChildren && (
