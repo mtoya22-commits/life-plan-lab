@@ -408,7 +408,7 @@ function buildNotes(input: SimulationInput, cashRatioKnown: boolean, monthlyInve
 
   // 現在価値換算の説明。
   notes.push(
-    '将来額はインフレを反映した金額です。現在価値は、今のお金の感覚に割り戻した目安として併記しています。',
+    '将来額はその年に実際に表示される額面、現在価値は「今のお金の感覚」で見た金額です。生活感覚としては現在価値を中心に見てください。',
   );
 
   // 4%ルール系の達成率は参考指標である旨。

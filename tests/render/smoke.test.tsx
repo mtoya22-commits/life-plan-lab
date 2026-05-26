@@ -128,6 +128,21 @@ describe('render smoke (jsdom)', () => {
     expect(card?.textContent).not.toContain('95歳時点 0万円');
   });
 
+  it('asset card carries a plain-language hint for present value & future amount', () => {
+    store().loadHighIncomeSample(330);
+    const { container } = render(<App />);
+    const card = Array.from(container.querySelectorAll('.detail-card')).find((el) =>
+      el.textContent?.includes('資産推移'),
+    )!;
+    // 通常表示にも生活言語の短いヒントを添える（拡大グラフへの導線）
+    expect(card.querySelector('.asset-card__hint')!.textContent).toContain('今のお金の感覚');
+    expect(card.querySelector('.asset-card__hint')!.textContent).toContain('グラフを拡大');
+    // 結果画面のユーザー向け文字列に専門語を出さない
+    expect(container.textContent).not.toContain('割り戻');
+    expect(container.textContent).not.toContain('実質価値');
+    expect(container.textContent).not.toContain('名目額');
+  });
+
   it('shows FIRE-after income only for side FIRE', () => {
     store().setMode('thorough');
     store().setThoroughValue('fire.type', 'full');
@@ -157,7 +172,7 @@ describe('render smoke (jsdom)', () => {
   it('risk factors and edit links are collapsed by default and openable', () => {
     store().loadThoroughSample(true);
     const { container } = render(<App />);
-    const risk = findDetailsBySummary(container, '見直しが効きやすいポイントを見る');
+    const risk = findDetailsBySummary(container, '見直しポイントを見る');
     const edit = findDetailsBySummary(container, '条件を変えてみる');
     expect(risk).toBeDefined();
     expect(edit).toBeDefined();
@@ -285,7 +300,7 @@ describe('render smoke (jsdom)', () => {
   it('renders structured risk factors (title + decomposed points) inside the collapsible', () => {
     store().loadThoroughSample(true);
     const { container } = render(<App />);
-    const risk = findDetailsBySummary(container, '見直しが効きやすいポイントを見る')!;
+    const risk = findDetailsBySummary(container, '見直しポイントを見る')!;
     risk.open = true;
     const items = risk.querySelectorAll('.risk-factor');
     expect(items.length).toBeGreaterThan(0);
@@ -298,14 +313,25 @@ describe('render smoke (jsdom)', () => {
     fillAll();
     store().submitRough();
     render(<App />);
-    fireEvent.click(screen.getByText(/グラフを拡大/));
+    fireEvent.click(screen.getByRole('button', { name: /グラフを拡大/ }));
     expect(document.querySelector('.sheet')).not.toBeNull();
     // Recharts は遅延読み込みのため、解決を待ってから内容を確認する
-    const note = await screen.findByText(/インフレ反映/);
+    const note = await screen.findByText(/その年に表示される額面/);
     expect(document.querySelector('.sheet .asset-rc')).not.toBeNull();
     // 将来額と現在価値の両方を扱う旨が示される
     expect(note.textContent).toContain('将来額');
     expect(note.textContent).toContain('現在価値');
+    // 詳細な「見方」は折りたたみで提供（初期は閉じ・専門用語は使わない）
+    const sheet = document.querySelector('.sheet')!;
+    const explainer = Array.from(sheet.querySelectorAll<HTMLDetailsElement>('details.collapsible')).find((d) =>
+      d.querySelector('summary')?.textContent?.includes('現在価値と将来額の見方'),
+    )!;
+    expect(explainer).toBeDefined();
+    expect(explainer.open).toBe(false);
+    expect(explainer.textContent).toContain('今のお金の感覚');
+    expect(explainer.textContent).toContain('通帳');
+    expect(explainer.textContent).toContain('658万円'); // 具体例
+    expect(explainer.textContent).not.toContain('割り戻'); // 専門語は使わない
   });
 
   it('closes a bottom sheet via the close button', () => {

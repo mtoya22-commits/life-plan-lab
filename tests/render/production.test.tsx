@@ -101,7 +101,7 @@ describe('STEP7 production readiness', () => {
     const all = Array.from(container.querySelectorAll('details.collapsible'));
     const idx = (text: string) =>
       all.findIndex((d) => d.querySelector('summary')?.textContent?.includes(text));
-    const risk = idx('見直しが効きやすいポイント');
+    const risk = idx('見直しポイントを見る');
     const edit = idx('条件を変えてみる');
     const cautious = idx('慎重条件で見る');
     expect(risk).toBeGreaterThanOrEqual(0);

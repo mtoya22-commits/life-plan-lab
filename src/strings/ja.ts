@@ -70,7 +70,7 @@ export const ja = {
     assumptionsToggle: '今回の試算条件を見る',
     suggestionsHeading: '見直しのヒント',
     suggestionsToggle: '見直しのヒントを見る',
-    riskFactorsToggle: '見直しが効きやすいポイントを見る',
+    riskFactorsToggle: '見直しポイントを見る',
     cautiousToggle: '慎重条件で見る',
     cautiousLead: '長期の利回りを低めに、物価上昇をやや高めに見た場合の目安です。将来を予測するものではなく、前提を変えた確認用です。',
     cautiousNote: '暴落シナリオは一時的な投資資産の下落、慎重条件は長期前提を厳しめに見るもので、別の見方です。',
