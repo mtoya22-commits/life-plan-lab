@@ -103,8 +103,8 @@ export function AssetChartMini({ rows, events }: { rows: YearRow[]; events: Life
         <ComposedChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 2 }}>
           <defs>
             <linearGradient id="assetFillMini" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={COLORS_PV} stopOpacity={0.18} />
-              <stop offset="100%" stopColor={COLORS_PV} stopOpacity={0.02} />
+              <stop offset="0%" stopColor={COLORS_PV} stopOpacity={0.14} />
+              <stop offset="100%" stopColor={COLORS_PV} stopOpacity={0} />
             </linearGradient>
           </defs>
           <XAxis
@@ -132,7 +132,7 @@ export function AssetChartMini({ rows, events }: { rows: YearRow[]; events: Life
             type="monotone"
             dataKey="assetsPV"
             stroke={COLORS_PV}
-            strokeWidth={2}
+            strokeWidth={2.4}
             fill="url(#assetFillMini)"
             dot={false}
             isAnimationActive={false}
@@ -167,8 +167,8 @@ export function AssetChartFull({ rows, events }: { rows: YearRow[]; events: Life
         <ComposedChart data={data} margin={{ top: 22, right: 16, left: 0, bottom: 6 }}>
           <defs>
             <linearGradient id="assetFillFull" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={COLORS_PV} stopOpacity={0.18} />
-              <stop offset="100%" stopColor={COLORS_PV} stopOpacity={0.02} />
+              <stop offset="0%" stopColor={COLORS_PV} stopOpacity={0.16} />
+              <stop offset="100%" stopColor={COLORS_PV} stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid stroke={COLORS.grid} vertical={false} />
@@ -217,7 +217,7 @@ export function AssetChartFull({ rows, events }: { rows: YearRow[]; events: Life
             dataKey="assetsPV"
             name="現在価値"
             stroke={COLORS_PV}
-            strokeWidth={2}
+            strokeWidth={2.4}
             fill="url(#assetFillFull)"
             dot={false}
             isAnimationActive={false}

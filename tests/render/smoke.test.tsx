@@ -157,7 +157,7 @@ describe('render smoke (jsdom)', () => {
   it('risk factors and edit links are collapsed by default and openable', () => {
     store().loadThoroughSample(true);
     const { container } = render(<App />);
-    const risk = findDetailsBySummary(container, '見直しが効きやすいポイントを見る');
+    const risk = findDetailsBySummary(container, '見直しポイントを見る');
     const edit = findDetailsBySummary(container, '条件を変えてみる');
     expect(risk).toBeDefined();
     expect(edit).toBeDefined();
@@ -285,7 +285,7 @@ describe('render smoke (jsdom)', () => {
   it('renders structured risk factors (title + decomposed points) inside the collapsible', () => {
     store().loadThoroughSample(true);
     const { container } = render(<App />);
-    const risk = findDetailsBySummary(container, '見直しが効きやすいポイントを見る')!;
+    const risk = findDetailsBySummary(container, '見直しポイントを見る')!;
     risk.open = true;
     const items = risk.querySelectorAll('.risk-factor');
     expect(items.length).toBeGreaterThan(0);

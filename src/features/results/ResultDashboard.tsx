@@ -56,7 +56,7 @@ export function ResultDashboard() {
     : `95歳時点 ${formatMan(result.indicators.assetsAt95PresentValue)}（現在価値）`;
   const assetCardCaption = depleted
     ? `95歳時点は資産枯渇済み・累計不足額 約${formatMan(result.indicators.cumulativeShortfallPresentValue)}（現在価値）`
-    : 'グラフは現在価値。タップで将来額と比較できます。';
+    : '現在価値ベースで表示しています。';
 
   return (
     <section className="screen result">

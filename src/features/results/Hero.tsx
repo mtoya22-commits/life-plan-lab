@@ -3,16 +3,20 @@ import { formatMan, formatPct } from '../../lib/format';
 import { ja } from '../../strings/ja';
 
 // 結果のHero。分析ダッシュボードではなく「静かな要約」を目指す。
-// 主役は資産寿命の一言。95歳時点は支え、FIRE準備率は脚注（目安）に下げる。
-// 教育費ピーク・ローン完済・FIRE後の状態は直下の Outlook カードが担う。
+// 主役は資産寿命の一言。95歳時点は「ラベル小／金額大／注記極小muted」の3段で見せる。
+// FIRE準備率は脚注（目安）。教育費ピーク・ローン完済・FIRE後の状態は直下の Outlook が担う。
 export function Hero({ result }: { result: SimulationResult }) {
   const { indicators, score } = result;
   const depleted = indicators.cumulativeShortfall > 0;
 
   const longevityText = depleted ? `${indicators.assetLongevityAge}歳ごろ` : '95歳以降も維持';
-  const supportText = depleted
-    ? `95歳時点：資産は枯渇済み・累計不足額 約${formatMan(indicators.cumulativeShortfallPresentValue)}（現在価値）`
-    : `95歳時点：現在価値 約${formatMan(indicators.assetsAt95PresentValue)}（将来額 約${formatMan(indicators.assetsAt95)}）`;
+  // 3段表示用の主値・補足
+  const supportValue = depleted
+    ? '資産は枯渇済み'
+    : formatMan(indicators.assetsAt95PresentValue);
+  const supportSub = depleted
+    ? `累計不足額 約${formatMan(indicators.cumulativeShortfallPresentValue)}（現在価値）`
+    : `現在価値（将来額 約${formatMan(indicators.assetsAt95)}）`;
 
   return (
     <div className="hero">
@@ -26,7 +30,12 @@ export function Hero({ result }: { result: SimulationResult }) {
         <span className="hero__primary-value">{longevityText}</span>
       </div>
 
-      <p className="hero__support muted">{supportText}</p>
+      <div className="hero__support">
+        <span className="hero__support-label">95歳時点</span>
+        <span className="hero__support-value">{supportValue}</span>
+        <span className="hero__support-sub">{supportSub}</span>
+      </div>
+
       <p className="hero__foot muted">FIRE準備率（目安）{formatPct(indicators.fireAchievementRate)}</p>
     </div>
   );
