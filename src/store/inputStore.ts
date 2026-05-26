@@ -3,7 +3,6 @@ import { buildFullInputFromRough, buildFullInputFromThorough } from '../schema/n
 import { draftFromAnswers } from '../schema/roughMapping';
 import { runSimulation } from '../engine/annualSimulationEngine';
 import { createDefaultInput } from '../schema/defaultValues';
-import { applyRecommendedValues } from '../schema/recommendedValues';
 import { ALL_ROUGH_QUESTIONS, ROUGH_PAGES, pageIndexByStepId } from '../schema/roughQuestions';
 import {
   ROUGH_TO_DETAILED,
@@ -46,7 +45,9 @@ function emptyRoughDraft(): RoughDraft {
 }
 
 function freshThoroughInput(): SimulationInput {
-  return applyRecommendedValues(createDefaultInput('thorough'));
+  // 入力UIには「ユーザーが触っていない値」をそのまま見せる（skipped/default_value は空欄）。
+  // applyRecommendedValues は submit 時の buildFullInputFromThorough で適用する。
+  return createDefaultInput('thorough');
 }
 
 const recommendedById = new Map(ALL_ROUGH_QUESTIONS.map((q) => [q.id, q.recommendedValue]));
