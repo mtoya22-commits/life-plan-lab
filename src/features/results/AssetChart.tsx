@@ -13,6 +13,7 @@ import {
 import type { YearRow } from '../../schema/types';
 import type { LifeEventEntry, LifeEventType } from './lifeEvents';
 import { formatMan } from '../../lib/format';
+import { ChartExplainer } from './ChartExplainer';
 
 // =============================================================================
 // 資産推移グラフ（Recharts）。横軸=年齢、縦軸=資産。系列は総資産1本のみ。
@@ -161,7 +162,8 @@ export function AssetChartFull({ rows, events }: { rows: YearRow[]; events: Life
 
   return (
     <div className="asset-rc">
-      <p className="muted chart-axis-note">将来額（インフレ反映）と現在価値（今のお金に割り戻した目安）。</p>
+      <p className="muted chart-axis-note">将来額（その年に表示される額面）と現在価値（今のお金の感覚で見た金額）。</p>
+      <ChartExplainer />
       <div className="asset-rc__panel">
       <ResponsiveContainer width="100%" height={360}>
         <ComposedChart data={data} margin={{ top: 22, right: 16, left: 0, bottom: 6 }}>

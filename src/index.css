@@ -1140,6 +1140,73 @@ body {
   transform: rotate(180deg);
 }
 
+/* 拡大グラフ内：現在価値と将来額の見方（折りたたみ） */
+.explainer {
+  margin: 4px 0 8px;
+}
+.explainer__body {
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+.explainer__dl {
+  margin: 4px 0 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.explainer__dl > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.explainer__dl dt {
+  font-weight: 600;
+  color: var(--accent);
+  font-size: 0.88rem;
+}
+.explainer__dl dd {
+  margin: 0;
+}
+.explainer__guidance {
+  margin: 10px 0 0;
+}
+.explainer__example {
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: var(--accent-soft);
+  border-radius: 10px;
+}
+.explainer__example-title {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.explainer__example-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.92rem;
+}
+.explainer__example-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.explainer__example-list li > span:first-child {
+  color: var(--muted);
+}
+.explainer__example-list li > span:last-child {
+  font-weight: 600;
+}
+.explainer__example-note {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
 /* 折りたたみの階層感（重要→操作→参考）。構造は変えず weight/tone だけで差を出す。 */
 /* 最重要: 見直しポイント — わずかに視線を集める（CTA未満） */
 .collapsible--primary > summary {
