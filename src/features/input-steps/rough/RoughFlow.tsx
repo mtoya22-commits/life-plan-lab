@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useInputStore } from '../../../store/inputStore';
 import { ja } from '../../../strings/ja';
 import { ROUGH_PAGES, type RoughQuestion } from '../../../schema/roughQuestions';
@@ -31,10 +31,14 @@ export function RoughFlow() {
   const backToResult = useInputStore((s) => s.backToResult);
 
   const [attempted, setAttempted] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   // ステップが変わったら質問画面の先頭へスクロール（前ステップの位置を引き継がない）。
+  // 通常スクロールは内側の .step-content で行うため、そちらを優先的にリセットする。
+  // window.scrollTo はドキュメント自体がスクロールする旧経路への保険として残す。
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    contentRef.current?.scrollTo?.({ top: 0, behavior: 'auto' });
+    window.scrollTo({ top: 0, behavior: 'auto' });
   }, [roughPage, cameFromResult]);
 
   const page = ROUGH_PAGES[roughPage];
@@ -69,27 +73,28 @@ export function RoughFlow() {
 
   return (
     <section className="screen step-layout">
-      {cameFromResult ? (
-        <header className="edit-header">編集中：{page.title}</header>
-      ) : (
-        <ProgressHeader label="ざっくり診断" current={roughPage + 1} total={ROUGH_PAGES.length} etaText={etaText} />
-      )}
+      <div className="step-content" ref={contentRef}>
+        {cameFromResult ? (
+          <header className="edit-header">編集中：{page.title}</header>
+        ) : (
+          <ProgressHeader label="ざっくり診断" current={roughPage + 1} total={ROUGH_PAGES.length} etaText={etaText} />
+        )}
 
-      <div className="step-head">
-        <h2 className="section-heading">{page.title}</h2>
-        <p className="step-purpose muted">{page.purpose}</p>
-      </div>
-
-      {!cameFromResult && roughPage === 0 && <p className="step-reassure">{ja.nav.reassure}</p>}
-
-      {visible.map((q) => (
-        <div id={`q-${q.id}`} key={q.id}>
-          <RoughQuestionView q={q} cell={draft[q.id]} showHint={attempted && !isComplete(draft[q.id])} />
+        <div className="step-head">
+          <h2 className="section-heading">{page.title}</h2>
+          <p className="step-purpose muted">{page.purpose}</p>
         </div>
-      ))}
 
-      {/* 下部余白（固定ナビと本文が重ならないように） */}
-      <div className="bottom-nav-spacer" />
+        {!cameFromResult && roughPage === 0 && <p className="step-reassure">{ja.nav.reassure}</p>}
+
+        {visible.map((q) => (
+          <div id={`q-${q.id}`} key={q.id}>
+            <RoughQuestionView q={q} cell={draft[q.id]} showHint={attempted && !isComplete(draft[q.id])} />
+          </div>
+        ))}
+
+        <div className="bottom-nav-spacer" />
+      </div>
 
       <nav className="bottom-nav" aria-label="ステップ操作">
         <div className="bottom-nav__inner">
