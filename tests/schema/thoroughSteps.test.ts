@@ -43,10 +43,27 @@ describe('thorough steps definition', () => {
 
   it('keeps the visible step count (progress denominator) consistent with housing', () => {
     const input = createDefaultInput('thorough');
+    // この回帰テストは住まい起因の差分のみを見たいので、FIRE 関連の差分は固定する（side で FIRE ステップを最大表示）。
+    input.fire.type.value = 'side';
     input.housing.type.value = 'rent';
     expect(visibleThoroughPages(input).length).toBe(14); // 賃貸はローン関連2ページを非表示
     input.housing.type.value = 'own';
     expect(visibleThoroughPages(input).length).toBe(16); // 持ち家は金利・返済方式を1ページに統合済み
+  });
+
+  it('hides the FIRE-after step entirely when 現役継続 (fire.type === "none") is selected', () => {
+    const input = createDefaultInput('thorough');
+    input.housing.type.value = 'rent';
+    input.fire.type.value = 'side';
+    const withFire = visibleThoroughPages(input).map((p) => p.pageId);
+    expect(withFire).toContain('fire-2');
+
+    input.fire.type.value = 'none';
+    const noFire = visibleThoroughPages(input).map((p) => p.pageId);
+    expect(noFire).not.toContain('fire-2');
+    // fire-1（働き方の方針）は残る（type 自体は選びたいから）
+    expect(noFire).toContain('fire-1');
+    expect(noFire.length).toBe(withFire.length - 1);
   });
 
   it('keeps the two record-only mortgage detail pages merged into one', () => {

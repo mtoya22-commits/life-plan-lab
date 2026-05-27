@@ -189,18 +189,19 @@ export const ROUGH_PAGES: RoughPage[] = [
       {
         id: 'workStyle',
         label: '将来の働き方',
-        help: '完全に辞めたいか、少し働き続けたいか、まだ決めていないかを選んでください。',
+        help: '将来 FIRE するか、現役を続けるか、まだ決めていないかを選んでください。後から変えられます。',
         kind: 'choice',
         options: [
           { value: 'full_retire', label: '完全リタイアしたい' },
           { value: 'work_a_little', label: '少し働きたい' },
+          { value: 'keep_working', label: '現役で働き続けたい' },
           { value: 'undecided', label: 'まだ決めていない' },
         ],
       },
       {
         id: 'reduceWorkAge',
-        label: '仕事を減らしたい年齢',
-        help: 'フルタイムをセーブしたい年齢の目安です。迷ったら入力例が使えます。',
+        label: '働き方を変える年齢',
+        help: '完全リタイア・サイドFIRE・退職など、いまの働き方を変える時期の目安です。迷ったら入力例が使えます。',
         kind: 'number',
         unit: '歳',
         placeholder: '例：55',
@@ -227,6 +228,9 @@ export const ROUGH_PAGES: RoughPage[] = [
         placeholder: '例：30',
         min: 0,
         allowSkip: true,
+        // 現役継続を選んだ場合は FIRE という前提が成り立たないため聞かない。
+        // 65歳以降の生活費は別途「老後生活費」が担う。
+        showIf: (d) => workStyleOf(d) !== 'keep_working',
       },
       {
         id: 'sideFireIncome',
@@ -240,7 +244,8 @@ export const ROUGH_PAGES: RoughPage[] = [
         allowRecommended: true,
         recommendedValue: 10,
         recommendedLabel: '例（月10万円）を入れる',
-        showIf: (d) => workStyleOf(d) !== 'full_retire',
+        // 完全リタイア・現役継続の場合は意味を持たないため非表示。
+        showIf: (d) => workStyleOf(d) !== 'full_retire' && workStyleOf(d) !== 'keep_working',
       },
     ],
   },

@@ -48,6 +48,7 @@ export interface ThoroughPage {
 const hasLoan = (i: SimulationInput) => i.housing.type.value !== 'rent';
 const isRent = (i: SimulationInput) => i.housing.type.value === 'rent';
 const isSide = (i: SimulationInput) => i.fire.type.value === 'side';
+const isFiring = (i: SimulationInput) => i.fire.type.value !== 'none';
 
 const schoolOptions: ThoroughChoice[] = [
   { value: 'public', label: '公立' },
@@ -370,21 +371,33 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
   {
     pageId: 'fire-1',
     stepId: 'detailed-fire',
-    title: 'FIRE条件',
-    purpose: 'いつ・どう働き方を変えるかです。',
+    title: '働き方の方針',
+    purpose: 'いつ・どう働き方を変えるかです。現役継続を選んだ場合は、退職年齢は「収入」ステップで設定済みの「退職予定年齢」が使われます。',
     kind: 'fields',
     questions: [
       {
         path: 'fire.type',
-        label: '完全FIRE / サイドFIRE',
-        help: '完全FIREはFIRE後の労働収入が0、サイドFIREは少し働き続けます。',
+        label: '将来の働き方',
+        help: '完全FIREはFIRE後の労働収入が0、サイドFIREは少し働き続けます。現役継続は退職年齢まで普通に働く前提（FIREイベントなし）です。',
         kind: 'choice',
         options: [
           { value: 'full', label: '完全FIRE' },
           { value: 'side', label: 'サイドFIRE' },
+          { value: 'none', label: '現役継続' },
         ],
       },
-      { path: 'fire.targetAge', label: 'FIRE希望年齢', kind: 'number', unit: '歳', min: 35, max: 75, allowSkip: true, placeholder: '例：55' },
+      {
+        path: 'fire.targetAge',
+        label: 'FIRE希望年齢',
+        kind: 'number',
+        unit: '歳',
+        min: 35,
+        max: 75,
+        allowSkip: true,
+        placeholder: '例：55',
+        // 現役継続では FIRE 自体が発生しないので非表示。退職年齢は「収入」ステップの income.retirementAge を使用。
+        showIf: isFiring,
+      },
     ],
   },
   {
@@ -393,6 +406,8 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
     title: 'FIRE後の暮らし',
     purpose: 'FIRE後の生活費と収入を確認します。',
     kind: 'fields',
+    // 現役継続を選んだ場合は FIRE 後の概念がないため、このステップ自体をスキップする。
+    showIf: isFiring,
     questions: [
       {
         path: 'fire.postFireLiving',
@@ -404,6 +419,8 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
         placeholder: '例：280',
         min: 0,
         allowSkip: true,
+        // 現役継続: FIRE 後の概念が発生しないため非表示（65歳以降は老後生活費が担う）。
+        showIf: isFiring,
       },
       {
         path: 'fire.postFireIncome',
