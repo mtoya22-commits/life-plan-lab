@@ -52,7 +52,33 @@ export function ModeSelect() {
       </div>
 
       <p className="top-note muted">{m.note}</p>
-      <p className="top-disclaimer muted">{ja.common.disclaimerShort}</p>
+
+      {/* 開始前トップ画面にのみ出す説明・注意点・関連記事。
+          ざっくり/しっかり 診断を始めると ModeSelect 自体がアンマウントされるため、
+          質問画面・結果画面では自動的に表示されない。 */}
+      <details className="collapsible top-details">
+        <summary>{ja.top.detailsToggle}</summary>
+        <div className="collapsible__body top-details__body">
+          <h3 className="top-details__heading">{ja.top.whatYouLearnHeading}</h3>
+          <ul className="top-details__list">
+            {ja.top.whatYouLearnItems.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+          <h3 className="top-details__heading">{ja.top.pvFutureHeading}</h3>
+          <p className="top-details__body-text">{ja.top.pvFutureBody}</p>
+        </div>
+      </details>
+
+      <section className="top-section top-cautions" aria-labelledby="top-cautions-heading">
+        <h3 id="top-cautions-heading" className="top-section__heading">{ja.top.cautionsHeading}</h3>
+        <p className="top-section__body muted">{ja.common.disclaimer}</p>
+      </section>
+
+      <section className="top-section top-related" aria-labelledby="top-related-heading">
+        <h3 id="top-related-heading" className="top-section__heading">{ja.top.relatedHeading}</h3>
+        <p className="top-section__body muted">{ja.top.relatedBody}</p>
+      </section>
 
       {/* 開発用: 手入力せずに画面遷移・結果反映を確認する導線（本番では非表示・控えめに格納）。 */}
       {import.meta.env.DEV && (
