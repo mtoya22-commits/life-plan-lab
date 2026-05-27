@@ -187,7 +187,7 @@ export function ResultDashboard() {
         </Suspense>
       </BottomSheet>
       <BottomSheet open={sheet === 'education'} onClose={() => setSheet(null)} title={ja.result.educationSheetHeading}>
-        <EducationDetail result={result} />
+        <EducationDetail result={result} input={input} />
       </BottomSheet>
       <BottomSheet open={sheet === 'mortgage'} onClose={() => setSheet(null)} title={ja.result.mortgageSheetHeading}>
         <MortgageDetail input={input} />
