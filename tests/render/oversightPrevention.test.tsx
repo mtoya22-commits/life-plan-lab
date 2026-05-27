@@ -18,11 +18,10 @@ describe('oversight prevention: rough flow', () => {
   });
   afterEach(cleanup);
 
-  it('shows a step status with "0/3 項目入力済み" and the soft hint when nothing is entered', () => {
+  it('shows a single-line step status "0/3入力済み・未入力OK" when nothing is entered', () => {
     render(<App />);
     // 「あなたについて」ステップは age / householdIncome / currentAssets の 3 項目
-    expect(screen.getByText(/このステップ：0\/3項目入力済み/)).toBeTruthy();
-    expect(screen.getByText(/未入力でも次へ進めます/)).toBeTruthy();
+    expect(screen.getByText('0/3入力済み・未入力OK')).toBeTruthy();
   });
 
   it('counts answered items as the user fills them', () => {
@@ -31,9 +30,8 @@ describe('oversight prevention: rough flow', () => {
       store().setRoughValue('age', 38);
       store().setRoughValue('householdIncome', 800);
     });
-    expect(screen.getByText(/このステップ：2\/3項目入力済み/)).toBeTruthy();
-    // まだ未入力があるので「未入力でも次へ進めます」が付く
-    expect(screen.getByText(/未入力でも次へ進めます/)).toBeTruthy();
+    // まだ未入力があるので「・未入力OK」サフィックスが付く
+    expect(screen.getByText('2/3入力済み・未入力OK')).toBeTruthy();
   });
 
   it('shows the confirm panel and does NOT advance when "次へ" is pressed with incomplete items', () => {
@@ -73,7 +71,7 @@ describe('oversight prevention: rough flow', () => {
       expect(scrollSpy).toHaveBeenCalled();
       // 補足バーは閉じる（移動先で残り続けると圧迫感が出るため）。通常のステータス行に戻る。
       expect(screen.queryByText('未入力の項目があります')).toBeNull();
-      expect(screen.getByText(/このステップ：0\/3項目入力済み/)).toBeTruthy();
+      expect(screen.getByText('0/3入力済み・未入力OK')).toBeTruthy();
     } finally {
       scrollSpy.mockRestore();
     }
@@ -106,9 +104,9 @@ describe('oversight prevention: rough flow', () => {
       store().skipRough('householdIncome');
       store().skipRough('currentAssets');
     });
-    // すべて入力済み扱い → 「未入力でも...」のソフト案内は消える
-    expect(screen.getByText(/このステップ：3\/3項目入力済み/)).toBeTruthy();
-    expect(screen.queryByText(/未入力でも次へ進めます/)).toBeNull();
+    // すべて入力済み扱い → 「・未入力OK」サフィックスは消え、"3/3入力済み" だけになる
+    expect(screen.getByText('3/3入力済み')).toBeTruthy();
+    expect(screen.queryByText(/未入力OK/)).toBeNull();
     // 「次へ」で確認パネルを経由せずに進む
     const before = store().roughPage;
     fireEvent.click(screen.getByText('次へ'));
@@ -124,10 +122,10 @@ describe('oversight prevention: thorough flow (fields page)', () => {
   });
   afterEach(cleanup);
 
-  it('shows a step status on the first fields page', () => {
+  it('shows a single-line step status on the first fields page', () => {
     render(<App />);
-    // 最初の「基本情報」ページの可視項目数は実装依存だが、必ず "X/Y 項目入力済み" 形式で出る
-    expect(screen.getByText(/このステップ：\d+\/\d+項目入力済み/)).toBeTruthy();
+    // 最初の「基本情報」ページの可視項目数は実装依存だが、必ず "X/Y入力済み..." 形式で出る
+    expect(screen.getByText(/^\d+\/\d+入力済み(・未入力OK)?$/)).toBeTruthy();
   });
 
   it('shows confirm panel when "次へ" is pressed with default-only values', () => {
