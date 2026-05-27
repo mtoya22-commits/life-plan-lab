@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useInputStore } from '../../../store/inputStore';
 import { ja } from '../../../strings/ja';
 import { visibleThoroughPages } from '../../../schema/thoroughSteps';
@@ -26,9 +26,14 @@ export function ThoroughFlow() {
   const submitThorough = useInputStore((s) => s.submitThorough);
   const backToResult = useInputStore((s) => s.backToResult);
 
+  const contentRef = useRef<HTMLDivElement>(null);
+
   // ステップが変わったら質問画面の先頭へスクロール。
+  // 通常スクロールは内側の .step-content で行うため、そちらを優先的にリセットする。
+  // window.scrollTo はドキュメント自体がスクロールする旧経路への保険として残す。
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    contentRef.current?.scrollTo?.({ top: 0, behavior: 'auto' });
+    window.scrollTo({ top: 0, behavior: 'auto' });
   }, [thoroughPageId, cameFromResult]);
 
   if (!thoroughInput) return null;
@@ -48,26 +53,28 @@ export function ThoroughFlow() {
 
   return (
     <section className="screen step-layout">
-      {cameFromResult ? (
-        <header className="edit-header">編集中：{page.title}</header>
-      ) : (
-        <ProgressHeader label="しっかり診断" current={idx + 1} total={total} etaText={etaText} />
-      )}
+      <div className="step-content" ref={contentRef}>
+        {cameFromResult ? (
+          <header className="edit-header">編集中：{page.title}</header>
+        ) : (
+          <ProgressHeader label="しっかり診断" current={idx + 1} total={total} etaText={etaText} />
+        )}
 
-      <div className="step-head">
-        <h2 className="section-heading">{page.title}</h2>
-        <p className="step-purpose muted">{page.purpose}</p>
+        <div className="step-head">
+          <h2 className="section-heading">{page.title}</h2>
+          <p className="step-purpose muted">{page.purpose}</p>
+        </div>
+
+        <StepOverview page={page} input={thoroughInput} />
+
+        {!cameFromResult && idx === 0 && <p className="step-reassure">{ja.nav.reassure}</p>}
+
+        {page.kind === 'family' && <FamilyStep input={thoroughInput} />}
+        {page.kind === 'events' && <EventsStep input={thoroughInput} />}
+        {page.kind === 'fields' && renderFieldGroups(visibleQuestions(page, thoroughInput), thoroughInput)}
+
+        <div className="bottom-nav-spacer" />
       </div>
-
-      <StepOverview page={page} input={thoroughInput} />
-
-      {!cameFromResult && idx === 0 && <p className="step-reassure">{ja.nav.reassure}</p>}
-
-      {page.kind === 'family' && <FamilyStep input={thoroughInput} />}
-      {page.kind === 'events' && <EventsStep input={thoroughInput} />}
-      {page.kind === 'fields' && renderFieldGroups(visibleQuestions(page, thoroughInput), thoroughInput)}
-
-      <div className="bottom-nav-spacer" />
 
       <nav className="bottom-nav" aria-label="ステップ操作">
         <div className="bottom-nav__inner">
