@@ -61,6 +61,7 @@ describe('STEP5.4 age/timing boundaries', () => {
     const child: ChildInput = {
       currentAge: field(17, 'user_input', '年齢', '', '歳'),
       ageAssumed: false,
+      elementarySchool: field('public', 'user_input', '小学校', ''),
       middleSchool: field('public', 'user_input', '中学', ''),
       highSchool: field('public', 'user_input', '高校', ''),
       university: field('private_humanities', 'user_input', '大学', ''),

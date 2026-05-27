@@ -108,6 +108,7 @@ describe('STEP5.3 university split costs', () => {
     return {
       currentAge: field(20, 'user_input', '年齢', '', '歳'),
       ageAssumed: false,
+      elementarySchool: field('public', 'user_input', '小学校', ''),
       middleSchool: field('public', 'user_input', '中学', ''),
       highSchool: field('public', 'user_input', '高校', ''),
       university: field(uni, 'user_input', '大学', ''),

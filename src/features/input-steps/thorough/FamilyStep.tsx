@@ -16,6 +16,15 @@ function childQuestions(i: number): ThoroughQuestion[] {
   return [
     { path: `children.${i}.currentAge`, label: '年齢', kind: 'number', unit: '歳', min: 0, max: 30, allowSkip: true },
     {
+      path: `children.${i}.elementarySchool`,
+      label: '小学校',
+      kind: 'choice',
+      options: CHILD_SCHOOL_OPTIONS,
+      allowRecommended: true,
+      recommendedValue: 'public',
+      recommendedLabel: '未定（公立で概算）',
+    },
+    {
       path: `children.${i}.middleSchool`,
       label: '中学',
       kind: 'choice',

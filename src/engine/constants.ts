@@ -8,20 +8,38 @@ export const SIM = {
   pensionStartAge: 65,
 } as const;
 
-/** 教育費の初期値（万円/年）。年齢区分 × 進路。 */
+/** 教育費の初期値（万円/年）。年齢区分 × 進路。
+ *  小・中・高は R5 文科省「子供の学習費調査」、大学は R5 文科省「私立大学等の
+ *  学生納付金等調査」と JASSO R4「学生生活調査」を出典に概算で揃えている。
+ *  最新統計が出たらここを差し替えれば全シミュレーションに反映される。 */
 export const EDUCATION_COST = {
   preschool: 30, // 0〜5歳 未就学
-  elementary: 35, // 6〜11歳 小学校（公立想定）
-  middle: { public: 55, private: 140 }, // 12〜14歳
-  high: { public: 60, private: 120 }, // 15〜17歳
+  // R5 文科省: 公立 約36.7 / 私立 約174.2 万円/年
+  elementary: { public: 37, private: 174 },
+  // R5 文科省: 公立 約54.2 / 私立 約156 万円/年
+  middle: { public: 54, private: 156 },
+  // R5 文科省: 公立 約59.7 / 私立 約117.9 万円/年
+  high: { public: 60, private: 118 },
   university: {
-    // 18〜21歳（万円/年）。国公立/私立 × 文系/理系 × 自宅/一人暮らし。
+    // 18〜21歳の各年の経常費（学費 + 生活費, 万円/年）。
+    // 入学金は age=18 の1年目に限り UNIVERSITY_ENTRANCE_FEE で別途加算する。
+    // 学費: 国公立授業料 53.58万 + 諸経費、私立は R5「学生納付金等調査」ベース。
+    // 生活費: JASSO R4「学生生活調査」より、自宅 約30万 / 自宅外 約110万 を上乗せ。
     none: { home: 0, away: 0 },
-    public_humanities: { home: 90, away: 170 },
-    public_science: { home: 110, away: 190 },
-    private_humanities: { home: 130, away: 230 },
-    private_science: { home: 170, away: 270 },
+    public_humanities: { home: 90, away: 170 }, // 学費 60 + 生活 30 / 110
+    public_science: { home: 100, away: 180 }, // 学費 70 + 生活 30 / 110
+    private_humanities: { home: 150, away: 230 }, // 学費 120 + 生活 30 / 110
+    private_science: { home: 175, away: 255 }, // 学費 145 + 生活 30 / 110
   },
+} as const;
+
+/** 大学入学金（万円, age=18 の1年目に一度だけ加算）。R5 文科省データに基づく概算。 */
+export const UNIVERSITY_ENTRANCE_FEE = {
+  none: 0,
+  public_humanities: 28,
+  public_science: 28,
+  private_humanities: 25,
+  private_science: 26,
 } as const;
 
 /** 大学進路が未定のときに使う標準的な仮定（国公立文系・自宅）。 */

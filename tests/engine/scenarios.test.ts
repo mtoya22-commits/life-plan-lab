@@ -10,6 +10,7 @@ function child(age: number, uni = 'private_humanities', living = 'away'): ChildI
   return {
     currentAge: field(age, 'user_input', '子の年齢', '', '歳'),
     ageAssumed: false,
+    elementarySchool: field('public', 'user_input', '小学校', ''),
     middleSchool: field('public', 'user_input', '中学', ''),
     highSchool: field('public', 'user_input', '高校', ''),
     university: field(uni as never, 'user_input', '大学', ''),

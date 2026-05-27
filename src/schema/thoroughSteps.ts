@@ -605,6 +605,7 @@ export function makeDetailedChild(): ChildInput {
   return {
     currentAge: field(10, 'default_value', '子の年齢', '未入力のため仮の年齢で試算しています。', '歳'),
     ageAssumed: true,
+    elementarySchool: field('public', 'default_value', '小学校', '公立で概算しています。'),
     middleSchool: field('public', 'default_value', '中学', '公立で概算しています。'),
     highSchool: field('public', 'default_value', '高校', '公立で概算しています。'),
     university: field('undecided', 'default_value', '大学', '未定（国公立文系・自宅）で概算しています。'),
