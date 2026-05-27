@@ -986,14 +986,20 @@ body {
   gap: 12px;
 }
 /* 入力済み件数の自己確認ステータス（控えめ・煽らない）。
-   セージ系ではなくグレー系の小さな注記として置く。 */
+   セージ系ではなくグレー系の小さな注記として置く。
+   スマホ 375px でも 1 行に収まる文言にしている前提で、安全側として
+   nowrap + ellipsis を付ける（万一の長文化でも下部ナビの縦幅は増やさない）。 */
 .step-status {
   max-width: 720px;
-  margin: 0 auto 6px;
+  margin: 0 auto 4px;
   padding: 0 14px;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
+  line-height: 1.3;
   color: var(--muted);
   text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 /* 「次へ」を押した直後の補足バー。
    セージ淡パネルではなく、下部ナビ上に細い注記として置く。
