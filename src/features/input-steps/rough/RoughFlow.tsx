@@ -28,6 +28,7 @@ export function RoughFlow() {
   const nextRoughPage = useInputStore((s) => s.nextRoughPage);
   const prevRoughPage = useInputStore((s) => s.prevRoughPage);
   const submitRough = useInputStore((s) => s.submitRough);
+  const submitRoughAndContinue = useInputStore((s) => s.submitRoughAndContinue);
   const backToResult = useInputStore((s) => s.backToResult);
 
   const [attempted, setAttempted] = useState(false);
@@ -135,6 +136,16 @@ export function RoughFlow() {
                 {ja.nav.confirmProceed}
               </button>
             </div>
+          </div>
+        )}
+
+        {/* 結果からの編集モード時の補助ボタン: 続けて変更（結果へ戻って次の条件編集へ）。
+            メインの「再計算して結果へ」と区別したいため、主ボタンの上に薄い 1 行で置く。 */}
+        {cameFromResult && (
+          <div className="recompute-continue">
+            <button type="button" className="btn" onClick={submitRoughAndContinue}>
+              {ja.nav.recomputeContinue}
+            </button>
           </div>
         )}
 

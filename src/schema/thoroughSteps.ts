@@ -398,6 +398,23 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
         // 現役継続では FIRE 自体が発生しないので非表示。退職年齢は「収入」ステップの income.retirementAge を使用。
         showIf: isFiring,
       },
+      {
+        // 現役継続で 65 歳より前に退職する人向けの「ブリッジ期間」生活費。
+        // 内部的には fire.postFireLiving と同じフィールドを使う（engine が
+        // 退職以降〜年金開始まで postFireLiving を参照するため）。
+        // FIRE 用の質問とはラベル・出現条件で分けて、UI 上の意味だけ「退職後の生活費」に寄せる。
+        path: 'fire.postFireLiving',
+        label: '退職後の生活費（年額・年金開始まで）',
+        help: '65歳より前に退職する場合、年金開始までの年間生活費として使います。未入力なら現在生活費の90%で概算します。',
+        kind: 'number',
+        unit: '万円',
+        inputNote: '年額・万円（日常生活費のみ／今のお金の感覚で）',
+        placeholder: '例：280',
+        min: 0,
+        allowSkip: true,
+        // 現役継続で、退職予定年齢が年金開始年齢（65歳）より前のときだけ意味を持つ。
+        showIf: (i) => i.fire.type.value === 'none' && i.income.retirementAge.value < 65,
+      },
     ],
   },
   {
