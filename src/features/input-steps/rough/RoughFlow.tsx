@@ -72,12 +72,15 @@ export function RoughFlow() {
     }
   };
 
-  // 「未入力項目を見る」: 最初の未入力項目を .step-content 内でセンターに表示。
+  // 「未入力項目を見る」: 最初の未入力項目を .step-content 内でセンターに表示し、
+  // 補足バーは閉じる。移動した先で同じ案内が残り続けると圧迫感が出るため。
+  // 再度「次へ」を押して未入力が残っていれば、また同じ補足バーが出る。
   const revealFirstIncomplete = () => {
     const firstIncomplete = visible.find((q) => !isComplete(draft[q.id]));
     if (firstIncomplete) {
       document.getElementById(`q-${firstIncomplete.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
+    setAttempted(false);
   };
 
   // 「このまま次へ」: 仕様 #4 のとおり、未入力項目には触らず通常進行する。

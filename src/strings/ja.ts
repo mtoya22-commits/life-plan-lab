@@ -53,8 +53,8 @@ export const ja = {
     // 目的は入力強制ではなく見落とし防止。煽らないトーン。
     stepStatus: (done: number, total: number): string =>
       `このステップ：${done}/${total}項目入力済み${done < total ? '。未入力でも次へ進めます' : ''}`,
-    // 未入力のまま「次へ」を押したときの軽い確認パネル
-    confirmIncomplete: '未入力の項目があります。未入力のまま次へ進みますか？',
+    // 未入力のまま「次へ」を押したときの軽い注記（補足バー）
+    confirmIncomplete: '未入力の項目があります',
     showIncomplete: '未入力項目を見る',
     confirmProceed: 'このまま次へ',
   },

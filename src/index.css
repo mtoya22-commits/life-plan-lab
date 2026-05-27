@@ -955,28 +955,32 @@ body {
   color: var(--muted);
   text-align: center;
 }
-/* 「次へ」を押した直後の軽い確認パネル。エラーではなく注記として見せる。 */
+/* 「次へ」を押した直後の補足バー。
+   セージ淡パネルではなく、下部ナビ上に細い注記として置く。
+   背景は親 (.bottom-nav) の薄白を継承し、上部に細い border 一本だけ。
+   煽らない・占有しない・必要なら無視できる、を見た目で伝える。 */
 .step-confirm {
   max-width: 720px;
-  margin: 0 auto 8px;
-  padding: 10px 14px;
-  background: var(--accent-soft);
+  margin: 0 auto;
+  padding: 6px 14px 8px;
   border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
 }
 .step-confirm__text {
-  margin: 0 0 8px;
-  font-size: 0.85rem;
-  color: var(--text);
-  line-height: 1.5;
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.4;
+  text-align: center;
 }
 .step-confirm__actions {
   display: flex;
+  justify-content: center;
   gap: 8px;
 }
 .step-confirm__actions .btn {
-  flex: 1;
-  min-height: 44px;
+  min-height: 36px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
 }
 .bottom-nav__inner .btn {
   min-height: 48px;

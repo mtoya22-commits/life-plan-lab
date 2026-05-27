@@ -41,7 +41,7 @@ describe('oversight prevention: rough flow', () => {
     const before = store().roughPage;
     fireEvent.click(screen.getByText('次へ'));
     // 確認パネル
-    expect(screen.getByText('未入力の項目があります。未入力のまま次へ進みますか？')).toBeTruthy();
+    expect(screen.getByText('未入力の項目があります')).toBeTruthy();
     expect(screen.getByText('未入力項目を見る')).toBeTruthy();
     expect(screen.getByText('このまま次へ')).toBeTruthy();
     // ページは進んでいない
@@ -59,7 +59,7 @@ describe('oversight prevention: rough flow', () => {
     expect(store().roughDraft.age.source).toBe('default_value');
   });
 
-  it('"未入力項目を見る" triggers scrollIntoView and keeps the panel open', () => {
+  it('"未入力項目を見る" triggers scrollIntoView and dismisses the confirm bar', () => {
     render(<App />);
     // jsdom では scrollIntoView は Element.prototype 上で未実装。先にスタブを置いてから spy する。
     const proto = Element.prototype as unknown as { scrollIntoView: (..._args: unknown[]) => void };
@@ -71,8 +71,28 @@ describe('oversight prevention: rough flow', () => {
       fireEvent.click(screen.getByText('次へ'));
       fireEvent.click(screen.getByText('未入力項目を見る'));
       expect(scrollSpy).toHaveBeenCalled();
-      // パネルは残ったまま（ユーザーが項目を埋めるか「このまま次へ」を選ぶまで）
-      expect(screen.getByText('未入力の項目があります。未入力のまま次へ進みますか？')).toBeTruthy();
+      // 補足バーは閉じる（移動先で残り続けると圧迫感が出るため）。通常のステータス行に戻る。
+      expect(screen.queryByText('未入力の項目があります')).toBeNull();
+      expect(screen.getByText(/このステップ：0\/3項目入力済み/)).toBeTruthy();
+    } finally {
+      scrollSpy.mockRestore();
+    }
+  });
+
+  it('re-shows the confirm bar when "次へ" is pressed again after dismissing', () => {
+    render(<App />);
+    const proto = Element.prototype as unknown as { scrollIntoView: (..._args: unknown[]) => void };
+    if (typeof proto.scrollIntoView !== 'function') {
+      proto.scrollIntoView = () => {};
+    }
+    const scrollSpy = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(() => {});
+    try {
+      fireEvent.click(screen.getByText('次へ'));
+      fireEvent.click(screen.getByText('未入力項目を見る')); // dismiss
+      expect(screen.queryByText('未入力の項目があります')).toBeNull();
+      // 再度「次へ」: 未入力が残っているので補足バーが再表示される
+      fireEvent.click(screen.getByText('次へ'));
+      expect(screen.getByText('未入力の項目があります')).toBeTruthy();
     } finally {
       scrollSpy.mockRestore();
     }
@@ -93,7 +113,7 @@ describe('oversight prevention: rough flow', () => {
     const before = store().roughPage;
     fireEvent.click(screen.getByText('次へ'));
     expect(store().roughPage).toBe(before + 1);
-    expect(screen.queryByText('未入力の項目があります。未入力のまま次へ進みますか？')).toBeNull();
+    expect(screen.queryByText('未入力の項目があります')).toBeNull();
   });
 });
 
@@ -113,7 +133,7 @@ describe('oversight prevention: thorough flow (fields page)', () => {
   it('shows confirm panel when "次へ" is pressed with default-only values', () => {
     render(<App />);
     fireEvent.click(screen.getByText('次へ'));
-    expect(screen.getByText('未入力の項目があります。未入力のまま次へ進みますか？')).toBeTruthy();
+    expect(screen.getByText('未入力の項目があります')).toBeTruthy();
     expect(screen.getByText('未入力項目を見る')).toBeTruthy();
     expect(screen.getByText('このまま次へ')).toBeTruthy();
   });
