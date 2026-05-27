@@ -84,12 +84,14 @@ export function ThoroughFlow() {
     }
   };
 
-  // 「未入力項目を見る」: 最初の未入力（default_value のままの）項目を .step-content 内でセンターに表示。
+  // 「未入力項目を見る」: 最初の未入力（default_value のままの）項目を .step-content 内でセンターに表示し、
+  // 補足バーは閉じる。再度「次へ」で未入力が残っていればまた出る（仕様 #7）。
   const revealFirstIncomplete = () => {
     const firstIncomplete = visibleQs.find((q) => !isFieldAcknowledged(getFieldByPath(thoroughInput, q.path)));
     if (firstIncomplete) {
       document.getElementById(`q-${firstIncomplete.path}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
+    setAttempted(false);
   };
 
   // 「このまま次へ」: 仕様 #4 のとおり、未入力項目には触らず通常進行する。

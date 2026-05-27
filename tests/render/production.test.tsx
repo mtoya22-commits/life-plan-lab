@@ -28,10 +28,13 @@ describe('STEP7 production readiness', () => {
     expect(container.textContent).toContain('開発用メニュー');
   });
 
-  it('top screen carries an intro note and a short disclaimer', () => {
+  it('top screen carries the intro note and the formal "ご利用前の注意点" section (STEP11.8: full disclaimer on top, not the one-liner)', () => {
     const { container } = render(<App />);
     expect(container.textContent).toContain('まずは概算で');
-    expect(container.textContent).toContain('投資助言でもありません');
+    // 旧 .top-disclaimer の短文は削除し、B. ご利用前の注意点（フル本文）に置き換え。
+    expect(container.textContent).toContain('ご利用前の注意点');
+    expect(container.textContent).toContain('将来の結果を保証するものではなく');
+    expect(container.textContent).toContain('投資判断や金融商品の推奨を行うものではありません');
   });
 
   it('result shows the full disclaimer (no guarantee / not investment advice / consult a pro)', () => {

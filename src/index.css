@@ -85,14 +85,54 @@ body {
   line-height: 1.6;
 }
 
-/* 入口の補足・短い免責 */
+/* 入口の補足 */
 .top-note {
   margin: 12px 0 0;
 }
-.top-disclaimer {
-  margin: 4px 0 0;
-  font-size: 0.78rem;
-  line-height: 1.6;
+
+/* 開始前トップ画面の説明・注意点・関連記事ブロック。
+   ざっくり / しっかり 診断に入る前にだけ出す。煽らず参考情報として置く。 */
+.top-details {
+  margin-top: 14px;
+}
+.top-details__heading {
+  margin: 14px 0 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+.top-details__heading:first-child {
+  margin-top: 4px;
+}
+.top-details__list {
+  margin: 0 0 4px;
+  padding-left: 20px;
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+.top-details__body-text {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+.top-section {
+  margin-top: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 18px;
+}
+.top-section__heading {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.top-section__body {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.7;
 }
 
 /* キーボード操作時のフォーカス可視化（アクセシビリティ） */
@@ -955,28 +995,32 @@ body {
   color: var(--muted);
   text-align: center;
 }
-/* 「次へ」を押した直後の軽い確認パネル。エラーではなく注記として見せる。 */
+/* 「次へ」を押した直後の補足バー。
+   セージ淡パネルではなく、下部ナビ上に細い注記として置く。
+   背景は親 (.bottom-nav) の薄白を継承し、上部に細い border 一本だけ。
+   煽らない・占有しない・必要なら無視できる、を見た目で伝える。 */
 .step-confirm {
   max-width: 720px;
-  margin: 0 auto 8px;
-  padding: 10px 14px;
-  background: var(--accent-soft);
+  margin: 0 auto;
+  padding: 6px 14px 8px;
   border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
 }
 .step-confirm__text {
-  margin: 0 0 8px;
-  font-size: 0.85rem;
-  color: var(--text);
-  line-height: 1.5;
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.4;
+  text-align: center;
 }
 .step-confirm__actions {
   display: flex;
+  justify-content: center;
   gap: 8px;
 }
 .step-confirm__actions .btn {
-  flex: 1;
-  min-height: 44px;
+  min-height: 36px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
 }
 .bottom-nav__inner .btn {
   min-height: 48px;
