@@ -36,14 +36,18 @@ export function RoughFlow() {
   // ステップが変わったら質問画面の先頭へスクロール（前ステップの位置を引き継がない）。
   // 通常スクロールは内側の .step-content で行うため、そちらを優先的にリセットする。
   // window.scrollTo はドキュメント自体がスクロールする旧経路への保険として残す。
+  // ページ切替時に「未入力確認パネル」状態もリセットする（前ステップの確認を持ち越さない）。
   useEffect(() => {
     contentRef.current?.scrollTo?.({ top: 0, behavior: 'auto' });
     window.scrollTo({ top: 0, behavior: 'auto' });
+    setAttempted(false);
   }, [roughPage, cameFromResult]);
 
   const page = ROUGH_PAGES[roughPage];
   const visible = page.questions.filter((q) => (q.showIf ? q.showIf(draft) : true));
-  const pageComplete = visible.every((q) => isComplete(draft[q.id]));
+  const completedCount = visible.filter((q) => isComplete(draft[q.id])).length;
+  const totalCount = visible.length;
+  const pageComplete = totalCount === 0 || completedCount === totalCount;
   const isLast = roughPage === ROUGH_PAGES.length - 1;
 
   // あと何問・あと何分（おおよそ）
@@ -51,7 +55,7 @@ export function RoughFlow() {
     (n, p) => n + p.questions.filter((q) => (q.showIf ? q.showIf(draft) : true)).length,
     0,
   );
-  const remainingQuestions = laterQuestions + visible.filter((q) => !isComplete(draft[q.id])).length;
+  const remainingQuestions = laterQuestions + (totalCount - completedCount);
   const etaText = remainingQuestions <= 0 ? 'まもなく完了' : `残り約${remainingQuestions}問・あと約1分`;
 
   const advance = () => {
@@ -59,16 +63,28 @@ export function RoughFlow() {
     nextRoughPage(); // スクロールは roughPage 変更を検知する useEffect が担当
   };
 
+  // 「次へ」: 未入力があれば確認パネルを出すだけ。即スクロールはせず、ユーザーに選ばせる。
   const handleNext = () => {
     if (pageComplete) {
       advance();
     } else {
       setAttempted(true);
-      const firstIncomplete = visible.find((q) => !isComplete(draft[q.id]));
-      if (firstIncomplete) {
-        document.getElementById(`q-${firstIncomplete.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
     }
+  };
+
+  // 「未入力項目を見る」: 最初の未入力項目を .step-content 内でセンターに表示。
+  const revealFirstIncomplete = () => {
+    const firstIncomplete = visible.find((q) => !isComplete(draft[q.id]));
+    if (firstIncomplete) {
+      document.getElementById(`q-${firstIncomplete.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
+  // 「このまま次へ」: 仕様 #4 のとおり、未入力項目には触らず通常進行する。
+  // 仕様 #5 の「入力済み扱い」はあくまで per-item の「未入力で進む」ボタン分のみで、
+  // ステップ単位の確認パネルでは状態を変えない（明示的にスキップしたい項目はユーザーが個別操作する）。
+  const proceedAsIs = () => {
+    advance();
   };
 
   return (
@@ -97,6 +113,28 @@ export function RoughFlow() {
       </div>
 
       <nav className="bottom-nav" aria-label="ステップ操作">
+        {/* 通常モード時のみ、入力済み/未入力の自己確認ステータスと、
+            「次へ」を押した直後の軽い確認パネルを出す。
+            cameFromResult（結果からの編集）では再計算が主導線なので出さない。 */}
+        {!cameFromResult && totalCount > 0 && (!attempted || pageComplete) && (
+          <p className="step-status" aria-live="polite">
+            {ja.nav.stepStatus(completedCount, totalCount)}
+          </p>
+        )}
+        {!cameFromResult && attempted && !pageComplete && (
+          <div className="step-confirm" role="group" aria-label="未入力項目の確認">
+            <p className="step-confirm__text">{ja.nav.confirmIncomplete}</p>
+            <div className="step-confirm__actions">
+              <button type="button" className="btn" onClick={revealFirstIncomplete}>
+                {ja.nav.showIncomplete}
+              </button>
+              <button type="button" className="btn btn--primary" onClick={proceedAsIs}>
+                {ja.nav.confirmProceed}
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="bottom-nav__inner">
           {cameFromResult ? (
             <>
@@ -122,15 +160,6 @@ export function RoughFlow() {
             </>
           )}
         </div>
-
-        {!cameFromResult && attempted && !pageComplete && (
-          <div className="bottom-nav__hint">
-            <span className="muted">{ja.nav.incompleteHint}</span>
-            <button className="link-btn" onClick={advance}>
-              {ja.nav.proceedAnyway}
-            </button>
-          </div>
-        )}
       </nav>
     </section>
   );
