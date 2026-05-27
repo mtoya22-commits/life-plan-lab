@@ -72,6 +72,7 @@ describe('STEP5.2 no double counting', () => {
       {
         currentAge: field(10, 'user_input', '子の年齢', '', '歳'),
         ageAssumed: false,
+        elementarySchool: field('public', 'user_input', '小学校', ''),
         middleSchool: field('public' as const, 'user_input', '中学', ''),
         highSchool: field('public' as const, 'user_input', '高校', ''),
         university: field('public_humanities' as const, 'user_input', '大学', ''),

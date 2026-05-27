@@ -109,6 +109,7 @@ export interface ChildInput {
   currentAge: Field<number>;
   /** ざっくり診断で年齢を仮置きした場合 true。結果画面で「仮定」と明示する。 */
   ageAssumed: boolean;
+  elementarySchool: Field<SchoolPath>;
   middleSchool: Field<SchoolPath>;
   highSchool: Field<SchoolPath>;
   university: Field<UniversityPath>;

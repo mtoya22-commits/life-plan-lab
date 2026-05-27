@@ -139,14 +139,16 @@ export function applyRoughDraft(base: SimulationInput, draft: RoughDraft): Simul
 }
 
 // 教育方針 → 各進路の初期値。
+// 小学校は「教育重視」のみ私立想定（家計インパクトが最も大きい段階のため）。
+// 「ところどころ私立」は中学までは公立に寄せ、高校・大学から私立。
 const POLICY_PATHS: Record<
   EducationPolicy,
-  { middle: SchoolPath; high: SchoolPath; uni: UniversityPath; living: UniversityLiving }
+  { elementary: SchoolPath; middle: SchoolPath; high: SchoolPath; uni: UniversityPath; living: UniversityLiving }
 > = {
-  public: { middle: 'public', high: 'public', uni: 'public_humanities', living: 'home' },
-  some_private: { middle: 'public', high: 'private', uni: 'private_humanities', living: 'home' },
-  education_focused: { middle: 'private', high: 'private', uni: 'private_science', living: 'away' },
-  undecided: { middle: 'public', high: 'public', uni: 'undecided', living: 'undecided' },
+  public: { elementary: 'public', middle: 'public', high: 'public', uni: 'public_humanities', living: 'home' },
+  some_private: { elementary: 'public', middle: 'public', high: 'private', uni: 'private_humanities', living: 'home' },
+  education_focused: { elementary: 'private', middle: 'private', high: 'private', uni: 'private_science', living: 'away' },
+  undecided: { elementary: 'public', middle: 'public', high: 'public', uni: 'undecided', living: 'undecided' },
 };
 
 function makeAssumedChild(policy: EducationPolicy, policySource: FieldSource): ChildInput {
@@ -158,6 +160,7 @@ function makeAssumedChild(policy: EducationPolicy, policySource: FieldSource): C
   return {
     currentAge: field(8, 'recommended_value', '子の年齢', '年齢未入力のため仮の年齢（8歳）で試算しています。', '歳'),
     ageAssumed: true,
+    elementarySchool: field(paths.elementary, pathSource, '小学校', note ?? '教育方針に基づき概算しています。'),
     middleSchool: field(paths.middle, pathSource, '中学', note ?? '教育方針に基づき概算しています。'),
     highSchool: field(paths.high, pathSource, '高校', note ?? '教育方針に基づき概算しています。'),
     university: field(paths.uni, pathSource, '大学', note ?? '教育方針に基づき概算しています。'),

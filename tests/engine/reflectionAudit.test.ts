@@ -19,6 +19,7 @@ function child(age: number): ChildInput {
   return {
     currentAge: field(age, 'user_input', '子の年齢', '', '歳'),
     ageAssumed: false,
+    elementarySchool: field('public', 'user_input', '小学校', ''),
     middleSchool: field('public', 'user_input', '中学', ''),
     highSchool: field('public', 'user_input', '高校', ''),
     university: field('private_humanities', 'user_input', '大学', ''),

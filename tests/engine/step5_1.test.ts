@@ -161,6 +161,7 @@ function makeChild(age: number) {
   return {
     currentAge: field(age, 'user_input', '子の年齢', '', '歳'),
     ageAssumed: false,
+    elementarySchool: field('public', 'user_input', '小学校', ''),
     middleSchool: field('private' as const, 'user_input', '中学', ''),
     highSchool: field('private' as const, 'user_input', '高校', ''),
     university: field('private_science' as const, 'user_input', '大学', ''),
