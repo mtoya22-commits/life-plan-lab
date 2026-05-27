@@ -43,8 +43,10 @@ function workStyleToFireType(style: string | number | null): FireType {
       return 'full';
     case 'work_a_little':
       return 'side';
+    case 'keep_working':
+      return 'none'; // 現役継続 — 通常退職モード（FIREイベントなし、income.retirementAge までフルタイム）
     default:
-      return 'side'; // 未定はサイドFIRE想定
+      return 'side'; // 未定はサイドFIRE想定（従来挙動を維持）
   }
 }
 
