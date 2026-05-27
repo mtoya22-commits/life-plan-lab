@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useInputStore } from '../../../store/inputStore';
 import { ja } from '../../../strings/ja';
 import { visibleThoroughPages } from '../../../schema/thoroughSteps';
@@ -8,14 +8,27 @@ import { ProgressHeader } from '../ProgressHeader';
 import { ThoroughQuestionView, ThoroughFieldRow } from './ThoroughQuestionView';
 import { FamilyStep } from './FamilyStep';
 import { EventsStep } from './EventsStep';
-import type { SimulationInput } from '../../../schema/types';
+import type { Field, SimulationInput } from '../../../schema/types';
 import type { ThoroughPage, ThoroughQuestion } from '../../../schema/thoroughSteps';
 
 // =============================================================================
 // しっかり診断のステップフロー。ざっくり診断と同じ操作感（進捗・目的説明・下部固定ナビ）。
 // 全項目が任意（スキップ/おすすめあり）のため、Next は常に進める（止めない）。
 // 結果からの「カテゴリ修正」(cameFromResult) では再計算を主導線にする。
+//
+// 見落とし防止: 'fields' ページでは「このステップ：X/Y 項目入力済み」を
+// 下部ナビに常時表示し、未入力のまま「次へ」を押した場合は軽い確認パネルを出す。
+// 'family' / 'events' ページは項目という単位を持たないので無印で進む。
 // =============================================================================
+
+// しっかり診断の項目「入力済み（acknowledged）」判定。
+// user_input / recommended_value はもちろん、ユーザーが per-item で
+// 「未入力で進む」(source: 'skipped') を押した項目も acknowledged 扱い。
+// 'default_value'（システムの初期標準値）だけはまだユーザー未確認とみなす。
+function isFieldAcknowledged(field: Field<unknown> | undefined): boolean {
+  if (!field) return false;
+  return field.source === 'user_input' || field.source === 'recommended_value' || field.source === 'skipped';
+}
 
 export function ThoroughFlow() {
   const thoroughInput = useInputStore((s) => s.thoroughInput);
@@ -27,13 +40,16 @@ export function ThoroughFlow() {
   const backToResult = useInputStore((s) => s.backToResult);
 
   const contentRef = useRef<HTMLDivElement>(null);
+  const [attempted, setAttempted] = useState(false);
 
   // ステップが変わったら質問画面の先頭へスクロール。
   // 通常スクロールは内側の .step-content で行うため、そちらを優先的にリセットする。
   // window.scrollTo はドキュメント自体がスクロールする旧経路への保険として残す。
+  // ページ切替時に「未入力確認パネル」状態もリセットする。
   useEffect(() => {
     contentRef.current?.scrollTo?.({ top: 0, behavior: 'auto' });
     window.scrollTo({ top: 0, behavior: 'auto' });
+    setAttempted(false);
   }, [thoroughPageId, cameFromResult]);
 
   if (!thoroughInput) return null;
@@ -47,8 +63,38 @@ export function ThoroughFlow() {
   const etaText =
     remaining <= 0 ? 'まもなく完了' : `あと約${Math.max(1, Math.ceil(remaining * 0.6))}分（のこり${remaining}ステップ）`;
 
+  // 'fields' ページでのみ入力済み件数を計算（family/events には項目の概念がない）。
+  const visibleQs: ThoroughQuestion[] =
+    page.kind === 'fields' ? visibleQuestions(page, thoroughInput) : [];
+  const totalCount = visibleQs.length;
+  const completedCount = visibleQs.filter((q) => isFieldAcknowledged(getFieldByPath(thoroughInput, q.path))).length;
+  const pageComplete = totalCount === 0 || completedCount === totalCount;
+
   const advance = () => {
+    setAttempted(false);
     nextThoroughPage(); // スクロールは thoroughPageId 変更を検知する useEffect が担当
+  };
+
+  // 「次へ」: 未入力があれば確認パネルを出す。即進行はしない。
+  const handleNext = () => {
+    if (pageComplete) {
+      advance();
+    } else {
+      setAttempted(true);
+    }
+  };
+
+  // 「未入力項目を見る」: 最初の未入力（default_value のままの）項目を .step-content 内でセンターに表示。
+  const revealFirstIncomplete = () => {
+    const firstIncomplete = visibleQs.find((q) => !isFieldAcknowledged(getFieldByPath(thoroughInput, q.path)));
+    if (firstIncomplete) {
+      document.getElementById(`q-${firstIncomplete.path}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
+  // 「このまま次へ」: 仕様 #4 のとおり、未入力項目には触らず通常進行する。
+  const proceedAsIs = () => {
+    advance();
   };
 
   return (
@@ -77,6 +123,28 @@ export function ThoroughFlow() {
       </div>
 
       <nav className="bottom-nav" aria-label="ステップ操作">
+        {/* 通常モード時のみ、入力済み/未入力の自己確認ステータスと、
+            「次へ」を押した直後の軽い確認パネルを出す。
+            cameFromResult（結果からの編集）では再計算が主導線なので出さない。 */}
+        {!cameFromResult && totalCount > 0 && (!attempted || pageComplete) && (
+          <p className="step-status" aria-live="polite">
+            {ja.nav.stepStatus(completedCount, totalCount)}
+          </p>
+        )}
+        {!cameFromResult && attempted && !pageComplete && (
+          <div className="step-confirm" role="group" aria-label="未入力項目の確認">
+            <p className="step-confirm__text">{ja.nav.confirmIncomplete}</p>
+            <div className="step-confirm__actions">
+              <button type="button" className="btn" onClick={revealFirstIncomplete}>
+                {ja.nav.showIncomplete}
+              </button>
+              <button type="button" className="btn btn--primary" onClick={proceedAsIs}>
+                {ja.nav.confirmProceed}
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="bottom-nav__inner">
           {cameFromResult ? (
             <>
@@ -96,7 +164,7 @@ export function ThoroughFlow() {
               <span className="bottom-nav__center muted">
                 {idx + 1} / {total}
               </span>
-              <button className="btn btn--primary" onClick={advance}>
+              <button className="btn btn--primary" onClick={handleNext}>
                 {isLast ? ja.common.seeResult : ja.common.next}
               </button>
             </>
@@ -114,6 +182,7 @@ function visibleQuestions(page: ThoroughPage, input: SimulationInput): ThoroughQ
 
 // 連続する単純な数値入力は1枚のまとめカードに（スクロール削減）。
 // 選択・判断が必要な項目（choice / toggle）は従来どおり単独カードで丁寧に見せる。
+// 各項目は `q-${path}` の id で包み、「未入力項目を見る」スクロール先として使う。
 function renderFieldGroups(questions: ThoroughQuestion[], input: SimulationInput): ReactNode[] {
   const out: ReactNode[] = [];
   let run: ThoroughQuestion[] = [];
@@ -122,12 +191,18 @@ function renderFieldGroups(questions: ThoroughQuestion[], input: SimulationInput
     if (run.length === 0) return;
     if (run.length === 1) {
       const q = run[0];
-      out.push(<ThoroughQuestionView key={q.path} q={q} field={getFieldByPath(input, q.path)} />);
+      out.push(
+        <div id={`q-${q.path}`} key={q.path}>
+          <ThoroughQuestionView q={q} field={getFieldByPath(input, q.path)} />
+        </div>,
+      );
     } else {
       out.push(
         <div className="question-card group-card" key={key}>
           {run.map((q) => (
-            <ThoroughFieldRow key={q.path} q={q} field={getFieldByPath(input, q.path)} />
+            <div id={`q-${q.path}`} key={q.path}>
+              <ThoroughFieldRow q={q} field={getFieldByPath(input, q.path)} />
+            </div>
           ))}
         </div>,
       );
@@ -140,7 +215,11 @@ function renderFieldGroups(questions: ThoroughQuestion[], input: SimulationInput
       run.push(q);
     } else {
       flush(`grp-${i}`);
-      out.push(<ThoroughQuestionView key={q.path} q={q} field={getFieldByPath(input, q.path)} />);
+      out.push(
+        <div id={`q-${q.path}`} key={q.path}>
+          <ThoroughQuestionView q={q} field={getFieldByPath(input, q.path)} />
+        </div>,
+      );
     }
   });
   flush('grp-last');

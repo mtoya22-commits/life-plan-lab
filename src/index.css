@@ -945,6 +945,39 @@ body {
   justify-content: space-between;
   gap: 12px;
 }
+/* 入力済み件数の自己確認ステータス（控えめ・煽らない）。
+   セージ系ではなくグレー系の小さな注記として置く。 */
+.step-status {
+  max-width: 720px;
+  margin: 0 auto 6px;
+  padding: 0 14px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-align: center;
+}
+/* 「次へ」を押した直後の軽い確認パネル。エラーではなく注記として見せる。 */
+.step-confirm {
+  max-width: 720px;
+  margin: 0 auto 8px;
+  padding: 10px 14px;
+  background: var(--accent-soft);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.step-confirm__text {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+.step-confirm__actions {
+  display: flex;
+  gap: 8px;
+}
+.step-confirm__actions .btn {
+  flex: 1;
+  min-height: 44px;
+}
 .bottom-nav__inner .btn {
   min-height: 48px;
 }
