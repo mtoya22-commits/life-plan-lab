@@ -1030,6 +1030,19 @@ body {
   padding: 6px 12px;
   font-size: 0.82rem;
 }
+/* 「続けて変更」: 結果からの編集モード時、メインの「再計算して結果へ」ボタンの上に
+   薄く一段だけ置く補助導線。主ボタンとの視覚的な競合を避けるため secondary 扱い。 */
+.recompute-continue {
+  max-width: 720px;
+  margin: 0 auto 6px;
+  display: flex;
+  justify-content: center;
+}
+.recompute-continue .btn {
+  min-height: 36px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+}
 .bottom-nav__inner .btn {
   min-height: 48px;
   /* グローバルの .btn (padding 12px 18px) を下部ナビ用に少し詰める。

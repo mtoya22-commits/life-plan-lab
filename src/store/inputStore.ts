@@ -119,6 +119,9 @@ interface InputState {
   result: SimulationResult | null;
   resumePrompt: boolean;
   cameFromResult: boolean;
+  /** 結果画面に戻ったあとのスクロール先指示。'adjust' は「条件を変えてみる」セクションに戻り、
+   *  そこを開いた状態にする。null/'top' は従来どおり上部へ。 */
+  resultReturnTarget: 'top' | 'adjust' | null;
 
   setMode: (mode: Mode) => void;
   reset: () => void;
@@ -130,6 +133,9 @@ interface InputState {
   nextRoughPage: () => void;
   prevRoughPage: () => void;
   submitRough: () => void;
+  /** 「続けて変更」: 再計算して結果画面に戻るが、結果画面では「条件を変えてみる」へジャンプして
+   *  そこを開いた状態にする。試行錯誤しやすくするため。 */
+  submitRoughAndContinue: () => void;
 
   // しっかり診断
   setThoroughValue: (path: string, value: string | number | boolean) => void;
@@ -142,6 +148,10 @@ interface InputState {
   nextThoroughPage: () => void;
   prevThoroughPage: () => void;
   submitThorough: () => void;
+  /** 「続けて変更」しっかり版。 */
+  submitThoroughAndContinue: () => void;
+  /** スクロール処理を実行したあと、結果画面からターゲットをクリアする。 */
+  clearResultReturnTarget: () => void;
 
   // 再開
   resumeSaved: () => void;
@@ -265,6 +275,7 @@ export const useInputStore = create<InputState>((set, get) => ({
   result: null,
   resumePrompt: savedHasProgress,
   cameFromResult: false,
+  resultReturnTarget: null,
 
   setMode: (mode) => {
     if (mode === 'thorough') {
@@ -329,7 +340,15 @@ export const useInputStore = create<InputState>((set, get) => ({
   submitRough: () => {
     const input = buildFullInputFromRough(get().roughDraft);
     const result = runSimulation(input);
-    set({ input, result, phase: 'result', cameFromResult: false });
+    // 通常の再計算 → 結果画面の上部へ戻る（resultReturnTarget の指示は出さない）。
+    set({ input, result, phase: 'result', cameFromResult: false, resultReturnTarget: 'top' });
+  },
+
+  // 「続けて変更」: 再計算後、結果画面の「条件を変えてみる」セクションへスクロールしてそこを開く。
+  submitRoughAndContinue: () => {
+    const input = buildFullInputFromRough(get().roughDraft);
+    const result = runSimulation(input);
+    set({ input, result, phase: 'result', cameFromResult: false, resultReturnTarget: 'adjust' });
   },
 
   // ---- しっかり診断 ----
@@ -401,8 +420,18 @@ export const useInputStore = create<InputState>((set, get) => ({
     if (!ti) return;
     const input = buildFullInputFromThorough(ti);
     const result = runSimulation(input);
-    set({ input, result, phase: 'result', cameFromResult: false });
+    set({ input, result, phase: 'result', cameFromResult: false, resultReturnTarget: 'top' });
   },
+
+  submitThoroughAndContinue: () => {
+    const ti = get().thoroughInput;
+    if (!ti) return;
+    const input = buildFullInputFromThorough(ti);
+    const result = runSimulation(input);
+    set({ input, result, phase: 'result', cameFromResult: false, resultReturnTarget: 'adjust' });
+  },
+
+  clearResultReturnTarget: () => set({ resultReturnTarget: null }),
 
   // ---- 再開 ----
   resumeSaved: () => {

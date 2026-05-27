@@ -37,6 +37,7 @@ export function ThoroughFlow() {
   const nextThoroughPage = useInputStore((s) => s.nextThoroughPage);
   const prevThoroughPage = useInputStore((s) => s.prevThoroughPage);
   const submitThorough = useInputStore((s) => s.submitThorough);
+  const submitThoroughAndContinue = useInputStore((s) => s.submitThoroughAndContinue);
   const backToResult = useInputStore((s) => s.backToResult);
 
   const contentRef = useRef<HTMLDivElement>(null);
@@ -144,6 +145,15 @@ export function ThoroughFlow() {
                 {ja.nav.confirmProceed}
               </button>
             </div>
+          </div>
+        )}
+
+        {/* 結果からの編集モード時の補助ボタン（続けて変更）。 */}
+        {cameFromResult && (
+          <div className="recompute-continue">
+            <button type="button" className="btn" onClick={submitThoroughAndContinue}>
+              {ja.nav.recomputeContinue}
+            </button>
           </div>
         )}
 

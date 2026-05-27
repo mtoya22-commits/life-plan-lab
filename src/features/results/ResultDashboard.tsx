@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { forwardRef, lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useInputStore } from '../../store/inputStore';
 import { ja } from '../../strings/ja';
 import { formatMan } from '../../lib/format';
@@ -32,13 +32,28 @@ export function ResultDashboard() {
   const result = useInputStore((s) => s.result);
   const input = useInputStore((s) => s.input);
   const reset = useInputStore((s) => s.reset);
+  const resultReturnTarget = useInputStore((s) => s.resultReturnTarget);
+  const clearResultReturnTarget = useInputStore((s) => s.clearResultReturnTarget);
   const [sheet, setSheet] = useState<SheetId>(null);
+  // 「条件を変えてみる」セクションの details 要素。「続けて変更」で戻ってきたとき、
+  // この要素をスクロール先 + 開いた状態にする。
+  const editLinksRef = useRef<HTMLDetailsElement>(null);
 
-  // 結果画面に切り替わった（または再計算した）直後は、必ず最上部から表示する。
-  // calculatedAt は submit / recompute のたびに更新されるため、編集→再計算でも先頭へ戻る。
+  // 結果画面に切り替わった（または再計算した）直後の挙動を resultReturnTarget で切り替える:
+  //   'adjust' → 「条件を変えてみる」へジャンプして開く（複数条件を続けて試したい人向け）
+  //   それ以外 → 従来どおり上部から表示
+  // calculatedAt は submit / submitContinue / recompute のたびに更新される。
   const calculatedAt = result?.calculatedAt;
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'auto' });
+    if (resultReturnTarget === 'adjust' && editLinksRef.current) {
+      editLinksRef.current.open = true;
+      // jsdom 等の環境では scrollIntoView が未実装なため optional chain で守る。
+      editLinksRef.current.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+    if (resultReturnTarget) clearResultReturnTarget();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [calculatedAt]);
 
   if (!result || !input) return null;
@@ -138,8 +153,8 @@ export function ResultDashboard() {
         </details>
       )}
 
-      {/* 2) 条件変更導線（操作系・中立） */}
-      <EditLinks />
+      {/* 2) 条件変更導線（操作系・中立）。「続けて変更」のスクロール先として ref を渡す。 */}
+      <EditLinks ref={editLinksRef} />
       {/* しっかり診断の結果では「もっと正確に見る」は出さない（既に詳細なため）。 */}
       {input.meta.mode !== 'thorough' && <DeepenLink />}
 
@@ -224,7 +239,7 @@ const ROUGH_EDIT_TARGETS: { stepId: StepId; label: string }[] = [
   { stepId: 'investment', label: ja.editLinks.investment },
 ];
 
-function EditLinks() {
+const EditLinks = forwardRef<HTMLDetailsElement>(function EditLinks(_, ref) {
   const mode = useInputStore((s) => s.mode);
   const input = useInputStore((s) => s.input);
   const editCategory = useInputStore((s) => s.editCategory);
@@ -236,7 +251,7 @@ function EditLinks() {
   const thoroughTargets = isThorough && input ? visibleThoroughPages(input).map((p) => ({ pageId: p.pageId, label: p.title })) : [];
 
   return (
-    <details className="collapsible">
+    <details className="collapsible" ref={ref}>
       <summary>{ja.result.editHeading}</summary>
       <div className="collapsible__body">
         <p className="muted">{ja.result.editLead}</p>
@@ -256,7 +271,7 @@ function EditLinks() {
       </div>
     </details>
   );
-}
+});
 
 function DeepenLink() {
   const deepenToThorough = useInputStore((s) => s.deepenToThorough);
