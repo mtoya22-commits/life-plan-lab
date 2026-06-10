@@ -1,4 +1,4 @@
-import type { Indicators, Score, ScoreBand, ScoreItem, Suggestion } from '../schema/types';
+import type { FireType, Indicators, Score, ScoreBand, ScoreItem, Suggestion } from '../schema/types';
 import { JUDGE } from './constants';
 
 // =============================================================================
@@ -7,14 +7,17 @@ import { JUDGE } from './constants';
 // しきい値は constants.ts の JUDGE に集約（後で調整可能）。
 // =============================================================================
 
-function scoreFireRate(rate: number): ScoreItem {
+// 現役継続（fireType === 'none'）では「FIRE達成率」という呼び方が不自然なため、
+// 同じ指標（4%ルール準備率）を「老後資金準備率」と表示する。配点ロジックは共通。
+function scoreFireRate(rate: number, fireType: FireType): ScoreItem {
   const t = JUDGE.fireRate;
   let points = 0;
   let note = '50%未満：厳しめ';
   if (rate >= t.full) ((points = 3), (note = '100%以上：達成圏'));
   else if (rate >= t.close) ((points = 2), (note = '80〜99%：あと少し'));
   else if (rate >= t.adjust) ((points = 1), (note = '50〜79%：要調整'));
-  return { key: 'fireAchievementRate', label: 'FIRE達成率', points, note };
+  const label = fireType === 'none' ? '老後資金準備率' : 'FIRE達成率';
+  return { key: 'fireAchievementRate', label, points, note };
 }
 
 function scoreLongevity(age: number | null): ScoreItem {
@@ -65,9 +68,9 @@ function bandForTotal(total: number): ScoreBand {
   return 'tough';
 }
 
-export function judge(indicators: Indicators): Score {
+export function judge(indicators: Indicators, fireType: FireType = 'side'): Score {
   const byIndicator: ScoreItem[] = [
-    scoreFireRate(indicators.fireAchievementRate),
+    scoreFireRate(indicators.fireAchievementRate, fireType),
     scoreLongevity(indicators.assetLongevityAge),
     scoreAssetsAt95(indicators.assetsAt95),
     scoreEduPeak(indicators.eduPeakResilience.pctOfAssets, indicators.eduPeakResilience.netCashFlow),

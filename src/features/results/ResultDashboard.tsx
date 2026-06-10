@@ -81,7 +81,7 @@ export function ResultDashboard() {
       </div>
 
       {/* 結論（常時表示） */}
-      <Hero result={result} />
+      <Hero result={result} fireType={input.fire.type.value} />
 
       {/* 人生フェーズ・次の節目（常時表示） */}
       <Outlook result={result} input={input} events={events} />
@@ -221,8 +221,10 @@ function mortgageCard(input: SimulationInput): { value: string; caption: string 
   }
   if (h.remainingYears.value > 0) {
     const payoff = baseAge + h.remainingYears.value;
+    // 現役継続では「FIRE後」ではなく「退職後」と表現する。
+    const afterLabel = input.fire.type.value === 'none' ? '退職後' : 'FIRE後';
     const caption =
-      payoff > fireStartAge ? 'FIRE後も返済が一部残る可能性があります。' : 'ローン完済までを住宅費に反映しています。';
+      payoff > fireStartAge ? `${afterLabel}も返済が一部残る可能性があります。` : 'ローン完済までを住宅費に反映しています。';
     return { value: `${payoff}歳頃に完済予定`, caption };
   }
   if (h.monthlyPayment.value > 0) {
@@ -250,6 +252,11 @@ const EditLinks = forwardRef<HTMLDetailsElement>(function EditLinks(_, ref) {
   // 直接戻れるよう、表示中のページ単位で導線を出す。
   const thoroughTargets = isThorough && input ? visibleThoroughPages(input).map((p) => ({ pageId: p.pageId, label: p.title })) : [];
 
+  // ざっくり診断の編集導線。現役継続では「FIRE条件を修正」だと不自然なのでラベルを差し替える。
+  const roughTargets = ROUGH_EDIT_TARGETS.map((t) =>
+    t.stepId === 'fire' && input?.fire.type.value === 'none' ? { ...t, label: ja.editLinks.fireNone } : t,
+  );
+
   return (
     <details className="collapsible" ref={ref}>
       <summary>{ja.result.editHeading}</summary>
@@ -262,7 +269,7 @@ const EditLinks = forwardRef<HTMLDetailsElement>(function EditLinks(_, ref) {
                   {t.label}
                 </button>
               ))
-            : ROUGH_EDIT_TARGETS.map((t) => (
+            : roughTargets.map((t) => (
                 <button key={t.stepId} className="btn edit-link" onClick={() => editCategory(t.stepId)}>
                   {t.label}
                 </button>

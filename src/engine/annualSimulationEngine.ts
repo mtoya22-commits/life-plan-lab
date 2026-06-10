@@ -264,7 +264,7 @@ export function runSimulation(input: SimulationInput): SimulationResult {
     cumulativeShortfallPresentValue,
     monthlyInvestKnown ? monthlyInvestAnnual : 0,
   );
-  const score = judge(indicators);
+  const score = judge(indicators, input.fire.type.value);
   const suggestions = buildSuggestions(indicators, score);
 
   return {
@@ -332,6 +332,10 @@ const TAKE_HOME_METHOD_NOTE: Record<'direct' | 'split' | 'household', string> = 
 function buildNotes(input: SimulationInput, cashRatioKnown: boolean, monthlyInvestKnown: boolean): string[] {
   const notes = [TAX_SIMPLIFIED_NOTE, RETURN_MODEL_NOTE];
 
+  // 現役継続（FIREなし）では注記の「FIRE後」を「退職後」と表現する。
+  const isNone = input.fire.type.value === 'none';
+  const afterLabel = isNone ? '退職後' : 'FIRE後';
+
   // 名目利回りとインフレ率から実質利回りの目安を示す。
   const nominal = input.investment.returnRate.value;
   const inflationPct = input.investment.inflationRate.value;
@@ -345,12 +349,12 @@ function buildNotes(input: SimulationInput, cashRatioKnown: boolean, monthlyInve
 
   // 収入も現在価値入力としてインフレ補正している旨（収入と支出の前提を揃える）。
   notes.push(
-    'FIRE後収入・年金・退職金は現在価値で入力し、支出と同じインフレ率で将来額に換算しています（収入だけ名目固定にしません）。',
+    `${afterLabel}収入・年金・退職金は現在価値で入力し、支出と同じインフレ率で将来額に換算しています（収入だけ名目固定にしません）。`,
   );
 
-  // FIRE後生活費・老後生活費は日常生活費のみ（住居費・教育費・保険・特別費等は別加算）。
+  // FIRE後/退職後生活費・老後生活費は日常生活費のみ（住居費・教育費・保険・特別費等は別加算）。
   notes.push(
-    'FIRE後生活費・老後生活費は日常生活費のみです。住居費・教育費・保険料・年間特別費・旅行費・車関連費は別途加算されます。',
+    `${afterLabel}生活費・老後生活費は日常生活費のみです。住居費・教育費・保険料・年間特別費・旅行費・車関連費は別途加算されます。`,
   );
 
   // 特別費・旅行費・車関連費は老後まで毎年継続する旨。
@@ -411,9 +415,9 @@ function buildNotes(input: SimulationInput, cashRatioKnown: boolean, monthlyInve
     '将来額はその年に実際に表示される額面、現在価値は「今のお金の感覚」で見た金額です。生活感覚としては現在価値を中心に見てください。',
   );
 
-  // 4%ルール系の達成率は参考指標である旨。
+  // 4%ルール系の達成率は参考指標である旨（現役継続ではスコア項目名に合わせて「老後資金準備率」）。
   notes.push(
-    'FIRE準備率は4%ルールに基づく簡易的な目安です。教育費・住宅費・年金未入力なども含む年次シミュレーションの資産寿命とあわせてご確認ください。',
+    `${isNone ? '老後資金準備率' : 'FIRE準備率'}は4%ルールに基づく簡易的な目安です。教育費・住宅費・年金未入力なども含む年次シミュレーションの資産寿命とあわせてご確認ください。`,
   );
 
   if (input.meta.mode === 'thorough') notes.push(CAPTURE_NOTE);
@@ -476,6 +480,11 @@ function eventsForAge(
       kind: input.fire.type.value === 'side' ? 'side_fire_start' : 'fire_start',
       label: input.fire.type.value === 'side' ? 'サイドFIRE開始' : 'FIRE開始',
     });
+  }
+  // 現役継続（FIREなし）では、代わりに退職予定年齢に「退職」マーカーを出す。
+  // タイムラインに働き方の節目が一切出ないと寂しいため。kind は既存の full_retire を再利用。
+  if (input.fire.type.value === 'none' && age === fireStartAge) {
+    out.push({ age, kind: 'full_retire', label: '退職' });
   }
   if (age === SIM.pensionStartAge && input.retirement.pension.value > 0) {
     out.push({ age, kind: 'pension_start', label: '年金受給開始' });
@@ -564,7 +573,14 @@ function collectAssumptions(input: SimulationInput): AssumptionLine[] {
 
   push(input.investment.returnRate);
   push(input.investment.inflationRate);
-  push(input.fire.postFireLiving);
+  // 現役継続では「FIRE後生活費」は質問していない。
+  // 退職が65歳より前のとき（年金開始までのブリッジ年に postFireLiving を使う）だけ、
+  // 「退職後の生活費」というラベルで表示する。65歳以降退職なら行ごと省く。
+  if (input.fire.type.value !== 'none') {
+    push(input.fire.postFireLiving);
+  } else if (input.income.retirementAge.value < SIM.pensionStartAge) {
+    push({ ...input.fire.postFireLiving, label: '退職後の生活費' });
+  }
   push(input.retirement.retirementLiving);
   push(input.retirement.pension);
   push(input.income.retirementLumpSum);

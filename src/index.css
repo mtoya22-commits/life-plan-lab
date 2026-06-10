@@ -31,6 +31,11 @@
   --band-realistic: #4c6b62; /* くすんだ青緑グレー */
   --band-needs: #8f7344; /* くすんだブラス */
   --band-tough: #8a6749; /* 落ち着いたブラウン */
+
+  /* .app の上部余白。入力画面 (.step-layout) のビューポート高計算と共有する。
+     この分を引かないと「padding-top + 100dvh > viewport」になり、
+     overflow:hidden の .step-layout 内に張り付く下部ナビが初期表示で下に切れる。 */
+  --app-pad-top: calc(24px + env(safe-area-inset-top, 0px));
 }
 
 * {
@@ -54,8 +59,9 @@ body {
   max-width: 720px;
   margin: 0 auto;
   /* ステータスバー/ノッチに詰まらないよう上部に safe-area を確保。
-     下部の余白は、入力画面の sticky ナビ自体が下端を担うため不要。 */
-  padding: calc(24px + env(safe-area-inset-top)) 18px 0;
+     下部の余白は、入力画面の sticky ナビ自体が下端を担うため不要。
+     値は .step-layout の高さ計算と共有するため :root の --app-pad-top に集約。 */
+  padding: var(--app-pad-top) 18px 0;
 }
 
 .screen {
@@ -504,8 +510,10 @@ body {
 .step-layout {
   display: flex;
   flex-direction: column;
-  height: 100svh;
-  height: 100dvh;
+  /* .app の上部 padding を差し引いて「padding + 高さ = ちょうど viewport」にする。
+     差し引かないと下部ナビが padding-top 分だけ画面外に切れる。 */
+  height: calc(100svh - var(--app-pad-top));
+  height: calc(100dvh - var(--app-pad-top));
   overflow: hidden;
 }
 /* 内側スクロール領域。入力カードはここに積まれ、必要に応じて縦スクロールする。

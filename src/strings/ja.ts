@@ -136,6 +136,8 @@ export const ja = {
     family: '家族・教育を修正',
     housing: '住まいを修正',
     fire: 'FIRE条件を修正',
+    // 現役継続（fire.type === 'none'）選択時の同ステップ向けラベル
+    fireNone: '働き方・退職を修正',
     investment: '投資条件を修正',
     retirement: '老後を修正',
     events: 'ライフイベントを修正',

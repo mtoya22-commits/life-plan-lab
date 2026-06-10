@@ -1,11 +1,12 @@
-import type { SimulationResult } from '../../schema/types';
+import type { FireType, SimulationResult } from '../../schema/types';
 import { formatMan, formatPct } from '../../lib/format';
 import { ja } from '../../strings/ja';
 
 // 結果のHero。分析ダッシュボードではなく「静かな要約」を目指す。
 // 主役は資産寿命の一言。95歳時点は「ラベル小／金額大／注記極小muted」の3段で見せる。
 // FIRE準備率は脚注（目安）。教育費ピーク・ローン完済・FIRE後の状態は直下の Outlook が担う。
-export function Hero({ result }: { result: SimulationResult }) {
+// 現役継続（fireType === 'none'）では FIRE 準備率の脚注を出さない（FIRE を目指していないため）。
+export function Hero({ result, fireType }: { result: SimulationResult; fireType: FireType }) {
   const { indicators, score } = result;
   const depleted = indicators.cumulativeShortfall > 0;
 
@@ -36,7 +37,9 @@ export function Hero({ result }: { result: SimulationResult }) {
         <span className="hero__support-sub">{supportSub}</span>
       </div>
 
-      <p className="hero__foot muted">FIRE準備率（目安）{formatPct(indicators.fireAchievementRate)}</p>
+      {fireType !== 'none' && (
+        <p className="hero__foot muted">FIRE準備率（目安）{formatPct(indicators.fireAchievementRate)}</p>
+      )}
     </div>
   );
 }
