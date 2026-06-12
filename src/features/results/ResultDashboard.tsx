@@ -21,6 +21,8 @@ import { EducationDetail } from './EducationDetail';
 import { MortgageDetail } from './MortgageDetail';
 import { AssumptionSummary } from './AssumptionSummary';
 import { Suggestions } from './Suggestions';
+import { QuickAdjust } from './QuickAdjust';
+import { PreviousDelta } from './PreviousDelta';
 
 type SheetId = 'timeline' | 'chart' | 'education' | 'mortgage' | null;
 
@@ -41,15 +43,16 @@ export function ResultDashboard() {
 
   // 結果画面に切り替わった（または再計算した）直後の挙動を resultReturnTarget で切り替える:
   //   'adjust' → 「条件を変えてみる」へジャンプして開く（複数条件を続けて試したい人向け）
+  //   'stay'   → スクロールしない（クイック調整中。画面位置を保つ）
   //   それ以外 → 従来どおり上部から表示
-  // calculatedAt は submit / submitContinue / recompute のたびに更新される。
+  // calculatedAt は submit / submitContinue / nudge のたびに更新される。
   const calculatedAt = result?.calculatedAt;
   useEffect(() => {
     if (resultReturnTarget === 'adjust' && editLinksRef.current) {
       editLinksRef.current.open = true;
       // jsdom 等の環境では scrollIntoView が未実装なため optional chain で守る。
       editLinksRef.current.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
-    } else {
+    } else if (resultReturnTarget !== 'stay') {
       window.scrollTo({ top: 0, behavior: 'auto' });
     }
     if (resultReturnTarget) clearResultReturnTarget();
@@ -81,7 +84,10 @@ export function ResultDashboard() {
       </div>
 
       {/* 結論（常時表示） */}
-      <Hero result={result} />
+      <Hero result={result} fireType={input.fire.type.value} />
+
+      {/* 前回の条件との差分（再計算・クイック調整の直後だけ出る） */}
+      <PreviousDelta />
 
       {/* 人生フェーズ・次の節目（常時表示） */}
       <Outlook result={result} input={input} events={events} />
@@ -153,6 +159,9 @@ export function ResultDashboard() {
         </details>
       )}
 
+      {/* 1.5) What-if クイック調整（その場で再計算。試行錯誤の主導線） */}
+      <QuickAdjust />
+
       {/* 2) 条件変更導線（操作系・中立）。「続けて変更」のスクロール先として ref を渡す。 */}
       <EditLinks ref={editLinksRef} />
       {/* しっかり診断の結果では「もっと正確に見る」は出さない（既に詳細なため）。 */}
@@ -221,8 +230,10 @@ function mortgageCard(input: SimulationInput): { value: string; caption: string 
   }
   if (h.remainingYears.value > 0) {
     const payoff = baseAge + h.remainingYears.value;
+    // 現役継続では「FIRE後」ではなく「退職後」と表現する。
+    const afterLabel = input.fire.type.value === 'none' ? '退職後' : 'FIRE後';
     const caption =
-      payoff > fireStartAge ? 'FIRE後も返済が一部残る可能性があります。' : 'ローン完済までを住宅費に反映しています。';
+      payoff > fireStartAge ? `${afterLabel}も返済が一部残る可能性があります。` : 'ローン完済までを住宅費に反映しています。';
     return { value: `${payoff}歳頃に完済予定`, caption };
   }
   if (h.monthlyPayment.value > 0) {
@@ -250,6 +261,11 @@ const EditLinks = forwardRef<HTMLDetailsElement>(function EditLinks(_, ref) {
   // 直接戻れるよう、表示中のページ単位で導線を出す。
   const thoroughTargets = isThorough && input ? visibleThoroughPages(input).map((p) => ({ pageId: p.pageId, label: p.title })) : [];
 
+  // ざっくり診断の編集導線。現役継続では「FIRE条件を修正」だと不自然なのでラベルを差し替える。
+  const roughTargets = ROUGH_EDIT_TARGETS.map((t) =>
+    t.stepId === 'fire' && input?.fire.type.value === 'none' ? { ...t, label: ja.editLinks.fireNone } : t,
+  );
+
   return (
     <details className="collapsible" ref={ref}>
       <summary>{ja.result.editHeading}</summary>
@@ -262,7 +278,7 @@ const EditLinks = forwardRef<HTMLDetailsElement>(function EditLinks(_, ref) {
                   {t.label}
                 </button>
               ))
-            : ROUGH_EDIT_TARGETS.map((t) => (
+            : roughTargets.map((t) => (
                 <button key={t.stepId} className="btn edit-link" onClick={() => editCategory(t.stepId)}>
                   {t.label}
                 </button>

@@ -31,6 +31,11 @@
   --band-realistic: #4c6b62; /* くすんだ青緑グレー */
   --band-needs: #8f7344; /* くすんだブラス */
   --band-tough: #8a6749; /* 落ち着いたブラウン */
+
+  /* .app の上部余白。入力画面 (.step-layout) のビューポート高計算と共有する。
+     この分を引かないと「padding-top + 100dvh > viewport」になり、
+     overflow:hidden の .step-layout 内に張り付く下部ナビが初期表示で下に切れる。 */
+  --app-pad-top: calc(24px + env(safe-area-inset-top, 0px));
 }
 
 * {
@@ -54,8 +59,9 @@ body {
   max-width: 720px;
   margin: 0 auto;
   /* ステータスバー/ノッチに詰まらないよう上部に safe-area を確保。
-     下部の余白は、入力画面の sticky ナビ自体が下端を担うため不要。 */
-  padding: calc(24px + env(safe-area-inset-top)) 18px 0;
+     下部の余白は、入力画面の sticky ナビ自体が下端を担うため不要。
+     値は .step-layout の高さ計算と共有するため :root の --app-pad-top に集約。 */
+  padding: var(--app-pad-top) 18px 0;
 }
 
 .screen {
@@ -504,8 +510,10 @@ body {
 .step-layout {
   display: flex;
   flex-direction: column;
-  height: 100svh;
-  height: 100dvh;
+  /* .app の上部 padding を差し引いて「padding + 高さ = ちょうど viewport」にする。
+     差し引かないと下部ナビが padding-top 分だけ画面外に切れる。 */
+  height: calc(100svh - var(--app-pad-top));
+  height: calc(100dvh - var(--app-pad-top));
   overflow: hidden;
 }
 /* 内側スクロール領域。入力カードはここに積まれ、必要に応じて縦スクロールする。
@@ -1075,6 +1083,92 @@ body {
   text-underline-offset: 2px;
   cursor: pointer;
   padding: 6px 4px;
+}
+
+/* 結果: 前回比の差分チップ（Hero 直下）。
+   再計算・クイック調整の直後だけ出る控えめな 1 行。赤は使わない。 */
+.delta-chip {
+  margin: -4px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  text-align: center;
+}
+.delta-chip__value {
+  font-weight: 600;
+}
+.delta-chip__value--up {
+  color: var(--band-stable);
+}
+.delta-chip__value--down {
+  color: var(--band-needs);
+}
+
+/* 結果: What-if クイック調整カード。
+   押すたびに即時再計算する ± ステッパー。試行錯誤の摩擦を最小化する。 */
+.quick-adjust {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px 18px;
+}
+.quick-adjust .section-heading {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+.quick-adjust__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+}
+.quick-adjust__label {
+  flex: 1 1 auto;
+  font-size: 0.9rem;
+}
+.quick-adjust__value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.quick-adjust__unit {
+  margin-left: 2px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+.quick-adjust__steppers {
+  display: flex;
+  gap: 8px;
+}
+.stepper-btn {
+  appearance: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.stepper-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.stepper-btn:active:not(:disabled) {
+  background: var(--accent-soft);
+}
+.stepper-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.quick-adjust__note {
+  margin: 10px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.6;
 }
 
 /* 結果: 今回のポイント */

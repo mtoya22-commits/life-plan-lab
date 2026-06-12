@@ -73,9 +73,11 @@ function buildReassurances(result: SimulationResult, input: SimulationInput, eve
 
   const payoff = events.find((e) => e.type === 'mortgage');
   if (payoff) {
+    // 現役継続では「FIRE後」ではなく「退職後」と表現する。
+    const afterLabel = input.fire.type.value === 'none' ? '退職後' : 'FIRE後';
     const tail =
       payoff.age > fireStartAge
-        ? '完済後は返済負担が下がりますが、持ち家の維持費は残ります。FIRE後もしばらく返済が続く見込みです。'
+        ? `完済後は返済負担が下がりますが、持ち家の維持費は残ります。${afterLabel}もしばらく返済が続く見込みです。`
         : '完済後は返済負担が下がりますが、持ち家の維持費は残ります。';
     out.push(`住宅ローンは${payoff.age}歳ごろに完済予定です。${tail}`);
   }
