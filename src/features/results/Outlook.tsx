@@ -1,5 +1,6 @@
 import type { SimulationInput, SimulationResult } from '../../schema/types';
 import type { LifeEventEntry } from './lifeEvents';
+import { totalChildAllowance } from '../../engine/educationCostEngine';
 import { currentLifePhase, educationSettleAge, upcomingMilestones } from './lifePhase';
 
 // 「人生フェーズ・次の節目」カード。結論(Hero)の直後に置き、
@@ -68,6 +69,16 @@ function buildReassurances(result: SimulationResult, input: SimulationInput, eve
       out.push(`教育費は${peak}歳ごろにピークを迎え、${settle}歳ごろに一段落する見込みです。`);
     } else {
       out.push(`教育費は${peak}歳ごろにピークを迎える見込みです。`);
+    }
+    // 児童手当（R6 改定）を見える化する。子の年齢で給付額が変わるため、今年・5年後の額を示す。
+    const allowanceNow = totalChildAllowance(input.children, 0);
+    if (allowanceNow > 0) {
+      const allowance5 = totalChildAllowance(input.children, 5);
+      if (allowance5 > 0 && allowance5 !== allowanceNow) {
+        out.push(`児童手当は今年 約${allowanceNow}万円、5年後 約${allowance5}万円が毎年の収入に乗ります（年齢に応じて自動加算）。`);
+      } else {
+        out.push(`児童手当として、今年 約${allowanceNow}万円が毎年の収入に乗ります（年齢に応じて自動加算）。`);
+      }
     }
   }
 

@@ -44,11 +44,12 @@ describe('mortgage engine: equal_payment (元利均等) with full data', () => {
     expect(schedule[schedule.length - 1]).toBeLessThan(1); // 完済（端数のみ）
   });
 
-  it('first-year breakdown: interest ≈ balance × rate, principal = annual − interest', () => {
+  it('first-year breakdown: interest ≈ balance × rate, principal = annual − interest (固定金利前提)', () => {
     const h = makeOwn({
       balance: field(3000, 'user_input', '残高', '', '万円'),
       rate: field(1, 'user_input', '金利', '', '%'),
       remainingYears: field(30, 'user_input', '残年数', '', '年'),
+      rateType: field('fixed', 'user_input', '金利タイプ', ''),
       repayMethod: field('equal_payment', 'user_input', '返済方式', ''),
     });
     const b = mortgageBreakdownForYear(h, 40, 40);
@@ -95,25 +96,71 @@ describe('mortgage engine: 固定→変動切替', () => {
       rateType: field('fixed', 'user_input', '金利タイプ', ''),
       fixedEndAge: field(50, 'user_input', '固定終了', '', '歳'),
     });
+    expect(RATE_RISE_AFTER_FIXED).toBeGreaterThan(0);
     const beforeFixedEnd = mortgageBreakdownForYear(h, 45, 40);
     const afterFixedEnd = mortgageBreakdownForYear(h, 55, 40);
-    // 固定終了後は利息率が高くなる → 同じ残高水準でも利息額が変わる
-    // 残高は同じではないが、適用利率の差は確実に出る
-    expect(RATE_RISE_AFTER_FIXED).toBeGreaterThan(0);
-    // 簡易: 固定終了直前と直後の利息率の差を年金利で見るのは難しいので、
-    // テストとしては「固定終了が動作する＝残高フローに差が出る」を確認する。
-    const flat = makeOwn({
+    expect(beforeFixedEnd.interest).toBeGreaterThan(0);
+    expect(afterFixedEnd.interest).toBeGreaterThan(0);
+  });
+});
+
+describe('mortgage engine: rateType (固定 vs 変動) は engine 上で区別される', () => {
+  it('変動は全期間で金利が上振れる → 固定（fixedEndAge なし）より総返済利息が大きい', () => {
+    const fixedNoEnd = makeOwn({
+      balance: field(3000, 'user_input', '残高', '', '万円'),
+      rate: field(1, 'user_input', '金利', '', '%'),
+      remainingYears: field(30, 'user_input', '残年数', '', '年'),
+      rateType: field('fixed', 'user_input', '金利タイプ', ''),
+      // fixedEndAge なし → 完済まで固定
+    });
+    const variable = makeOwn({
       balance: field(3000, 'user_input', '残高', '', '万円'),
       rate: field(1, 'user_input', '金利', '', '%'),
       remainingYears: field(30, 'user_input', '残年数', '', '年'),
       rateType: field('variable', 'user_input', '金利タイプ', ''),
     });
-    const flatSched = balanceSchedule(flat, 40);
-    const fixedSched = balanceSchedule(h, 40);
-    // 固定終了後に金利が上がるので、同年での残高は固定終了モデルの方が "やや高め残" になる
-    expect(fixedSched[20]).toBeGreaterThan(flatSched[20]);
-    expect(beforeFixedEnd.interest).toBeGreaterThan(0);
-    expect(afterFixedEnd.interest).toBeGreaterThan(0);
+    const fixedFirstYear = mortgageBreakdownForYear(fixedNoEnd, 40, 40);
+    const variableFirstYear = mortgageBreakdownForYear(variable, 40, 40);
+    // 変動は最初から +0.3% 上乗せされる → 初年度利息が固定より大きい
+    expect(variableFirstYear.interest).toBeGreaterThan(fixedFirstYear.interest);
+  });
+
+  it('元利均等 + 固定 vs 元利均等 + 変動 で初年度返済額が異なる', () => {
+    const fixedNoEnd = makeOwn({
+      balance: field(3000, 'user_input', '残高', '', '万円'),
+      rate: field(1, 'user_input', '金利', '', '%'),
+      remainingYears: field(30, 'user_input', '残年数', '', '年'),
+      rateType: field('fixed', 'user_input', '金利タイプ', ''),
+      repayMethod: field('equal_payment', 'user_input', '返済方式', ''),
+    });
+    const variable = makeOwn({
+      ...fixedNoEnd,
+      rateType: field('variable', 'user_input', '金利タイプ', ''),
+    });
+    const f = mortgageBreakdownForYear(fixedNoEnd, 40, 40);
+    const v = mortgageBreakdownForYear(variable, 40, 40);
+    // 元利均等は annualPayment 固定 → 変動の annualPayment は +0.3% 分だけ高い
+    expect(v.principal + v.interest).toBeGreaterThan(f.principal + f.interest);
+  });
+
+  it('固定（fixedEndAge=完済年）と変動でも結果が異なる（前回はここが等しくなって誤検出されていた）', () => {
+    // ユーザーが「base() で固定と変動が同じだった」と指摘した症状を回帰固定する。
+    const fixedFullTerm = makeOwn({
+      balance: field(2000, 'user_input', '残高', '', '万円'),
+      rate: field(1, 'user_input', '金利', '', '%'),
+      remainingYears: field(20, 'user_input', '残年数', '', '年'),
+      rateType: field('fixed', 'user_input', '金利タイプ', ''),
+      fixedEndAge: field(60, 'user_input', '固定終了', '', '歳'), // 完済年と同じ
+    });
+    const variable = makeOwn({
+      ...fixedFullTerm,
+      rateType: field('variable', 'user_input', '金利タイプ', ''),
+    });
+    // 固定（fixedEndAge=完済）は実質「ずっと base rate」、変動は全期間 +0.3%。
+    // 1年あたりの利息が異なるので、年次残高列の中盤値が等しくならないこと。
+    const fS = balanceSchedule(fixedFullTerm, 40);
+    const vS = balanceSchedule(variable, 40);
+    expect(fS[10]).not.toBeCloseTo(vS[10], 1);
   });
 });
 

@@ -327,6 +327,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
       {
         path: 'housing.rateType',
         label: '固定 / 変動',
+        help: '変動金利は将来の金利上昇リスクを織り込み、入力された金利に+0.3%ポイントを上乗せして全期間試算します（慎重な仮定）。固定金利を選ぶと完済まで入力どおり、固定終了年齢を入れた場合はそれ以降+0.5%上振れます。',
         kind: 'choice',
         options: [
           { value: 'fixed', label: '固定' },
@@ -337,7 +338,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
       {
         path: 'housing.fixedEndAge',
         label: '固定終了年齢',
-        help: '固定金利が終わる年齢です。タイムラインに反映します（変動金利では使用しません）。',
+        help: '固定金利が終わる年齢です。この年齢以降は金利が+0.5%ポイント上振れる慎重な仮定で計算します（変動金利では使用しません）。',
         kind: 'number',
         unit: '歳',
         min: 30,
@@ -348,6 +349,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
       {
         path: 'housing.repayMethod',
         label: '返済方式',
+        help: '元利均等は毎月の返済額が一定、元金均等は元金返済が一定で初期負担が大きく利息総額が少なめ。固定/変動とは独立に選べます。',
         kind: 'choice',
         options: [
           { value: 'equal_payment', label: '元利均等' },
