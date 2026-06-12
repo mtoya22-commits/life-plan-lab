@@ -1,5 +1,5 @@
 import type { ChildInput, UniversityLiving, UniversityPath } from '../schema/types';
-import { EDUCATION_COST, UNIVERSITY_ENTRANCE_FEE, UNIVERSITY_UNDECIDED } from './constants';
+import { CHILD_ALLOWANCE, EDUCATION_COST, UNIVERSITY_ENTRANCE_FEE, UNIVERSITY_UNDECIDED } from './constants';
 
 // =============================================================================
 // 教育費エンジン（純粋関数）
@@ -40,4 +40,35 @@ export function totalEducationCost(children: ChildInput[], yearOffset: number): 
     const ageThisYear = child.currentAge.value + yearOffset;
     return sum + eduCostForChild(child, ageThisYear);
   }, 0);
+}
+
+// =============================================================================
+// 児童手当（R6 改定: 所得制限撤廃・高校生まで対象拡大）
+// 教育費の対概念として、子育て期の家計を現実に近づける。年齢条件で発生する収入として
+// 「income.other」に加算する（教育費から差し引かないことで、年次表上で「給付が出ている」
+// 効果が見える）。手当も支出と同じ物価スライド前提でインフレ追従する（engine 側で適用）。
+// =============================================================================
+
+/** 第 N 子（1-based, 生年月日順 = 年齢の昇順）を考慮した、その子1人あたりの年間児童手当（万円, 今日の物価）。 */
+export function childAllowanceForChild(child: ChildInput, ageThisYear: number, birthOrder: number): number {
+  if (ageThisYear < 0 || ageThisYear > 17) return 0; // 18歳以降は支給なし
+  if (birthOrder >= 3) return CHILD_ALLOWANCE.thirdOrLater.age0to17;
+  return ageThisYear <= 2 ? CHILD_ALLOWANCE.firstOrSecond.under3 : CHILD_ALLOWANCE.firstOrSecond.age3to17;
+}
+
+/** その年の全子どもの児童手当合計（万円, 今日の物価）。yearOffset は現在からの経過年数。
+ *  生年月日順 = 入力時点での年齢の降順で第 1 子・第 2 子…を決める（年長が第 1 子）。
+ *  シミュレーションが進んでも世代順は変わらないため、初回確定 = 入力順の age 降順を保持。 */
+export function totalChildAllowance(children: ChildInput[], yearOffset: number): number {
+  // 年齢降順インデックスを 1-based の birthOrder にする（現時点で最年長 = 第 1 子）。
+  const ordered = children
+    .map((c, i) => ({ child: c, baseAge: c.currentAge.value, idx: i }))
+    .sort((a, b) => b.baseAge - a.baseAge);
+  let total = 0;
+  ordered.forEach((entry, k) => {
+    const birthOrder = k + 1;
+    const ageThisYear = entry.child.currentAge.value + yearOffset;
+    total += childAllowanceForChild(entry.child, ageThisYear, birthOrder);
+  });
+  return total;
 }

@@ -6,7 +6,7 @@ import type {
   SimulationResult,
   YearRow,
 } from '../schema/types';
-import { totalEducationCost } from './educationCostEngine';
+import { totalChildAllowance, totalEducationCost } from './educationCostEngine';
 import { annualHousingCost, mortgageEvents } from './mortgageEngine';
 import { fireAchievementRate, postFireIncomeForAge } from './fireEngine';
 import { buildSuggestions, judge } from './judgmentEngine';
@@ -18,6 +18,7 @@ import {
   DEFAULT_INVEST_FRACTION,
   HOME_MAINTENANCE_ANNUAL,
   MEDICAL_CARE_RESERVE,
+  RATE_RISE_AFTER_FIXED,
   RETURN_MODEL_NOTE,
   SIM,
   TAX_SIMPLIFIED_NOTE,
@@ -118,7 +119,9 @@ export function runSimulation(input: SimulationInput): SimulationResult {
     const pension = (age >= SIM.pensionStartAge ? input.retirement.pension.value : 0) * inflationFactor;
     const lifeEventIncome = sumLifeEventInflows(input, age) * inflationFactor;
     const retirementIncome = (age === fireStartAge ? input.income.retirementLumpSum.value : 0) * inflationFactor;
-    const other = lifeEventIncome + retirementIncome;
+    // 児童手当 (R6 改定): 0〜17歳の子に年単位で給付。物価スライド前提でインフレ追従。
+    const childAllowance = totalChildAllowance(input.children, offset) * inflationFactor;
+    const other = lifeEventIncome + retirementIncome + childAllowance;
     const incomeTotal = labor + postFire + pension + other;
 
     // ---- 支出（住宅費以外はインフレを適用）----
@@ -395,8 +398,24 @@ function buildNotes(input: SimulationInput, cashRatioKnown: boolean, monthlyInve
   );
 
   if (input.housing.type.value !== 'rent') {
-    notes.push(`住宅費は毎月返済額×12（完済年齢まで）＋完済後の持ち家維持費（年${HOME_MAINTENANCE_ANNUAL}万円）で計算しています。維持費は固定資産税・修繕・火災保険などをまとめた概算です。`);
-    notes.push('住宅ローンの残高・金利・固定/変動・返済方式・ボーナス払いは現時点では記録用で、住宅費の精密計算には未反映です。');
+    const h = input.housing;
+    const hasFull = h.balance.value > 0 && h.remainingYears.value > 0;
+    if (hasFull) {
+      const method = h.repayMethod.value === 'equal_principal' ? '元金均等' : '元利均等';
+      notes.push(
+        `住宅費は残高${h.balance.value}万円・金利${h.rate.value}%・${method}方式・残り${h.remainingYears.value}年で年次返済（元金＋利息）を計算しています。完済後は持ち家維持費（年${HOME_MAINTENANCE_ANNUAL}万円）に切り替わります。`,
+      );
+      if (h.rateType.value === 'fixed' && h.fixedEndAge.value > 0) {
+        notes.push(
+          `固定金利は${h.fixedEndAge.value}歳で終了する想定です。固定終了以降は金利が${RATE_RISE_AFTER_FIXED}%ポイント上振れる慎重な仮定で試算しています。`,
+        );
+      }
+      if (h.bonusAnnual.value > 0) {
+        notes.push(`ボーナス払いとして年間${h.bonusAnnual.value}万円を毎年の元金返済に上乗せしています。`);
+      }
+    } else {
+      notes.push(`住宅費は毎月返済額×12（残り${h.remainingYears.value}年）＋完済後の持ち家維持費（年${HOME_MAINTENANCE_ANNUAL}万円）で計算しています。残高・金利を入れると元利均等の精密計算に切り替わります。`);
+    }
   }
 
   if (input.retirement.medicalCareReserve.value) {
@@ -419,6 +438,13 @@ function buildNotes(input: SimulationInput, cashRatioKnown: boolean, monthlyInve
   notes.push(
     `${isNone ? '老後資金準備率' : 'FIRE準備率'}は4%ルールに基づく簡易的な目安です。教育費・住宅費・年金未入力なども含む年次シミュレーションの資産寿命とあわせてご確認ください。`,
   );
+
+  // 児童手当（R6 改定: 所得制限撤廃・高校生まで対象）を子の年齢に応じて毎年自動加算。
+  if (input.children.length > 0) {
+    notes.push(
+      '児童手当（令和6年改定: 所得制限撤廃・高校生まで対象拡大）を、お子さまの年齢に応じて毎年の収入に自動で加算しています。第3子以降は多子加算（月3万円）を反映します。',
+    );
+  }
 
   if (input.meta.mode === 'thorough') notes.push(CAPTURE_NOTE);
   return notes;
