@@ -18,6 +18,7 @@ import {
   DEFAULT_INVEST_FRACTION,
   HOME_MAINTENANCE_ANNUAL,
   MEDICAL_CARE_RESERVE,
+  RATE_RISE_AFTER_FIXED,
   RETURN_MODEL_NOTE,
   SIM,
   TAX_SIMPLIFIED_NOTE,
@@ -397,8 +398,24 @@ function buildNotes(input: SimulationInput, cashRatioKnown: boolean, monthlyInve
   );
 
   if (input.housing.type.value !== 'rent') {
-    notes.push(`住宅費は毎月返済額×12（完済年齢まで）＋完済後の持ち家維持費（年${HOME_MAINTENANCE_ANNUAL}万円）で計算しています。維持費は固定資産税・修繕・火災保険などをまとめた概算です。`);
-    notes.push('住宅ローンの残高・金利・固定/変動・返済方式・ボーナス払いは現時点では記録用で、住宅費の精密計算には未反映です。');
+    const h = input.housing;
+    const hasFull = h.balance.value > 0 && h.remainingYears.value > 0;
+    if (hasFull) {
+      const method = h.repayMethod.value === 'equal_principal' ? '元金均等' : '元利均等';
+      notes.push(
+        `住宅費は残高${h.balance.value}万円・金利${h.rate.value}%・${method}方式・残り${h.remainingYears.value}年で年次返済（元金＋利息）を計算しています。完済後は持ち家維持費（年${HOME_MAINTENANCE_ANNUAL}万円）に切り替わります。`,
+      );
+      if (h.rateType.value === 'fixed' && h.fixedEndAge.value > 0) {
+        notes.push(
+          `固定金利は${h.fixedEndAge.value}歳で終了する想定です。固定終了以降は金利が${RATE_RISE_AFTER_FIXED}%ポイント上振れる慎重な仮定で試算しています。`,
+        );
+      }
+      if (h.bonusAnnual.value > 0) {
+        notes.push(`ボーナス払いとして年間${h.bonusAnnual.value}万円を毎年の元金返済に上乗せしています。`);
+      }
+    } else {
+      notes.push(`住宅費は毎月返済額×12（残り${h.remainingYears.value}年）＋完済後の持ち家維持費（年${HOME_MAINTENANCE_ANNUAL}万円）で計算しています。残高・金利を入れると元利均等の精密計算に切り替わります。`);
+    }
   }
 
   if (input.retirement.medicalCareReserve.value) {

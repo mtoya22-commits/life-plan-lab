@@ -149,37 +149,46 @@ describe('reflection audit:主要入力は期待方向に効く', () => {
   });
 });
 
-describe('reflection audit: 記録用項目は結果を変えない', () => {
+describe('reflection audit: 住宅ローンフィールドは engine に反映される（STEP11.17-B）', () => {
+  it('higher mortgage rate → fewer assets at 95 (interest cost)', () => {
+    const hi = base();
+    hi.housing.rate = field(3.5, 'user_input', '', '', '%');
+    expect(ind(hi).assetsAt95).toBeLessThan(ind(base()).assetsAt95);
+  });
+  it('larger loan balance with the same monthly cap → fewer assets at 95', () => {
+    const hi = base();
+    hi.housing.balance = field(4500, 'user_input', '', '', '万円');
+    expect(ind(hi).assetsAt95).toBeLessThan(ind(base()).assetsAt95);
+  });
+  it('equal_principal vs equal_payment changes total interest paid', () => {
+    const ep = base();
+    ep.housing.repayMethod = field('equal_principal', 'user_input', '', '');
+    // 同条件で返済方式だけ変えれば、利息の積み上げが変わる → 結果も差が出る。
+    expect(sig(ep)).not.toBe(sig(base()));
+  });
+  it('bonus annual payment affects the trajectory (direction depends on return-vs-interest spread)', () => {
+    // ボーナス払いは「早期返済」だが、運用利回り > 借入金利のケースでは
+    // 投資機会損失が利息軽減を上回るため資産が減ることもある。
+    // テストとしては「結果が変わる」だけ確認する（方向は spread 依存のため）。
+    const hi = base();
+    hi.housing.bonusAnnual = field(60, 'user_input', '', '', '万円');
+    expect(sig(hi)).not.toBe(sig(base()));
+  });
+});
+
+describe('reflection audit: 記録用に留まる項目', () => {
   const baseSig = sig(base());
-  it('mortgage rate is record-only', () => {
-    const i = base();
-    i.housing.rate = field(3.5, 'user_input', '', '', '%');
-    expect(sig(i)).toBe(baseSig);
-  });
-  it('loan balance is record-only', () => {
-    const i = base();
-    i.housing.balance = field(4500, 'user_input', '', '', '万円');
-    expect(sig(i)).toBe(baseSig);
-  });
-  it('repayment method is record-only', () => {
-    const i = base();
-    i.housing.repayMethod = field('equal_principal', 'user_input', '', '');
-    expect(sig(i)).toBe(baseSig);
-  });
-  it('bonus payment is record-only', () => {
-    const i = base();
-    i.housing.bonusAnnual = field(60, 'user_input', '', '', '万円');
-    expect(sig(i)).toBe(baseSig);
-  });
   it('spouse age is record-only', () => {
     const i = base();
     i.basic.spouseAge = field(38, 'user_input', '', '', '歳');
     expect(sig(i)).toBe(baseSig);
   });
-  it('fixed-rate-end age does not change the financial result', () => {
-    const i = base();
-    i.housing.fixedEndAge = field(70, 'user_input', '', '', '歳');
-    expect(sig(i)).toBe(baseSig);
+  it('fixed-rate-end age affects financial result via rate uplift when within the loan term', () => {
+    // base は固定終了 60歳 = 完済年と同じなので、後ろにずらしても効かない。
+    // 早めて 50歳にすると、50〜60 歳の 10 年間に金利上振れが効く → 結果が変わる。
+    const earlier = base();
+    earlier.housing.fixedEndAge = field(50, 'user_input', '', '', '歳');
+    expect(sig(earlier)).not.toBe(baseSig);
   });
 });
 
