@@ -70,6 +70,22 @@ export function takeHomeRate(gross: number): number {
 /** 持ち家のローン完済後に残る維持費（固定資産税・火災保険・修繕など, 万円/年）。 */
 export const HOME_MAINTENANCE_ANNUAL = 60;
 
+/** 児童手当（令和 6 年 10 月改定: 所得制限撤廃・高校生まで対象拡大）。
+ *  数値は万円/年（月額 × 12）。生年月日順に第 1 子・第 2 子・第 3 子以降をカウントする。
+ *  出典: こども家庭庁「児童手当制度のご案内」R6 拡充。
+ *  - 第 1〜2 子: 0〜2歳 月15,000円(年18万) / 3〜17歳 月10,000円(年12万)
+ *  - 第 3 子以降: 0〜17歳 月30,000円(年36万) ※多子加算
+ *  18歳以降は支給なし。 */
+export const CHILD_ALLOWANCE = {
+  firstOrSecond: {
+    under3: 18, // 0〜2歳
+    age3to17: 12, // 3〜17歳
+  },
+  thirdOrLater: {
+    age0to17: 36, // 0〜17歳ずっと
+  },
+} as const;
+
 /** 現金比率が未入力のときに仮定する保守的な現金割合。 */
 export const DEFAULT_CASH_RATIO = 0.2;
 

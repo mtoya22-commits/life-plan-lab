@@ -144,7 +144,7 @@ export function ResultDashboard() {
 
       {/* 1) 見直しが効きやすいポイント（最重要・やや視線を集める） */}
       {riskFactors.length > 0 && (
-        <details className="collapsible collapsible--primary">
+        <details className="collapsible collapsible--card collapsible--primary">
           <summary>{ja.result.riskFactorsToggle}（{riskFactors.length}件）</summary>
           <div className="collapsible__body">
             <ul className="risk-factors">
@@ -269,7 +269,7 @@ const EditLinks = forwardRef<HTMLDetailsElement>(function EditLinks(_, ref) {
   );
 
   return (
-    <details className="collapsible" ref={ref}>
+    <details className="collapsible collapsible--card" ref={ref}>
       <summary>{ja.result.editHeading}</summary>
       <div className="collapsible__body">
         <p className="muted">{ja.result.editLead}</p>

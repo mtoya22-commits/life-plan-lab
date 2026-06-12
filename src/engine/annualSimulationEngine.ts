@@ -6,7 +6,7 @@ import type {
   SimulationResult,
   YearRow,
 } from '../schema/types';
-import { totalEducationCost } from './educationCostEngine';
+import { totalChildAllowance, totalEducationCost } from './educationCostEngine';
 import { annualHousingCost, mortgageEvents } from './mortgageEngine';
 import { fireAchievementRate, postFireIncomeForAge } from './fireEngine';
 import { buildSuggestions, judge } from './judgmentEngine';
@@ -118,7 +118,9 @@ export function runSimulation(input: SimulationInput): SimulationResult {
     const pension = (age >= SIM.pensionStartAge ? input.retirement.pension.value : 0) * inflationFactor;
     const lifeEventIncome = sumLifeEventInflows(input, age) * inflationFactor;
     const retirementIncome = (age === fireStartAge ? input.income.retirementLumpSum.value : 0) * inflationFactor;
-    const other = lifeEventIncome + retirementIncome;
+    // 児童手当 (R6 改定): 0〜17歳の子に年単位で給付。物価スライド前提でインフレ追従。
+    const childAllowance = totalChildAllowance(input.children, offset) * inflationFactor;
+    const other = lifeEventIncome + retirementIncome + childAllowance;
     const incomeTotal = labor + postFire + pension + other;
 
     // ---- 支出（住宅費以外はインフレを適用）----
@@ -419,6 +421,13 @@ function buildNotes(input: SimulationInput, cashRatioKnown: boolean, monthlyInve
   notes.push(
     `${isNone ? '老後資金準備率' : 'FIRE準備率'}は4%ルールに基づく簡易的な目安です。教育費・住宅費・年金未入力なども含む年次シミュレーションの資産寿命とあわせてご確認ください。`,
   );
+
+  // 児童手当（R6 改定: 所得制限撤廃・高校生まで対象）を子の年齢に応じて毎年自動加算。
+  if (input.children.length > 0) {
+    notes.push(
+      '児童手当（令和6年改定: 所得制限撤廃・高校生まで対象拡大）を、お子さまの年齢に応じて毎年の収入に自動で加算しています。第3子以降は多子加算（月3万円）を反映します。',
+    );
+  }
 
   if (input.meta.mode === 'thorough') notes.push(CAPTURE_NOTE);
   return notes;
