@@ -46,9 +46,10 @@ export function QuickAdjust() {
 
   knobs.push({
     knob: 'living',
-    label: '毎月の生活費',
+    // 現役期の月額生活費を動かす。FIRE後・老後の生活費は「条件を変えてみる」で詳細編集。
+    label: '毎月の生活費（現役）',
     value: input.expense.monthlyLiving.value,
-    unit: '万円',
+    unit: '万円/月',
     step: 1,
     min: 0,
     max: Number.POSITIVE_INFINITY,

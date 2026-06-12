@@ -118,7 +118,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
     pageId: 'income',
     stepId: 'detailed-income',
     title: '収入',
-    purpose: '収入の内訳と退職の予定を確認します。',
+    purpose: '収入の内訳と退職の予定を確認します。手取りは「手取り年収（基本情報）→ 本人＋配偶者の収入 → 世帯年収」の順に、入っているものが優先されます（どれか1つで計算できます）。',
     kind: 'fields',
     questions: [
       {
@@ -277,7 +277,7 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
     pageId: 'housing-2',
     stepId: 'detailed-housing',
     title: '住宅ローン',
-    purpose: '毎月返済額と残年数を中心に反映します。',
+    purpose: '毎月返済額と残年数を中心に反映します。残高・金利・固定/変動・返済方式は現在「記録用」で、住宅費の精密計算は今後対応予定です。',
     kind: 'fields',
     showIf: hasLoan,
     questions: [
@@ -404,12 +404,12 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
         // 退職以降〜年金開始まで postFireLiving を参照するため）。
         // FIRE 用の質問とはラベル・出現条件で分けて、UI 上の意味だけ「退職後の生活費」に寄せる。
         path: 'fire.postFireLiving',
-        label: '退職後の生活費（年額・年金開始まで）',
-        help: '65歳より前に退職する場合、年金開始までの年間生活費として使います。未入力なら現在生活費の90%で概算します。',
+        label: '退職後の毎月生活費（年金開始まで）',
+        help: '65歳より前に退職する場合、年金開始までの毎月の生活費として使います。未入力なら現在生活費の90%で概算します。',
         kind: 'number',
-        unit: '万円',
-        inputNote: '年額・万円（日常生活費のみ／今のお金の感覚で）',
-        placeholder: '例：280',
+        unit: '万円/月',
+        inputNote: '毎月の額・万円（日常生活費のみ／今のお金の感覚で）',
+        placeholder: '例：23',
         min: 0,
         allowSkip: true,
         // 現役継続で、退職予定年齢が年金開始年齢（65歳）より前のときだけ意味を持つ。
@@ -428,12 +428,12 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
     questions: [
       {
         path: 'fire.postFireLiving',
-        label: 'FIRE後生活費（日常生活費のみ）',
+        label: 'FIRE後の毎月生活費（日常生活費のみ）',
         help: 'FIRE開始〜65歳ごろの日常生活費です。住居費・教育費・保険・特別費・旅行・車関連費は別で加算されます。65歳以降は老後生活費を使用。未入力なら現在生活費の90%で概算します。',
         kind: 'number',
-        unit: '万円',
-        inputNote: '年額・万円（日常生活費のみ／今のお金の感覚で）',
-        placeholder: '例：280',
+        unit: '万円/月',
+        inputNote: '毎月の額・万円（日常生活費のみ／今のお金の感覚で）',
+        placeholder: '例：23',
         min: 0,
         allowSkip: true,
         // 現役継続: FIRE 後の概念が発生しないため非表示（65歳以降は老後生活費が担う）。
@@ -565,11 +565,12 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
       },
       {
         path: 'retirement.retirementLiving',
-        label: '老後生活費（日常生活費のみ）',
+        label: '老後の毎月生活費（日常生活費のみ）',
         help: '65歳以降の日常生活費です。住居費・保険・特別費・旅行・車関連費は別で加算されます（FIRE後生活費とは別、65歳以降はこちら）。未入力なら現在生活費の85%で概算します。',
         kind: 'number',
-        unit: '万円',
-        inputNote: '年額・万円（日常生活費のみ）',
+        unit: '万円/月',
+        inputNote: '毎月の額・万円（日常生活費のみ）',
+        placeholder: '例：22',
         min: 0,
         allowSkip: true,
       },

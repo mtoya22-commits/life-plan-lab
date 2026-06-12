@@ -89,6 +89,10 @@ export function ResultDashboard() {
       {/* 前回の条件との差分（再計算・クイック調整の直後だけ出る） */}
       <PreviousDelta />
 
+      {/* What-if クイック調整（Hero 直下に置き、操作→結果がほぼ 1 画面で完結するように。
+          下のセクション群へのスクロールを抑える主導線。） */}
+      <QuickAdjust />
+
       {/* 人生フェーズ・次の節目（常時表示） */}
       <Outlook result={result} input={input} events={events} />
 
@@ -159,10 +163,8 @@ export function ResultDashboard() {
         </details>
       )}
 
-      {/* 1.5) What-if クイック調整（その場で再計算。試行錯誤の主導線） */}
-      <QuickAdjust />
-
-      {/* 2) 条件変更導線（操作系・中立）。「続けて変更」のスクロール先として ref を渡す。 */}
+      {/* 2) 条件変更導線（操作系・中立）。「続けて変更」のスクロール先として ref を渡す。
+            QuickAdjust は Hero 直下に上げたので、ここでは詳細編集だけ。 */}
       <EditLinks ref={editLinksRef} />
       {/* しっかり診断の結果では「もっと正確に見る」は出さない（既に詳細なため）。 */}
       {input.meta.mode !== 'thorough' && <DeepenLink />}

@@ -115,7 +115,7 @@ describe('現役継続: edit-from-result integrity (thorough)', () => {
   it('exposes "退職後の生活費" question only when fire.type==="none" AND income.retirementAge < 65', () => {
     const fire1 = THOROUGH_PAGES.find((p) => p.pageId === 'fire-1')!;
     const bridgeQ = fire1.questions!.find(
-      (q) => q.path === 'fire.postFireLiving' && /退職後の生活費/.test(q.label),
+      (q) => q.path === 'fire.postFireLiving' && /退職後の(毎月)?生活費/.test(q.label),
     );
     expect(bridgeQ).toBeDefined();
 

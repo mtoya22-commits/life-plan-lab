@@ -1104,13 +1104,15 @@ body {
 }
 
 /* 結果: What-if クイック調整カード。
-   押すたびに即時再計算する ± ステッパー。試行錯誤の摩擦を最小化する。 */
+   押すたびに即時再計算する ± ステッパー。試行錯誤の摩擦を最小化する。
+   Hero 直下に置き、結論と「動かす」が 1 画面内で完結するように上の余白を詰める。 */
 .quick-adjust {
+  margin-top: -6px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 16px 18px;
+  padding: 14px 18px;
 }
 .quick-adjust .section-heading {
   margin: 0 0 10px;

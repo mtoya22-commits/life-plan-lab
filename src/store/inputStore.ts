@@ -36,6 +36,22 @@ export type Phase = 'mode' | 'input' | 'result';
 
 const STORAGE_KEY = 'fire-lifeplan-lab.v2.session.v1';
 
+/** UI 入力は月額・内部値は年額として扱うパス。setThoroughValue で ×12 する。
+ *  ユーザーが「毎月の生活費」で思考するため、入力ラベルを月額に統一しても
+ *  engine（年額前提）と既存テストが壊れないように、書き込み時にここで吸収する。 */
+const MONTHLY_INPUT_PATHS = new Set<string>([
+  'fire.postFireLiving',
+  'retirement.retirementLiving',
+]);
+function isMonthlyInputPath(path: string): boolean {
+  return MONTHLY_INPUT_PATHS.has(path);
+}
+
+/** 月額入力パスの内部年額値を、表示用の月額に換算する。 */
+export function monthlyDisplayValue(annualValue: number): number {
+  return Math.round((annualValue / 12) * 10) / 10;
+}
+
 /** 差分表示用に保持する主要指標のスナップショット。 */
 function indicatorsSnapshot(result: SimulationResult) {
   return {
@@ -400,7 +416,11 @@ export const useInputStore = create<InputState>((set, get) => ({
     const f = getFieldByPath(ti, path);
     if (!f) return;
     const empty = value === '' || value === null;
-    const nf = empty ? withResolved(f, null, 'skipped') : withResolved(f, value, 'user_input');
+    // FIRE後生活費・老後生活費は内部的に年額で保持するが、UI 入力は月額に統一する。
+    // ユーザーは「毎月の生活費」で思考するため、フィールド書き込み時にここで ×12 する。
+    // engine 側の意味は不変（postFireLiving / retirementLiving は年額）。
+    const storedValue = !empty && isMonthlyInputPath(path) ? Number(value) * 12 : value;
+    const nf = empty ? withResolved(f, null, 'skipped') : withResolved(f, storedValue, 'user_input');
     const next = setFieldByPath(ti, path, nf);
     const m = path.match(/^children\.(\d+)\.currentAge$/);
     if (m && !empty) next.children[Number(m[1])].ageAssumed = false;
@@ -411,7 +431,10 @@ export const useInputStore = create<InputState>((set, get) => ({
     if (!ti) return;
     const f = getFieldByPath(ti, path);
     if (!f) return;
-    set({ thoroughInput: setFieldByPath(ti, path, withResolved(f, value, 'recommended_value')) });
+    // 質問定義の recommendedValue は月額（postFireLiving/retirementLiving の場合）。
+    // setThoroughValue と同じく ×12 してフィールドに格納する。
+    const storedValue = isMonthlyInputPath(path) && typeof value === 'number' ? value * 12 : value;
+    set({ thoroughInput: setFieldByPath(ti, path, withResolved(f, storedValue, 'recommended_value')) });
   },
   skipThorough: (path) => {
     const ti = get().thoroughInput;
