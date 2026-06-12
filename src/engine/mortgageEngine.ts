@@ -1,5 +1,5 @@
 import type { HousingGroup, LifeEventMarker, RepayMethod } from '../schema/types';
-import { HOME_MAINTENANCE_ANNUAL, RATE_RISE_AFTER_FIXED } from './constants';
+import { HOME_MAINTENANCE_ANNUAL, RATE_RISE_AFTER_FIXED, VARIABLE_RATE_PREMIUM } from './constants';
 
 // =============================================================================
 // 住宅費エンジン（純粋関数）
@@ -102,12 +102,16 @@ function buildSchedule(housing: HousingGroup, baseAge: number): ScheduleEntry[] 
   // 元利均等は「最初に確定した annualPayment を固定」が本来の挙動。
   // ボーナス払いや金利上振れで残高が前倒し減少しても返済額は変わらず、結果として完済が早まる。
   // 元金均等は「毎年の元金 = 当初の balance / years 固定」。これも本来の挙動。
+  //
+  // 初期返済額の計算には「初年度に実際に適用される金利」を使う。変動なら rateBase + 0.3%、
+  // 固定なら rateBase そのまま。ここでブレると変動と固定の差が初期返済額にも反映されない。
+  const initialRate = rateForYearIndex(housing, baseAge, rateBase);
   let balance = balanceInput;
   const fixedAnnualPayment =
     repayMethod === 'equal_payment'
-      ? rateBase === 0
+      ? initialRate === 0
         ? balanceInput / years
-        : (balanceInput * rateBase) / (1 - Math.pow(1 + rateBase, -years))
+        : (balanceInput * initialRate) / (1 - Math.pow(1 + initialRate, -years))
       : 0;
   const fixedPrincipal = repayMethod === 'equal_principal' ? balanceInput / years : 0;
 
@@ -121,12 +125,13 @@ function buildSchedule(housing: HousingGroup, baseAge: number): ScheduleEntry[] 
     if (repayMethod === 'equal_principal') {
       principal = Math.min(fixedPrincipal, balance);
     } else {
-      // 元利均等: 当初の annualPayment 固定。金利が変わった場合は当年返済額を再算定する。
+      // 元利均等: 当初の annualPayment 固定。固定金利期間の終了などで適用利率が
+      // 変わった場合は、その時点の残高・残年数で当年返済額を再算定する。
+      // 変動は全期間同じ rate なので initial と一致 → 再計算は走らない（性能影響なし）。
       const annualPayment =
-        rate === rateBase
+        rate === initialRate
           ? fixedAnnualPayment
-          : // 固定終了後など。残り年数 (years - i) で残高をその時点の利率で元利均等再計算。
-            rate === 0
+          : rate === 0
             ? balance / (years - i)
             : (balance * rate) / (1 - Math.pow(1 + rate, -(years - i)));
       principal = Math.min(annualPayment - interest, balance);
@@ -152,9 +157,16 @@ function buildSchedule(housing: HousingGroup, baseAge: number): ScheduleEntry[] 
   return out;
 }
 
-/** その年の適用金利（小数）。固定→変動切替後は RATE_RISE_AFTER_FIXED 上振れ。 */
+/** その年の適用金利（小数）。
+ *  - 変動: 全期間にわたり rateBase + VARIABLE_RATE_PREMIUM（金利上昇リスクの慎重な織り込み）
+ *  - 固定 + fixedEndAge: fixedEndAge までは rateBase、それ以降は rateBase + RATE_RISE_AFTER_FIXED
+ *  - 固定 + fixedEndAge なし: 全期間 rateBase 固定（完済まで真の固定金利商品の想定） */
 function rateForYearIndex(housing: HousingGroup, age: number, rateBase: number): number {
-  if (housing.rateType.value === 'fixed' && housing.fixedEndAge.value > 0 && age >= housing.fixedEndAge.value) {
+  if (housing.rateType.value === 'variable') {
+    return rateBase + VARIABLE_RATE_PREMIUM / 100;
+  }
+  // fixed
+  if (housing.fixedEndAge.value > 0 && age >= housing.fixedEndAge.value) {
     return rateBase + RATE_RISE_AFTER_FIXED / 100;
   }
   return rateBase;

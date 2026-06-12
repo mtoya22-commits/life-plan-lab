@@ -75,6 +75,12 @@ export const HOME_MAINTENANCE_ANNUAL = 60;
  *  実額が分かるユーザーは「条件を変えてみる」で rate / fixedEndAge を直接編集する。 */
 export const RATE_RISE_AFTER_FIXED = 0.5;
 
+/** 住宅ローン: 変動金利を選んだ場合の上振れプレミアム（%ポイント）。
+ *  変動金利は将来の金利上昇リスクを内包するため、入力された rate に対して
+ *  全期間にわたり +0.3% の慎重シナリオで計算する。固定金利を選んだ場合は
+ *  fixedEndAge までは入力 rate のまま、それ以降は +RATE_RISE_AFTER_FIXED に切り替わる。 */
+export const VARIABLE_RATE_PREMIUM = 0.3;
+
 /** 児童手当（令和 6 年 10 月改定: 所得制限撤廃・高校生まで対象拡大）。
  *  数値は万円/年（月額 × 12）。生年月日順に第 1 子・第 2 子・第 3 子以降をカウントする。
  *  出典: こども家庭庁「児童手当制度のご案内」R6 拡充。
