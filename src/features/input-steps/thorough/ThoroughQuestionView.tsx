@@ -1,4 +1,4 @@
-import { useInputStore } from '../../../store/inputStore';
+import { useInputStore, monthlyDisplayValue } from '../../../store/inputStore';
 import { ja } from '../../../strings/ja';
 import { QuestionCard } from '../QuestionCard';
 import { HelpTooltip } from '../HelpTooltip';
@@ -18,6 +18,15 @@ export function ThoroughControls({ q, field }: { q: ThoroughQuestion; field: Fie
 
   const source = field.source;
   const filled = source === 'user_input' || source === 'recommended_value';
+  // 月額入力に統一しているパス（postFireLiving / retirementLiving）は、
+  // フィールド内部値（年額）を ÷12 して NumberField に渡す。書き込みは store 側で ×12。
+  const isMonthly = q.path === 'fire.postFireLiving' || q.path === 'retirement.retirementLiving';
+  const displayValue =
+    filled && field.value != null
+      ? isMonthly
+        ? monthlyDisplayValue(Number(field.value))
+        : Number(field.value)
+      : null;
 
   return (
     <>
@@ -26,7 +35,7 @@ export function ThoroughControls({ q, field }: { q: ThoroughQuestion; field: Fie
           <NumberField
             placeholder={q.placeholder}
             unit={q.unit}
-            value={filled && field.value != null ? Number(field.value) : null}
+            value={displayValue}
             onChange={(v) => setThoroughValue(q.path, v == null ? '' : v)}
           />
           {q.inputNote && <p className="field-note muted">{q.inputNote}</p>}

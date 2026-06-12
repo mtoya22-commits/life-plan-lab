@@ -119,13 +119,13 @@ describe('result screen: QuickAdjust card and delta chip', () => {
     const card = container.querySelector('.quick-adjust')!;
     expect(card).not.toBeNull();
     expect(card.textContent).toContain('条件を少し動かして見る');
-    // rough サンプル（side）: 年齢 + 生活費。利回りノブは thorough のみ。
+    // rough サンプル（side）: 年齢 + 生活費（現役）。利回りノブは thorough のみ。
     expect(card.textContent).toContain('働き方を変える年齢');
-    expect(card.textContent).toContain('毎月の生活費');
+    expect(card.textContent).toContain('毎月の生活費（現役）');
     expect(card.textContent).not.toContain('想定利回り');
 
     // − をタップ → その場で再計算され、差分チップが出る
-    const minus = container.querySelector('[aria-label="毎月の生活費を1万円減らす"]') as HTMLButtonElement;
+    const minus = container.querySelector('[aria-label="毎月の生活費（現役）を1万円/月減らす"]') as HTMLButtonElement;
     const calculatedBefore = store().result!.calculatedAt;
     fireEvent.click(minus);
     expect(store().result!.calculatedAt).not.toBe(calculatedBefore);

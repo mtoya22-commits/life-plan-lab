@@ -30,7 +30,8 @@ describe('STEP10.1 initial-value UX audit', () => {
     store().setThoroughValue('fire.type', 'side');
     store().setThoroughPage('fire-2');
     const { container } = render(<App />);
-    expect(inputValueOf(container, 'FIRE後生活費')).toBe('');
+    // 月額入力に統一したのでラベルは「FIRE後の毎月生活費」。
+    expect(inputValueOf(container, 'FIRE後の毎月生活費')).toBe('');
   });
 
   it('housing-3: interest rate renders empty (was prefilled 1.0)', () => {
@@ -45,7 +46,8 @@ describe('STEP10.1 initial-value UX audit', () => {
     store().setMode('thorough');
     store().setThoroughPage('retirement-1');
     const { container } = render(<App />);
-    expect(inputValueOf(container, '老後生活費')).toBe('');
+    // 月額入力に統一したのでラベルは「老後の毎月生活費」。
+    expect(inputValueOf(container, '老後の毎月生活費')).toBe('');
   });
 
   it('standard-example fields keep their value (return rate, inflation)', () => {
