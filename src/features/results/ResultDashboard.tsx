@@ -21,6 +21,8 @@ import { EducationDetail } from './EducationDetail';
 import { MortgageDetail } from './MortgageDetail';
 import { AssumptionSummary } from './AssumptionSummary';
 import { Suggestions } from './Suggestions';
+import { QuickAdjust } from './QuickAdjust';
+import { PreviousDelta } from './PreviousDelta';
 
 type SheetId = 'timeline' | 'chart' | 'education' | 'mortgage' | null;
 
@@ -41,15 +43,16 @@ export function ResultDashboard() {
 
   // 結果画面に切り替わった（または再計算した）直後の挙動を resultReturnTarget で切り替える:
   //   'adjust' → 「条件を変えてみる」へジャンプして開く（複数条件を続けて試したい人向け）
+  //   'stay'   → スクロールしない（クイック調整中。画面位置を保つ）
   //   それ以外 → 従来どおり上部から表示
-  // calculatedAt は submit / submitContinue / recompute のたびに更新される。
+  // calculatedAt は submit / submitContinue / nudge のたびに更新される。
   const calculatedAt = result?.calculatedAt;
   useEffect(() => {
     if (resultReturnTarget === 'adjust' && editLinksRef.current) {
       editLinksRef.current.open = true;
       // jsdom 等の環境では scrollIntoView が未実装なため optional chain で守る。
       editLinksRef.current.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
-    } else {
+    } else if (resultReturnTarget !== 'stay') {
       window.scrollTo({ top: 0, behavior: 'auto' });
     }
     if (resultReturnTarget) clearResultReturnTarget();
@@ -82,6 +85,9 @@ export function ResultDashboard() {
 
       {/* 結論（常時表示） */}
       <Hero result={result} fireType={input.fire.type.value} />
+
+      {/* 前回の条件との差分（再計算・クイック調整の直後だけ出る） */}
+      <PreviousDelta />
 
       {/* 人生フェーズ・次の節目（常時表示） */}
       <Outlook result={result} input={input} events={events} />
@@ -152,6 +158,9 @@ export function ResultDashboard() {
           </div>
         </details>
       )}
+
+      {/* 1.5) What-if クイック調整（その場で再計算。試行錯誤の主導線） */}
+      <QuickAdjust />
 
       {/* 2) 条件変更導線（操作系・中立）。「続けて変更」のスクロール先として ref を渡す。 */}
       <EditLinks ref={editLinksRef} />

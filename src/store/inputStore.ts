@@ -36,6 +36,15 @@ export type Phase = 'mode' | 'input' | 'result';
 
 const STORAGE_KEY = 'fire-lifeplan-lab.v2.session.v1';
 
+/** 差分表示用に保持する主要指標のスナップショット。 */
+function indicatorsSnapshot(result: SimulationResult) {
+  return {
+    assetsAt95: result.indicators.assetsAt95,
+    assetsAt95PresentValue: result.indicators.assetsAt95PresentValue,
+    assetLongevityAge: result.indicators.assetLongevityAge,
+  };
+}
+
 function emptyRoughDraft(): RoughDraft {
   const draft = {} as RoughDraft;
   for (const q of ALL_ROUGH_QUESTIONS) {
@@ -120,8 +129,15 @@ interface InputState {
   resumePrompt: boolean;
   cameFromResult: boolean;
   /** 結果画面に戻ったあとのスクロール先指示。'adjust' は「条件を変えてみる」セクションに戻り、
-   *  そこを開いた状態にする。null/'top' は従来どおり上部へ。 */
-  resultReturnTarget: 'top' | 'adjust' | null;
+   *  そこを開いた状態にする。'stay' はスクロールしない（クイック調整用）。null/'top' は従来どおり上部へ。 */
+  resultReturnTarget: 'top' | 'adjust' | 'stay' | null;
+  /** 直前の計算結果の主要指標。「前回の条件より ±N万円」の差分表示用。
+   *  再計算のたびに「1つ前」の値で上書きされ、reset / モード選択で消える。 */
+  previousIndicators: {
+    assetsAt95: number;
+    assetsAt95PresentValue: number;
+    assetLongevityAge: number | null;
+  } | null;
 
   setMode: (mode: Mode) => void;
   reset: () => void;
@@ -152,6 +168,12 @@ interface InputState {
   submitThoroughAndContinue: () => void;
   /** スクロール処理を実行したあと、結果画面からターゲットをクリアする。 */
   clearResultReturnTarget: () => void;
+  /** 結果画面のクイック調整（What-if）。ソースとなるドラフトを書き換えてから再計算する
+   *  （後で「条件を変えてみる」を開いても値が一致するように）。
+   *  再計算後はスクロールしない（resultReturnTarget: 'stay'）。
+   *  knob: 'age' = 退職予定年齢/FIRE希望年齢、'living' = 毎月の生活費（万円/月）、
+   *        'return' = 想定利回り（%、しっかり診断のみ）。範囲外への変更は no-op。 */
+  nudgeCondition: (knob: 'age' | 'living' | 'return', delta: number) => void;
 
   // 再開
   resumeSaved: () => void;
@@ -276,6 +298,7 @@ export const useInputStore = create<InputState>((set, get) => ({
   resumePrompt: savedHasProgress,
   cameFromResult: false,
   resultReturnTarget: null,
+  previousIndicators: null,
 
   setMode: (mode) => {
     if (mode === 'thorough') {
@@ -287,6 +310,7 @@ export const useInputStore = create<InputState>((set, get) => ({
         thoroughPageId: firstThoroughPageId(ti),
         cameFromResult: false,
         resumePrompt: false,
+        previousIndicators: null,
       });
     } else {
       set({
@@ -296,6 +320,7 @@ export const useInputStore = create<InputState>((set, get) => ({
         roughDraft: emptyRoughDraft(),
         cameFromResult: false,
         resumePrompt: false,
+        previousIndicators: null,
       });
     }
   },
@@ -313,6 +338,7 @@ export const useInputStore = create<InputState>((set, get) => ({
       result: null,
       cameFromResult: false,
       resumePrompt: false,
+      previousIndicators: null,
     });
   },
 
@@ -338,17 +364,33 @@ export const useInputStore = create<InputState>((set, get) => ({
     else get().reset();
   },
   submitRough: () => {
+    const prev = get().result;
     const input = buildFullInputFromRough(get().roughDraft);
     const result = runSimulation(input);
-    // 通常の再計算 → 結果画面の上部へ戻る（resultReturnTarget の指示は出さない）。
-    set({ input, result, phase: 'result', cameFromResult: false, resultReturnTarget: 'top' });
+    // 通常の再計算 → 結果画面の上部へ戻る。差し替え前の結果は「前回比」用に保持。
+    set({
+      input,
+      result,
+      phase: 'result',
+      cameFromResult: false,
+      resultReturnTarget: 'top',
+      previousIndicators: prev ? indicatorsSnapshot(prev) : null,
+    });
   },
 
   // 「続けて変更」: 再計算後、結果画面の「条件を変えてみる」セクションへスクロールしてそこを開く。
   submitRoughAndContinue: () => {
+    const prev = get().result;
     const input = buildFullInputFromRough(get().roughDraft);
     const result = runSimulation(input);
-    set({ input, result, phase: 'result', cameFromResult: false, resultReturnTarget: 'adjust' });
+    set({
+      input,
+      result,
+      phase: 'result',
+      cameFromResult: false,
+      resultReturnTarget: 'adjust',
+      previousIndicators: prev ? indicatorsSnapshot(prev) : null,
+    });
   },
 
   // ---- しっかり診断 ----
@@ -418,20 +460,81 @@ export const useInputStore = create<InputState>((set, get) => ({
   submitThorough: () => {
     const ti = get().thoroughInput;
     if (!ti) return;
+    const prev = get().result;
     const input = buildFullInputFromThorough(ti);
     const result = runSimulation(input);
-    set({ input, result, phase: 'result', cameFromResult: false, resultReturnTarget: 'top' });
+    set({
+      input,
+      result,
+      phase: 'result',
+      cameFromResult: false,
+      resultReturnTarget: 'top',
+      previousIndicators: prev ? indicatorsSnapshot(prev) : null,
+    });
   },
 
   submitThoroughAndContinue: () => {
     const ti = get().thoroughInput;
     if (!ti) return;
+    const prev = get().result;
     const input = buildFullInputFromThorough(ti);
     const result = runSimulation(input);
-    set({ input, result, phase: 'result', cameFromResult: false, resultReturnTarget: 'adjust' });
+    set({
+      input,
+      result,
+      phase: 'result',
+      cameFromResult: false,
+      resultReturnTarget: 'adjust',
+      previousIndicators: prev ? indicatorsSnapshot(prev) : null,
+    });
   },
 
   clearResultReturnTarget: () => set({ resultReturnTarget: null }),
+
+  nudgeCondition: (knob, delta) => {
+    const { mode, input, result } = get();
+    if (!input || !result) return;
+
+    // 直近の計算に使われた「有効値」を基準に増減する（未入力でも標準値から動かせる）。
+    let path: string;
+    let next: number;
+    if (knob === 'living') {
+      next = input.expense.monthlyLiving.value + delta;
+      if (next < 0) return;
+      path = 'expense.monthlyLiving';
+    } else if (knob === 'return') {
+      // 浮動小数の蓄積誤差を避けるため 0.1 単位に丸める。
+      next = Math.round((input.investment.returnRate.value + delta) * 10) / 10;
+      if (next < 0 || next > 10) return;
+      path = 'investment.returnRate';
+    } else {
+      const isNone = input.fire.type.value === 'none';
+      const cur = isNone ? input.income.retirementAge.value : input.fire.targetAge.value;
+      next = cur + delta;
+      if (next < 35 || next > 80) return;
+      path = isNone ? 'income.retirementAge' : 'fire.targetAge';
+    }
+
+    const prev = indicatorsSnapshot(result);
+
+    if (mode === 'thorough') {
+      get().setThoroughValue(path, next);
+      const ti = get().thoroughInput;
+      if (!ti) return;
+      const newInput = buildFullInputFromThorough(ti);
+      const newResult = runSimulation(newInput);
+      set({ input: newInput, result: newResult, previousIndicators: prev, resultReturnTarget: 'stay' });
+    } else {
+      // ざっくり: living → monthlyLiving、age → reduceWorkAge（FIRE希望年齢に写像される）。
+      // return は rough では UI 非表示（投資スタイルから導出のため）。
+      if (knob === 'return') return;
+      const id: RoughFieldId = knob === 'living' ? 'monthlyLiving' : 'reduceWorkAge';
+      get().setRoughValue(id, next);
+      const newInput = buildFullInputFromRough(get().roughDraft);
+      const newResult = runSimulation(newInput);
+      set({ input: newInput, result: newResult, previousIndicators: prev, resultReturnTarget: 'stay' });
+    }
+  },
 
   // ---- 再開 ----
   resumeSaved: () => {
@@ -487,7 +590,16 @@ export const useInputStore = create<InputState>((set, get) => ({
     }
     const input = buildFullInputFromRough(draft);
     const result = runSimulation(input);
-    set({ mode: 'rough', roughDraft: draft, input, result, phase: 'result', cameFromResult: false, resumePrompt: false });
+    set({
+      mode: 'rough',
+      roughDraft: draft,
+      input,
+      result,
+      phase: 'result',
+      cameFromResult: false,
+      resumePrompt: false,
+      previousIndicators: null,
+    });
   },
 
   loadThoroughSample: (toResult) => {
@@ -506,6 +618,8 @@ export const useInputStore = create<InputState>((set, get) => ({
       resumePrompt: false,
       roughDraft: emptyRoughDraft(),
       roughPage: 0,
+      previousIndicators: null,
+      result: null,
     });
     if (toResult) get().submitThorough();
   },
@@ -518,7 +632,16 @@ export const useInputStore = create<InputState>((set, get) => ({
       input.retirement.pension = field(pensionAnnual, 'user_input', '年金見込み', '', '万円');
     }
     const result = runSimulation(input);
-    set({ mode: 'rough', roughDraft: draft, input, result, phase: 'result', cameFromResult: false, resumePrompt: false });
+    set({
+      mode: 'rough',
+      roughDraft: draft,
+      input,
+      result,
+      phase: 'result',
+      cameFromResult: false,
+      resumePrompt: false,
+      previousIndicators: null,
+    });
   },
 }));
 

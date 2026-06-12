@@ -1085,6 +1085,92 @@ body {
   padding: 6px 4px;
 }
 
+/* 結果: 前回比の差分チップ（Hero 直下）。
+   再計算・クイック調整の直後だけ出る控えめな 1 行。赤は使わない。 */
+.delta-chip {
+  margin: -4px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  text-align: center;
+}
+.delta-chip__value {
+  font-weight: 600;
+}
+.delta-chip__value--up {
+  color: var(--band-stable);
+}
+.delta-chip__value--down {
+  color: var(--band-needs);
+}
+
+/* 結果: What-if クイック調整カード。
+   押すたびに即時再計算する ± ステッパー。試行錯誤の摩擦を最小化する。 */
+.quick-adjust {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px 18px;
+}
+.quick-adjust .section-heading {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+.quick-adjust__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+}
+.quick-adjust__label {
+  flex: 1 1 auto;
+  font-size: 0.9rem;
+}
+.quick-adjust__value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.quick-adjust__unit {
+  margin-left: 2px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+.quick-adjust__steppers {
+  display: flex;
+  gap: 8px;
+}
+.stepper-btn {
+  appearance: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.stepper-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.stepper-btn:active:not(:disabled) {
+  background: var(--accent-soft);
+}
+.stepper-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.quick-adjust__note {
+  margin: 10px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
 /* 結果: 今回のポイント */
 .summary {
   background: var(--accent-soft);
