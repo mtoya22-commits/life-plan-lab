@@ -1,21 +1,18 @@
 import type { ReactNode } from 'react';
-import { ja } from '../../strings/ja';
 
-// コンパクトなカード: タイトル + 重要な結論1つ + 短い説明 + 「詳しく見る」。
-// 最初から詳細を全部出さず、詳細は Bottom Sheet に逃がす。
+// コンパクトなカード: タイトル + 重要な結論1つ + 短い説明 + 任意の inline 展開（子要素）。
+// 詳細は <details> を子要素として渡すことで、その場で展開する（モーダルを使わない）。
+// STEP11.21 以前は onOpen で BottomSheet を開いていたが、iframe 内の position:fixed が
+// 親ページのスクロールで画面外に流れる問題を構造的に避けるため inline 化した。
 export function DetailCard({
   title,
   value,
   caption,
-  onOpen,
-  openLabel,
   children,
 }: {
   title: string;
   value: ReactNode;
   caption?: string;
-  onOpen?: () => void;
-  openLabel?: string;
   children?: ReactNode;
 }) {
   return (
@@ -24,11 +21,6 @@ export function DetailCard({
       <div className="detail-card__value">{value}</div>
       {caption && <p className="detail-card__caption muted">{caption}</p>}
       {children}
-      {onOpen && (
-        <button className="link-btn detail-card__more" onClick={onOpen}>
-          {openLabel ?? ja.common.detailMore} ›
-        </button>
-      )}
     </div>
   );
 }

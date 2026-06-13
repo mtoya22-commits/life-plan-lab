@@ -1,10 +1,9 @@
-import { forwardRef, lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { forwardRef, lazy, Suspense, useEffect, useRef } from 'react';
 import { useInputStore } from '../../store/inputStore';
 import { ja } from '../../strings/ja';
 import { formatMan } from '../../lib/format';
 import type { SimulationInput, StepId } from '../../schema/types';
 import { visibleThoroughPages } from '../../schema/thoroughSteps';
-import { BottomSheet } from '../../components/BottomSheet';
 import { Hero } from './Hero';
 import { Outlook } from './Outlook';
 import { CautiousScenario } from './CautiousScenario';
@@ -24,19 +23,17 @@ import { Suggestions } from './Suggestions';
 import { QuickAdjust } from './QuickAdjust';
 import { PreviousDelta } from './PreviousDelta';
 
-type SheetId = 'timeline' | 'chart' | 'education' | 'mortgage' | null;
-
 // 結果ダッシュボード。
 // 常時表示: 総合結果(Hero) / 今回のポイント / 主な節目の要約 / 条件変更導線（結論は隠さない）。
-// 詳細(グラフ拡大・年次収支・教育費・住宅ローン・タイムライン全件・試算条件)は
-// Bottom Sheet または折りたたみに逃がし、スクロール量を抑える。
+// 詳細（グラフ拡大・年次収支・教育費・住宅ローン・タイムライン全件・試算条件）は
+// STEP11.21 で BottomSheet から inline <details> 展開に切替: iframe 内 position:fixed が
+// 親ページのスクロールで画面外に流れる問題を構造的に回避する。
 export function ResultDashboard() {
   const result = useInputStore((s) => s.result);
   const input = useInputStore((s) => s.input);
   const reset = useInputStore((s) => s.reset);
   const resultReturnTarget = useInputStore((s) => s.resultReturnTarget);
   const clearResultReturnTarget = useInputStore((s) => s.clearResultReturnTarget);
-  const [sheet, setSheet] = useState<SheetId>(null);
   // 「条件を変えてみる」セクションの details 要素。「続けて変更」で戻ってきたとき、
   // この要素をスクロール先 + 開いた状態にする。
   const editLinksRef = useRef<HTMLDetailsElement>(null);
@@ -98,22 +95,23 @@ export function ResultDashboard() {
 
       <ResultSummary result={result} input={input} />
 
-      {/* 主な節目の要約（常時表示） */}
+      {/* 主な節目の要約（常時表示）。詳細は inline の <details> 展開で見る。 */}
       <div className="timeline">
         <div className="timeline__title">{ja.result.timelineSummaryHeading}</div>
         <TimelineSummary items={timelineItems} />
-        <button className="link-btn" onClick={() => setSheet('timeline')}>
-          {ja.result.timelineMore} ›
-        </button>
+        <details className="detail-card__expand">
+          <summary>{ja.result.timelineMore} ›</summary>
+          <div className="detail-card__expand-body">
+            <TimelineFull events={events} />
+          </div>
+        </details>
       </div>
 
-      {/* コンパクトな詳細カード（詳細はシートへ） */}
+      {/* コンパクトな詳細カード。STEP11.21 で BottomSheet → inline 展開に変更。 */}
       <DetailCard
         title={ja.result.assetCardTitle}
         value={assetCardValue}
         caption={assetCardCaption}
-        onOpen={() => setSheet('chart')}
-        openLabel={ja.result.assetExpand}
       >
         <Suspense fallback={<div className="asset-rc asset-rc--compact" aria-hidden />}>
           <AssetChartMini rows={result.rows} events={events} />
@@ -121,6 +119,14 @@ export function ResultDashboard() {
         <p className="asset-card__hint muted">
           現在価値は「今のお金の感覚」で見た金額です。将来の額面はグラフを拡大して比較できます。
         </p>
+        <details className="detail-card__expand">
+          <summary>{ja.result.assetExpand} ›</summary>
+          <div className="detail-card__expand-body">
+            <Suspense fallback={<div className="asset-rc" />}>
+              <AssetChartFull rows={result.rows} events={events} />
+            </Suspense>
+          </div>
+        </details>
       </DetailCard>
 
       {hasChildren && (
@@ -128,16 +134,28 @@ export function ResultDashboard() {
           title={ja.result.educationCardTitle}
           value={`${peakAge}歳頃にピーク`}
           caption="大学進学の時期に支出が増える見込みです。"
-          onOpen={() => setSheet('education')}
-        />
+        >
+          <details className="detail-card__expand">
+            <summary>{ja.common.detailMore} ›</summary>
+            <div className="detail-card__expand-body">
+              <EducationDetail result={result} input={input} />
+            </div>
+          </details>
+        </DetailCard>
       )}
 
       <DetailCard
         title={ja.result.mortgageCardTitle}
         value={mortgage.value}
         caption={mortgage.caption}
-        onOpen={() => setSheet('mortgage')}
-      />
+      >
+        <details className="detail-card__expand">
+          <summary>{ja.common.detailMore} ›</summary>
+          <div className="detail-card__expand-body">
+            <MortgageDetail input={input} />
+          </div>
+        </details>
+      </DetailCard>
 
       {/* 階層順（重要→操作→参考）: 見直し → 条件変更 → 慎重条件。
           構造は変えず、順序と weight/tone で意味の差を出す。 */}
@@ -202,22 +220,6 @@ export function ResultDashboard() {
           {ja.common.redo}
         </button>
       </div>
-
-      {/* 詳細シート */}
-      <BottomSheet open={sheet === 'timeline'} onClose={() => setSheet(null)} title={ja.result.timelineDetailHeading}>
-        <TimelineFull events={events} />
-      </BottomSheet>
-      <BottomSheet open={sheet === 'chart'} onClose={() => setSheet(null)} title={ja.result.assetSheetHeading}>
-        <Suspense fallback={<div className="asset-rc" />}>
-          <AssetChartFull rows={result.rows} events={events} />
-        </Suspense>
-      </BottomSheet>
-      <BottomSheet open={sheet === 'education'} onClose={() => setSheet(null)} title={ja.result.educationSheetHeading}>
-        <EducationDetail result={result} input={input} />
-      </BottomSheet>
-      <BottomSheet open={sheet === 'mortgage'} onClose={() => setSheet(null)} title={ja.result.mortgageSheetHeading}>
-        <MortgageDetail input={input} />
-      </BottomSheet>
     </section>
   );
 }
