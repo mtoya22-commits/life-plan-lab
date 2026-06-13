@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useInputStore } from '../../../store/inputStore';
 import { ja } from '../../../strings/ja';
 import { ROUGH_PAGES, type RoughQuestion } from '../../../schema/roughQuestions';
@@ -32,14 +32,11 @@ export function RoughFlow() {
   const backToResult = useInputStore((s) => s.backToResult);
 
   const [attempted, setAttempted] = useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
 
   // ステップが変わったら質問画面の先頭へスクロール（前ステップの位置を引き継がない）。
-  // 通常スクロールは内側の .step-content で行うため、そちらを優先的にリセットする。
-  // window.scrollTo はドキュメント自体がスクロールする旧経路への保険として残す。
-  // ページ切替時に「未入力確認パネル」状態もリセットする（前ステップの確認を持ち越さない）。
+  // STEP11.18 で内部スクロールを廃止し、スクロール対象は iframe document に一本化。
+  // ページ切替時に「未入力確認パネル」状態もリセットする。
   useEffect(() => {
-    contentRef.current?.scrollTo?.({ top: 0, behavior: 'auto' });
     window.scrollTo({ top: 0, behavior: 'auto' });
     setAttempted(false);
   }, [roughPage, cameFromResult]);
@@ -93,7 +90,7 @@ export function RoughFlow() {
 
   return (
     <section className="screen step-layout">
-      <div className="step-content" ref={contentRef}>
+      <div className="step-content">
         {cameFromResult ? (
           <header className="edit-header">編集中：{page.title}</header>
         ) : (
