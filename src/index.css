@@ -1257,6 +1257,9 @@ body {
   align-items: center;
   justify-content: center;
   padding: 20px;
+  /* 背面ページへのスクロール連鎖を遮断（BottomSheet と同じパターン） */
+  overscroll-behavior: contain;
+  touch-action: none;
 }
 .overlay__card {
   background: var(--surface);
@@ -1265,6 +1268,11 @@ body {
   padding: 24px;
   max-width: 420px;
   width: 100%;
+  /* 万が一コンテンツが画面より大きくても、カード内スクロールで完結させる */
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: auto;
 }
 .overlay__title {
   font-size: 1.15rem;
@@ -1607,8 +1615,12 @@ body {
   width: 100%;
   max-width: 720px;
   max-height: 85vh;
+  /* iOS の動的ビューポート単位にも対応（ノッチ/URL バー考慮） */
+  max-height: 85dvh;
   display: flex;
   flex-direction: column;
+  /* flex 子の overflow をパネルの max-height 内に閉じ込めるため必須 */
+  min-height: 0;
   background: var(--surface);
   border-radius: 18px 18px 0 0;
   box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.12);
@@ -1625,12 +1637,15 @@ body {
   }
 }
 .sheet__header {
+  /* パネル内で固定。スクロール領域に含めない（× ボタンが見えなくならないように） */
+  flex: 0 0 auto;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 14px 48px;
   border-bottom: 1px solid var(--border);
+  background: var(--surface);
 }
 .sheet__handle {
   position: absolute;
@@ -1660,6 +1675,10 @@ body {
   cursor: pointer;
 }
 .sheet__body {
+  /* パネル内の残り空間を占有し、ここだけが縦スクロールする。
+     ヘッダー（× を含む）は固定で常に見える。 */
+  flex: 1 1 auto;
+  min-height: 0;
   padding: 16px 18px calc(20px + env(safe-area-inset-bottom));
   overflow-y: auto;
   overscroll-behavior: contain; /* 背面ページへのスクロール連鎖を防ぐ */
