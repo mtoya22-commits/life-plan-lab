@@ -621,8 +621,17 @@ body {
   position: absolute;
   top: 24px;
   left: 0;
-  z-index: 10;
+  /* 下部ナビ (sticky, z-index: 40) より必ず下に置く。
+     長文時に bubble がナビを覆って「次へ」「再計算して結果へ」が押せなくなる症状の防止。 */
+  z-index: 30;
   width: min(240px, 78vw);
+  /* 長文の help でも画面内に収まる縦サイズに制限し、超過分は内部スクロールで読む。
+     50dvh は iOS の URL バー開閉でも安全。 */
+  max-height: 50vh;
+  max-height: 50dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   padding: 10px 12px;
   background: var(--surface);
   border: 1px solid var(--border);
