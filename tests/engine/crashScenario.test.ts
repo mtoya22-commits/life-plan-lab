@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { createDefaultInput } from '../../src/schema/defaultValues';
 import { applyRecommendedValues } from '../../src/schema/recommendedValues';
-import { runSimulation } from '../../src/engine/annualSimulationEngine';
-import { CRASH_SCENARIO } from '../../src/engine/constants';
+import { getCrashAge, runSimulation } from '../../src/engine/annualSimulationEngine';
 import { field } from '../../src/schema/field';
 import type { SimulationInput } from '../../src/schema/types';
 
-// STEP6.2追加: 暴落シナリオ（簡易）の計算反映を検証する。
-// 「あり」のとき、現在年齢+N年に投資資産のみを一度だけ下落させ、その後は通常利回りで回復。
+// STEP6.2追加 / STEP11.23 更新: 暴落シナリオ（簡易）の計算反映を検証する。
+// 「あり」のとき、取崩開始（FIRE開始 or 退職）+ 1 年の年に投資資産のみを一度だけ下落させ、
+// その後は通常利回りで回復（シーケンスリスク織り込み）。
 function base(crash: boolean, cashRatio = 20): SimulationInput {
   const i = createDefaultInput('thorough');
   i.basic.age = field(40, 'user_input', '', '', '歳');
@@ -30,12 +30,13 @@ function base(crash: boolean, cashRatio = 20): SimulationInput {
 const run = (i: SimulationInput) => runSimulation(applyRecommendedValues(i));
 
 describe('STEP6.2 crash scenario is reflected in the calculation', () => {
-  it('applies a one-time investment drop at age + N years (investment only, not cash)', () => {
-    const r = run(base(true));
-    const crashAge = 40 + CRASH_SCENARIO.yearsFromNow;
+  it('applies a one-time investment drop at drawdown-start + 1 (investment only, not cash)', () => {
+    const i = base(true);
+    const r = run(i);
+    const crashAge = getCrashAge(i); // none + retirementAge=65 → 66
     const row = r.rows.find((x) => x.age === crashAge)!;
     expect(row.debug!.crashLoss).toBeGreaterThan(0);
-    // 下落は投資資産のみ（直前年は0）。
+    // 下落は当該年のみ（直前年は0）。
     expect(r.rows.find((x) => x.age === crashAge - 1)!.debug!.crashLoss).toBe(0);
     // 反映後の方が、暴落なしより当年末資産が小さい。
     const noCrashRow = run(base(false)).rows.find((x) => x.age === crashAge)!;
@@ -51,14 +52,15 @@ describe('STEP6.2 crash scenario is reflected in the calculation', () => {
   it('has no effect when assets are all cash and nothing is invested', () => {
     const i = base(true, 100);
     i.investment.monthlyInvestment = field(0, 'user_input', '', '', '万円'); // 新規投資なし
-    const crashAge = 40 + CRASH_SCENARIO.yearsFromNow;
+    const crashAge = getCrashAge(i);
     const row = run(i).rows.find((x) => x.age === crashAge)!;
     expect(row.debug!.crashLoss).toBe(0); // 投資資産が0なので下落しない
   });
 
   it('shows a market-crash marker and a reflected-not-record-only note', () => {
-    const r = run(base(true));
-    const crashAge = 40 + CRASH_SCENARIO.yearsFromNow;
+    const i = base(true);
+    const r = run(i);
+    const crashAge = getCrashAge(i);
     const marker = r.rows.find((x) => x.age === crashAge)!.events.find((e) => e.kind === 'market_crash');
     expect(marker).toBeDefined();
     expect(r.notes.some((n) => n.includes('暴落シナリオ') && n.includes('下落'))).toBe(true);
