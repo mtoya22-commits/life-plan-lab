@@ -1,6 +1,7 @@
 import { useEffect, type ReactNode } from 'react';
 import { ja } from '../strings/ja';
 import { useLockBodyScroll } from '../lib/useLockBodyScroll';
+import { notifyModalToParent } from '../lib/notifyModalToParent';
 
 // スマホ優先の詳細表示。中央モーダルではなく下から出る Bottom Sheet。
 // 背景は暗くしすぎず、内部スクロールで完結、閉じやすくする。
@@ -18,6 +19,14 @@ export function BottomSheet({
 }) {
   // 背面のスクロールを固定（iOS Safari のタッチ慣性対策込み）
   useLockBodyScroll(open);
+
+  // 親 WordPress ページに開閉を通知。listener があれば親ページ側のスクロールも止められる
+  // （iframe 自体が親ページのスクロールで上に流れて × が画面外に出る問題への対策）。
+  useEffect(() => {
+    notifyModalToParent(open);
+    if (!open) return () => notifyModalToParent(false);
+    return () => notifyModalToParent(false);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
