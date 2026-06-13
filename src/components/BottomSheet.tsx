@@ -20,11 +20,36 @@ export function BottomSheet({
       if (e.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', onKey);
-    const prevOverflow = document.body.style.overflow;
+
+    // iOS Safari でモーダル開いている間に背面ページが動くケースを止めるため、
+    // body を fixed して現在のスクロール位置を保存する古典パターン。
+    // overflow:hidden だけだと iOS は背面のタッチ慣性が残る。
+    const scrollY = window.scrollY;
+    const prev = {
+      position: document.body.style.position,
+      top: document.body.style.top,
+      left: document.body.style.left,
+      right: document.body.style.right,
+      width: document.body.style.width,
+      overflow: document.body.style.overflow,
+    };
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.width = '100%';
     document.body.style.overflow = 'hidden';
+
     return () => {
       document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = prevOverflow;
+      document.body.style.position = prev.position;
+      document.body.style.top = prev.top;
+      document.body.style.left = prev.left;
+      document.body.style.right = prev.right;
+      document.body.style.width = prev.width;
+      document.body.style.overflow = prev.overflow;
+      // 開く前のスクロール位置に戻す（position:fixed 解除後の現状復帰）。
+      window.scrollTo(0, scrollY);
     };
   }, [open, onClose]);
 

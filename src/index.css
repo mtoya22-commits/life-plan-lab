@@ -504,25 +504,20 @@ body {
 }
 
 /* 入力画面の外殻。
-   ビューポート高にぴったり収まる縦flexにし、内側の .step-content だけ縦スクロールさせる。
-   これにより下部ナビ（.bottom-nav）は常に viewport 下端に表示される。
-   100svh をフォールバック、100dvh を本命（後勝ち）。iOS Safari の高さブレに強い順序。 */
+   STEP11.18 で 2 重スクロール構造を廃止し、スクロール対象を iframe document に一本化。
+   - min-height で「コンテンツが短いときも viewport いっぱい」（sticky ナビが下端）を担保
+   - コンテンツが長いときは body の自然なスクロールで対応（内部スクロールは持たない）
+   - sticky ナビはスクロール祖先が body になっても下端に張り付く */
 .step-layout {
   display: flex;
   flex-direction: column;
-  /* .app の上部 padding を差し引いて「padding + 高さ = ちょうど viewport」にする。
-     差し引かないと下部ナビが padding-top 分だけ画面外に切れる。 */
-  height: calc(100svh - var(--app-pad-top));
-  height: calc(100dvh - var(--app-pad-top));
-  overflow: hidden;
+  min-height: calc(100svh - var(--app-pad-top));
+  min-height: calc(100dvh - var(--app-pad-top));
 }
-/* 内側スクロール領域。入力カードはここに積まれ、必要に応じて縦スクロールする。
+/* 内側コンテンツ領域。flex:1 でナビを下端に押し下げる役割は残すが、内部スクロールは持たない。
    min-height:0 は flex 子要素で overflow を効かせる定番イディオム。 */
 .step-content {
   flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -1594,6 +1589,13 @@ body {
   display: flex;
   align-items: flex-end;
   justify-content: center;
+  /* 背景 backdrop 上でのタッチが背面ページのスクロール連鎖を起こさないよう抑止。 */
+  overscroll-behavior: contain;
+  touch-action: none;
+}
+/* タッチアクションは backdrop でだけ無効化したい。パネル本体は通常のジェスチャーを許可。 */
+.sheet__panel {
+  touch-action: auto;
 }
 .sheet__backdrop {
   position: absolute;

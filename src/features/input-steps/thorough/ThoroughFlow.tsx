@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useInputStore } from '../../../store/inputStore';
 import { ja } from '../../../strings/ja';
 import { visibleThoroughPages } from '../../../schema/thoroughSteps';
@@ -40,15 +40,11 @@ export function ThoroughFlow() {
   const submitThoroughAndContinue = useInputStore((s) => s.submitThoroughAndContinue);
   const backToResult = useInputStore((s) => s.backToResult);
 
-  const contentRef = useRef<HTMLDivElement>(null);
   const [attempted, setAttempted] = useState(false);
 
   // ステップが変わったら質問画面の先頭へスクロール。
-  // 通常スクロールは内側の .step-content で行うため、そちらを優先的にリセットする。
-  // window.scrollTo はドキュメント自体がスクロールする旧経路への保険として残す。
-  // ページ切替時に「未入力確認パネル」状態もリセットする。
+  // STEP11.18 で内部スクロールを廃止し、スクロール対象は iframe document に一本化。
   useEffect(() => {
-    contentRef.current?.scrollTo?.({ top: 0, behavior: 'auto' });
     window.scrollTo({ top: 0, behavior: 'auto' });
     setAttempted(false);
   }, [thoroughPageId, cameFromResult]);
@@ -102,7 +98,7 @@ export function ThoroughFlow() {
 
   return (
     <section className="screen step-layout">
-      <div className="step-content" ref={contentRef}>
+      <div className="step-content">
         {cameFromResult ? (
           <header className="edit-header">編集中：{page.title}</header>
         ) : (
