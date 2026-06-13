@@ -544,9 +544,30 @@ npm run build   # → dist/ に index.html + assets/（相対パス ./assets/...
 - 本番ビルドでは `import.meta.env.DEV=false` のため開発用メニュー（サンプル/検証ケース）は非表示。
 - GitHub Pages のプロジェクトページ（`user.github.io/repo/`）配下でも相対パスのため動作。独自ドメイン直下でも可。
 
-### iframe 埋め込み例（WordPress カスタムHTML / 固定ページ）
+### iframe 埋め込み例（WordPress カスタムHTML / 固定ページ） — **推奨形（v2）**
+
+**重要**: iframe をそのまま縦長（`min-height: 1000px` など）で置くと、親ページのスクロールで iframe 自体が画面外に流れ、**結果画面のモーダル（×ボタン）が画面外に出る／質問画面で「2 つのスクロール」が噛み合わない**といった症状が出ます。下の「sticky 1 画面固定」パターンを推奨します。
 
 ```html
+<!-- 推奨: 親ページのスクロールに iframe を追従させず、常に画面いっぱいに固定する -->
+<div style="position: sticky; top: 0; height: 100vh; height: 100svh;">
+  <iframe
+    src="https://（公開URL）/"
+    title="生活設計シミュレーター"
+    style="width: 100%; height: 100%; border: 0; background: transparent; display: block;"
+    loading="lazy"
+  ></iframe>
+</div>
+```
+
+- 外側 `<div>` を `position: sticky; top: 0; height: 100vh (svh)` にすることで、親 WordPress ページが上下スクロールしても **iframe element はビューポート内に張り付き**続けます。
+- iframe の中の sticky な下部ナビ・`position: fixed` のモーダル（Bottom Sheet / 続きから再開ダイアログ）が画面外に流れません。
+- ページ上部の説明文や下部の関連記事は通常どおり親ページとしてスクロール、iframe に到達した時点で固定 → 抜けると再び通常スクロール、という自然な挙動になります。
+
+#### 旧形（非推奨だが互換）
+
+```html
+<!-- 非推奨。動作はするが、上記の症状が出やすい -->
 <iframe
   src="https://（公開URL）/"
   title="生活設計シミュレーター"
@@ -555,8 +576,25 @@ npm run build   # → dist/ に index.html + assets/（相対パス ./assets/...
 ></iframe>
 ```
 
-- `width:100%`・`border:0`。高さは自動拡張しないため `min-height` を十分に（結果画面まで含め **1000px 以上**目安）。
-- 下部固定ナビ・グラフ拡大の Bottom Sheet は iframe のビューポート基準で表示されるため、iframe 内で完結する。
+#### 親ページ側でモーダル開閉に応じてスクロールを止めるサンプル（任意・冗長対策）
+
+アプリは BottomSheet / ResumePrompt の開閉時に `postMessage({ type: 'lifeplan-lab:modal', open })` を親に投げています。listener を付ければ親ページ側でもスクロールを止められます（sticky 推奨形を使っているなら不要）。
+
+```html
+<script>
+  window.addEventListener('message', function (e) {
+    if (e.data && e.data.type === 'lifeplan-lab:modal') {
+      document.body.style.overflow = e.data.open ? 'hidden' : '';
+    }
+  });
+</script>
+```
+
+- 親ページの listener が無い環境でもアプリは正常動作（メッセージは静かに無視される）。
+- origin を絞りたい場合は `if (e.origin !== 'https://mtoya22-commits.github.io') return;` を追加。
+
+#### その他の注意
+
 - 横スクロールは出にくい（max-width 720px 中央寄せ・年次表など横長要素は内部で横スクロール `.table-scroll`）。
 - 背景はウォームアイボリー。テーマと馴染ませたい場合は iframe 周囲の余白・背景を WordPress 側で調整。
 
@@ -627,39 +665,49 @@ npm run build   # → dist/ に index.html + assets/（相対パス ./assets/...
 
 ### WordPress 固定ページへの iframe 埋め込み
 
-カスタムHTMLブロックに（`src` を実URLへ差し替え）：
+カスタムHTMLブロックに（`src` を実URLへ差し替え）。**親ページのスクロールに iframe が追従して × ボタンが画面外に消える症状を防ぐため、「sticky 1 画面固定」パターンを推奨**：
 
 ```html
-<iframe
-  src="https://mtoya22-commits.github.io/life-plan-lab/"
-  title="生活設計シミュレーター"
-  style="width:100%; min-height:1000px; border:0; background:transparent;"
-  loading="lazy"
-></iframe>
+<!-- 推奨: 親ページがスクロールしても iframe は常に画面いっぱいに固定 -->
+<div style="position: sticky; top: 0; height: 100vh; height: 100svh;">
+  <iframe
+    src="https://mtoya22-commits.github.io/life-plan-lab/"
+    title="生活設計シミュレーター"
+    style="width: 100%; height: 100%; border: 0; background: transparent; display: block;"
+    loading="lazy"
+  ></iframe>
+</div>
 ```
 
 ### WordPress テーマ（Lightning 等）との干渉メモ
 
-固定ページの本文幅が狭いと窮屈になるため、必要に応じて固定ページ限定でCSS（カスタムHTML内 `<style>` か追加CSS）を：
+固定ページの本文幅が狭いと窮屈になるため、必要に応じて固定ページ限定でCSS（カスタムHTML内 `<style>` か追加CSS）を。`.lifeplan-embed` ラッパを sticky 化するパターンは以下：
 
 ```html
 <style>
   /* iframe を本文幅いっぱい〜画面いっぱいに。固定ページ限定で適用すること。 */
-  .lifeplan-embed { width: 100%; }
-  .lifeplan-embed iframe { width: 100%; border: 0; display: block; }
+  .lifeplan-embed {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    height: 100svh;
+    width: 100%;
+  }
+  .lifeplan-embed iframe { width: 100%; height: 100%; border: 0; display: block; }
   /* 本文の左右パディングが強い場合のフルブリード（テーマにより調整） */
   @media (max-width: 782px) {
-    .lifeplan-embed { margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); }
+    .lifeplan-embed { margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); width: 100vw; }
   }
 </style>
 <div class="lifeplan-embed">
-  <iframe src="（公開URL）" title="生活設計シミュレーター" style="min-height:1000px;" loading="lazy"></iframe>
+  <iframe src="（公開URL）" title="生活設計シミュレーター" loading="lazy"></iframe>
 </div>
 ```
 
 - iframe 既定の枠線・余白は `border:0; display:block` で消える。
 - 背景はウォームアイボリー固定。テーマが白基調なら自然に馴染む。
 - 下部固定ナビ・グラフ拡大 Bottom Sheet は iframe ビューポート基準で完結（親ページには影響しない）。
+- アプリ側からはモーダル開閉を `window.parent.postMessage({ type: 'lifeplan-lab:modal', open })` で通知している。sticky パターンを使っているなら listener は不要だが、必要なら親ページに `addEventListener('message', ...)` で `document.body.style.overflow = open ? 'hidden' : ''` を仕込むと冗長対策になる。
 
 ### iframe 高さの方針
 
