@@ -309,51 +309,58 @@ describe('render smoke (jsdom)', () => {
     expect(items[0].querySelectorAll('.risk-factor__points li').length).toBeGreaterThan(0);
   });
 
-  it('opens the expanded asset chart in a bottom sheet (lazy-loaded)', async () => {
+  it('expands the asset chart inline (lazy-loaded) when "グラフを拡大" is opened', async () => {
     fillAll();
     store().submitRough();
-    render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /グラフを拡大/ }));
-    expect(document.querySelector('.sheet')).not.toBeNull();
+    const { container } = render(<App />);
+    // STEP11.21: BottomSheet ではなく detail-card 内の inline <details> として展開する。
+    const expansion = Array.from(container.querySelectorAll<HTMLDetailsElement>('details.detail-card__expand')).find(
+      (d) => d.querySelector('summary')?.textContent?.includes('グラフを拡大'),
+    )!;
+    expect(expansion).toBeDefined();
+    expansion.open = true;
     // Recharts は遅延読み込みのため、解決を待ってから内容を確認する
     const note = await screen.findByText(/その年に表示される額面/);
-    expect(document.querySelector('.sheet .asset-rc')).not.toBeNull();
-    // 将来額と現在価値の両方を扱う旨が示される
+    expect(expansion.querySelector('.asset-rc')).not.toBeNull();
     expect(note.textContent).toContain('将来額');
     expect(note.textContent).toContain('現在価値');
-    // 詳細な「見方」は折りたたみで提供（初期は閉じ・専門用語は使わない）
-    const sheet = document.querySelector('.sheet')!;
-    const explainer = Array.from(sheet.querySelectorAll<HTMLDetailsElement>('details.collapsible')).find((d) =>
+    // 詳細な「見方」は内側の折りたたみで提供
+    const explainer = Array.from(expansion.querySelectorAll<HTMLDetailsElement>('details.collapsible')).find((d) =>
       d.querySelector('summary')?.textContent?.includes('現在価値と将来額の見方'),
     )!;
     expect(explainer).toBeDefined();
     expect(explainer.open).toBe(false);
     expect(explainer.textContent).toContain('今のお金の感覚');
     expect(explainer.textContent).toContain('通帳');
-    expect(explainer.textContent).toContain('658万円'); // 具体例
-    expect(explainer.textContent).not.toContain('割り戻'); // 専門語は使わない
+    expect(explainer.textContent).toContain('658万円');
+    expect(explainer.textContent).not.toContain('割り戻');
   });
 
-  it('closes a bottom sheet via the close button', () => {
+  it('toggles the timeline detail inline via details.open (no modal, no close button)', () => {
+    fillAll();
+    store().submitRough();
+    const { container } = render(<App />);
+    // モーダル (.sheet) はそもそも存在しない
+    expect(document.querySelector('.sheet')).toBeNull();
+    const expansion = Array.from(container.querySelectorAll<HTMLDetailsElement>('details.detail-card__expand')).find(
+      (d) => d.querySelector('summary')?.textContent?.includes('タイムラインを詳しく見る'),
+    )!;
+    expect(expansion).toBeDefined();
+    // 初期は閉じている → 展開 → 再度閉じる、を <details> で完結する
+    expect(expansion.open).toBe(false);
+    expansion.open = true;
+    expect(expansion.textContent).toMatch(/人生タイムライン|歳/);
+    expansion.open = false;
+    expect(expansion.open).toBe(false);
+  });
+
+  it('does not render any BottomSheet on the result screen (replaced by inline details)', () => {
     fillAll();
     store().submitRough();
     render(<App />);
-    fireEvent.click(screen.getByText(/タイムラインを詳しく見る/));
-    expect(document.querySelector('.sheet')).not.toBeNull();
-    fireEvent.click(screen.getByLabelText('閉じる'));
     expect(document.querySelector('.sheet')).toBeNull();
-  });
-
-  it('opens a bottom sheet when a detail link is tapped', () => {
-    fillAll();
-    store().submitRough();
-    render(<App />);
-    // シートは初期では閉じている
-    expect(document.querySelector('.sheet')).toBeNull();
-    fireEvent.click(screen.getByText(/タイムラインを詳しく見る/));
-    const sheet = document.querySelector('.sheet');
-    expect(sheet).not.toBeNull();
-    expect(sheet?.textContent).toContain('人生タイムライン');
+    // BottomSheet 用の閉じるボタン（aria-label="閉じる"）も存在しない
+    expect(document.querySelector('[aria-label="閉じる"]')).toBeNull();
   });
 
   it('resume overlay appears when there is saved in-progress input', () => {

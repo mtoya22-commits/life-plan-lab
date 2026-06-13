@@ -1316,6 +1316,33 @@ body {
   margin-top: 10px;
   display: inline-block;
 }
+/* 詳細カード内の inline 展開（STEP11.21 で BottomSheet を置換）。
+   summary は深緑のリンク風で「詳しく見る ›」と表示し、展開時にその場で内容が伸びる。
+   モーダルではないので親 iframe / 親 WordPress ページのスクロールと自然に噛み合う。 */
+.detail-card__expand {
+  margin-top: 10px;
+}
+.detail-card__expand > summary {
+  cursor: pointer;
+  list-style: none;
+  display: inline-block;
+  color: var(--link);
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 4px 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.detail-card__expand > summary::-webkit-details-marker {
+  display: none;
+}
+.detail-card__expand[open] > summary {
+  margin-bottom: 8px;
+}
+.detail-card__expand-body {
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
 /* 資産推移カード下の短い案内（拡大グラフ内の折りたたみ説明への導線） */
 .asset-card__hint {
   margin: 6px 0 0;
