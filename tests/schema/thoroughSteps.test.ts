@@ -108,15 +108,16 @@ describe('thorough steps definition', () => {
     expect(q.inputNote!).toMatch(/世帯合算/);
   });
 
-  it('暴落シナリオの help にタイミング・規模・根拠が含まれている (STEP11.23)', () => {
+  it('暴落シナリオの help は「いつ・どれくらい」を短く伝える (STEP11.25)', () => {
     const allQuestions = THOROUGH_PAGES.flatMap((p) => p.questions ?? []);
     const q = allQuestions.find((x) => x.path === 'investment.crashScenario')!;
     expect(q).toBeDefined();
     expect(q.help).toBeDefined();
-    // タイミング (FIRE開始/退職の翌年)、規模 (30%)、シーケンスリスク、過去比較が読める
+    // 入力時 help は最小限。詳しい根拠（シーケンスリスク・過去比較・回復モデル）は
+    // 結果画面の試算条件 notes 側で読む役割分担。
     expect(q.help!).toContain('FIRE開始');
     expect(q.help!).toContain('30%');
-    expect(q.help!).toContain('シーケンスリスク');
-    expect(q.help!).toMatch(/コロナ|リーマン/);
+    // 長文化への先祖返り防止のガードレール（STEP11.23 で 170字超まで膨らんだ反省）。
+    expect(q.help!.length).toBeLessThanOrEqual(80);
   });
 });
