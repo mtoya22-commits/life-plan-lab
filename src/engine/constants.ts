@@ -105,11 +105,14 @@ export const DEFAULT_INVEST_FRACTION = 0.5;
 
 /**
  * 暴落シナリオ（簡易モデル）。
- * 「あり」のとき、現在年齢＋yearsFromNow の年に投資資産を dropRate だけ一度だけ下落させる。
+ * 「あり」のとき、取崩開始（FIRE開始 or 退職）+ yearsAfterDrawdownStart の年に
+ * 投資資産を dropRate だけ一度だけ下落させる。
+ * 取崩期初期の暴落は資産寿命への影響が一番大きい（シーケンスリスク）ため、
+ * 「いつ起きるか分からないリスク」を最悪に近いタイミングで代表させる保守想定とする。
  * 現金資産には適用せず、下落後は通常の名目利回りで運用を継続（回復）する。
  */
 export const CRASH_SCENARIO = {
-  yearsFromNow: 5,
+  yearsAfterDrawdownStart: 1,
   dropRate: 0.3,
 } as const;
 

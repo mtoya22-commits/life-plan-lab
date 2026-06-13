@@ -76,9 +76,10 @@ export function runSimulation(input: SimulationInput): SimulationResult {
   const monthlyInvestKnown = input.investment.monthlyInvestment.source === 'user_input';
   const monthlyInvestAnnual = input.investment.monthlyInvestment.value * 12;
 
-  // 暴落シナリオ（簡易）: 「あり」のとき、現在年齢＋N年に投資資産を一度だけ下落させる。
+  // 暴落シナリオ（簡易）: 「あり」のとき、取崩開始（FIRE開始 or 退職）の翌年に
+  // 投資資産を一度だけ下落させる。シーケンスリスクの織り込みのため取崩期初期に置く。
   const crashEnabled = input.investment.crashScenario.value === true;
-  const crashAge = startAge + CRASH_SCENARIO.yearsFromNow;
+  const crashAge = getCrashAge(input);
 
   // 毎月投資額の積立を反映する期間の終わり（就労終了年齢）。
   // サイドFIRE: 働き方を軽くしても就労終了(workUntilAge)まで黒字の範囲で継続。
@@ -371,10 +372,11 @@ function buildNotes(input: SimulationInput, cashRatioKnown: boolean, monthlyInve
   }
 
   // 暴落シナリオ（簡易反映）。投資資産に一時的な下落として反映する。
+  // タイミングは「取崩開始（FIRE開始 or 退職）の翌年」= シーケンスリスクが最大になる時期に置く。
   if (input.investment.crashScenario.value) {
-    const crashAge = input.basic.age.value + CRASH_SCENARIO.yearsFromNow;
+    const crashAge = getCrashAge(input);
     notes.push(
-      `暴落シナリオは、${crashAge}歳ごろに投資資産を約${Math.round(CRASH_SCENARIO.dropRate * 100)}%下落させる簡易反映です（現金資産は対象外、その後は通常の利回りで回復を試算）。`,
+      `暴落シナリオは、${crashAge}歳ごろ（FIRE開始または退職の翌年）に投資資産を約${Math.round(CRASH_SCENARIO.dropRate * 100)}%下落させる簡易反映です（現金資産は対象外、その後は通常の利回りで回復を試算）。取崩期初期の暴落は資産寿命への影響が最も大きいため（シーケンスリスク）、備えとしてその時期に置いています。過去の参考: コロナショック（2020）約-34% / リーマンショック（2008）約-38%。`,
     );
   }
 
@@ -503,7 +505,7 @@ function eventsForAge(
 ): LifeEventMarker[] {
   const out: LifeEventMarker[] = baseEvents.filter((e) => e.age === age);
 
-  if (input.investment.crashScenario.value === true && age === input.basic.age.value + CRASH_SCENARIO.yearsFromNow) {
+  if (input.investment.crashScenario.value === true && age === getCrashAge(input)) {
     out.push({ age, kind: 'market_crash', label: '暴落シナリオ（投資資産の一時下落）' });
   }
   // FIRE開始イベントは FIRE を選んだ場合のみ。FIREなし（通常の退職）では出さない。
@@ -632,4 +634,14 @@ function collectFlags(input: SimulationInput): string[] {
     flags.push('退職金は未入力（0円）で試算しています。');
   }
   return flags;
+}
+
+/** 暴落シナリオ発生年齢を「取崩開始（FIRE開始 or 退職）+ オフセット」で算出する。
+ *  シーケンスリスクの織り込みのため取崩期初期に置く。
+ *  既に取崩開始済みのユーザー（startAge >= drawdownStart）の場合は、最低でも今から1年後にずらす。 */
+export function getCrashAge(input: SimulationInput): number {
+  const startAge = input.basic.age.value;
+  const drawdownStart =
+    input.fire.type.value === 'none' ? input.income.retirementAge.value : input.fire.targetAge.value;
+  return Math.max(startAge + 1, drawdownStart + CRASH_SCENARIO.yearsAfterDrawdownStart);
 }

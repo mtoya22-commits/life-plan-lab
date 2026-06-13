@@ -106,7 +106,8 @@ export function buildLifeEvents(result: SimulationResult, input: SimulationInput
             year: r.year,
             type: 'crash',
             title: '暴落シナリオ',
-            description: '投資資産が一時的に下落する想定です（その後は回復を試算）。',
+            description:
+              '取崩期初期（FIRE開始または退職の翌年）に投資資産を約30%下落させる保守想定です。シーケンスリスクが最大になる時期を選んでいます。現金資産は影響なし、暴落後は通常の利回りで回復を試算します。',
             relatedStepId: 'investment',
             major: true,
           });
