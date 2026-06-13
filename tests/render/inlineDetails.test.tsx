@@ -35,7 +35,7 @@ describe('inline detail expansion on the result screen', () => {
       (s) => s.textContent ?? '',
     );
     expect(summaries.some((s) => s.includes('タイムライン'))).toBe(true);
-    expect(summaries.some((s) => s.includes('グラフを拡大'))).toBe(true);
+    expect(summaries.some((s) => s.includes('グラフを詳しく見る'))).toBe(true);
     expect(summaries.some((s) => s.includes('詳しく見る'))).toBe(true);
   });
 

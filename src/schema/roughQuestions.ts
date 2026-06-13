@@ -235,7 +235,7 @@ export const ROUGH_PAGES: RoughPage[] = [
       {
         id: 'sideFireIncome',
         label: 'サイドFIRE後の毎月収入',
-        help: '少し働き続ける場合の毎月の収入の目安です。',
+        help: '少し働き続ける場合の毎月の収入の目安です。配偶者が働き続ける場合はその分も合算した「世帯としての月収」として入力してください。',
         kind: 'number',
         unit: '万円',
         placeholder: '例：20',

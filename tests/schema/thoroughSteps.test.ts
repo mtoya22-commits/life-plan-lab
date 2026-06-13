@@ -96,4 +96,15 @@ describe('thorough steps definition', () => {
     input.fire.type.value = 'side';
     expect(q.showIf!(input)).toBe(true);
   });
+
+  it('FIRE後収入 (postFireIncome) の help / inputNote が世帯合算を明示している (STEP11.22)', () => {
+    const page = THOROUGH_PAGES.find((p) => p.pageId === 'fire-2')!;
+    const q = page.questions!.find((x) => x.path === 'fire.postFireIncome')!;
+    // engine は postFireIncome を「世帯としての労働収入」として加算するため、
+    // ユーザーが配偶者の分も合算して入力する必要がある旨を明示する。
+    expect(q.help).toBeDefined();
+    expect(q.help!).toMatch(/世帯|合算/);
+    expect(q.inputNote).toBeDefined();
+    expect(q.inputNote!).toMatch(/世帯合算/);
+  });
 });

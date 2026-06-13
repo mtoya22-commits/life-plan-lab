@@ -117,7 +117,7 @@ export function ResultDashboard() {
           <AssetChartMini rows={result.rows} events={events} />
         </Suspense>
         <p className="asset-card__hint muted">
-          現在価値は「今のお金の感覚」で見た金額です。将来の額面はグラフを拡大して比較できます。
+          現在価値は「今のお金の感覚」で見た金額です。将来の額面はグラフを詳しく見ると比較できます。
         </p>
         <details className="detail-card__expand">
           <summary>{ja.result.assetExpand} ›</summary>
