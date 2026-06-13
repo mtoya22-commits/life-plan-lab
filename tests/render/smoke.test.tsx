@@ -134,9 +134,9 @@ describe('render smoke (jsdom)', () => {
     const card = Array.from(container.querySelectorAll('.detail-card')).find((el) =>
       el.textContent?.includes('資産推移'),
     )!;
-    // 通常表示にも生活言語の短いヒントを添える（拡大グラフへの導線）
+    // 通常表示にも生活言語の短いヒントを添える（詳細展開への導線）
     expect(card.querySelector('.asset-card__hint')!.textContent).toContain('今のお金の感覚');
-    expect(card.querySelector('.asset-card__hint')!.textContent).toContain('グラフを拡大');
+    expect(card.querySelector('.asset-card__hint')!.textContent).toContain('グラフを詳しく見る');
     // 結果画面のユーザー向け文字列に専門語を出さない
     expect(container.textContent).not.toContain('割り戻');
     expect(container.textContent).not.toContain('実質価値');
@@ -309,13 +309,13 @@ describe('render smoke (jsdom)', () => {
     expect(items[0].querySelectorAll('.risk-factor__points li').length).toBeGreaterThan(0);
   });
 
-  it('expands the asset chart inline (lazy-loaded) when "グラフを拡大" is opened', async () => {
+  it('expands the asset chart inline (lazy-loaded) when "グラフを詳しく見る" is opened', async () => {
     fillAll();
     store().submitRough();
     const { container } = render(<App />);
     // STEP11.21: BottomSheet ではなく detail-card 内の inline <details> として展開する。
     const expansion = Array.from(container.querySelectorAll<HTMLDetailsElement>('details.detail-card__expand')).find(
-      (d) => d.querySelector('summary')?.textContent?.includes('グラフを拡大'),
+      (d) => d.querySelector('summary')?.textContent?.includes('グラフを詳しく見る'),
     )!;
     expect(expansion).toBeDefined();
     expansion.open = true;

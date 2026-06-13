@@ -126,7 +126,7 @@ export const ja = {
     timelineDetailHeading: '人生タイムライン',
     // カードと詳細シート
     assetCardTitle: '資産推移',
-    assetExpand: 'グラフを拡大',
+    assetExpand: 'グラフを詳しく見る',
     assetSheetHeading: '資産推移の詳細',
     yearlyHeading: '年ごとの収支（5年ごと）',
     educationCardTitle: '教育費',

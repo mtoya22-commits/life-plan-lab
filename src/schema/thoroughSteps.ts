@@ -444,10 +444,10 @@ export const THOROUGH_PAGES: ThoroughPage[] = [
       {
         path: 'fire.postFireIncome',
         label: 'FIRE後収入',
-        help: 'サイドFIREで少し働く場合の年間収入です。今のお金の感覚で入力すると、将来額はインフレ率を反映して試算します。',
+        help: 'サイドFIREで少し働く場合の年間収入です。配偶者が働き続ける場合はその分も合算した「世帯としての年間労働収入」として入力してください。今のお金の感覚で入力すると、将来額はインフレ率を反映して試算します。',
         kind: 'number',
         unit: '万円',
-        inputNote: '年額・万円（今のお金の感覚で）',
+        inputNote: '年額・万円（世帯合算／今のお金の感覚で）',
         min: 0,
         allowSkip: true,
         allowRecommended: true,
