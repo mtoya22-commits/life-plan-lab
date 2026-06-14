@@ -110,17 +110,44 @@ export function weakestFactor(score: Score): ScoreItem | null {
 
 /**
  * 弱い指標に応じた改善提案を返す。
- * TODO(実装): 引き継ぎ資料30章の提案文を各指標ごとに拡充する。
+ * 各指標で「動かせるレバー」を 1〜2 個、結果画面の操作導線
+ * （下の「条件を変えてみる」/ QuickAdjust）に紐づくよう書く。
+ * 煽らず、ユーザーが自分で試行錯誤できる形に。
  */
-export function buildSuggestions(_indicators: Indicators, score: Score): Suggestion[] {
+export function buildSuggestions(
+  _indicators: Indicators,
+  score: Score,
+  fireType: FireType = 'side',
+): Suggestion[] {
   const out: Suggestion[] = [];
   for (const item of score.byIndicator) {
     if (item.points >= 2) continue;
     out.push({
       relatedIndicator: String(item.key),
       title: `${item.label}の改善余地`,
-      body: '条件を調整すると改善する可能性があります。', // TODO: 指標別の具体提案へ
+      body: bodyFor(String(item.key), fireType),
     });
   }
   return out;
+}
+
+function bodyFor(key: string, fireType: FireType): string {
+  switch (key) {
+    case 'fireAchievementRate':
+      return fireType === 'none'
+        ? '退職年齢を 1〜2 年後ろにずらすか、月の生活費を 2〜3 万円見直してみてください。下の「条件を変えてみる」で試せます。'
+        : 'FIRE 希望年齢を 1〜2 年遅らせるか、月の生活費を 2〜3 万円見直してみてください。下の「条件を変えてみる」で試せます。';
+    case 'assetLongevityAge':
+      return fireType === 'none'
+        ? '退職後の月額生活費を 1〜2 万円下げる、または利回り想定を見直してみてください。資産が長持ちする方向に変わります。'
+        : 'FIRE 後の月額生活費を 1〜2 万円下げる、または利回り想定を見直してみてください。資産が長持ちする方向に変わります。';
+    case 'assetsAt95':
+      return '投資への配分（NISA・iDeCo 等の積立）を増やすか、退職金・年金の見通しを見直してみてください。長期では複利の効きが大きく出る指標です。';
+    case 'eduPeakResilience':
+      return '進学パス（公立/私立の想定）を見直すか、ピーク年齢前後の臨時支出を分散できないか確認してみてください。「条件を変えてみる」の教育費から編集できます。';
+    case 'mortgageBurden':
+      return '繰り上げ返済の計画を見直すか、賃貸との比較も検討の余地があります。「条件を変えてみる」の住まいから編集できます。';
+    default:
+      return '条件を調整すると改善する可能性があります。';
+  }
 }
