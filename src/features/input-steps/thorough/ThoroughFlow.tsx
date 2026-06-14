@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useInputStore } from '../../../store/inputStore';
 import { ja } from '../../../strings/ja';
 import { visibleThoroughPages } from '../../../schema/thoroughSteps';
@@ -41,9 +41,13 @@ export function ThoroughFlow() {
   const backToResult = useInputStore((s) => s.backToResult);
 
   const [attempted, setAttempted] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   // ステップが変わったら質問画面の先頭へスクロール。
+  // inner-scroll 復活後は `.step-content` 内のスクロールリセットが本命。
+  // body の scrollTo は防御（result→input 戻り等で body 残スクロールがある場合）。
   useEffect(() => {
+    contentRef.current?.scrollTo?.({ top: 0, behavior: 'auto' });
     window.scrollTo({ top: 0, behavior: 'auto' });
     setAttempted(false);
   }, [thoroughPageId, cameFromResult]);
@@ -97,7 +101,7 @@ export function ThoroughFlow() {
 
   return (
     <section className="screen step-layout">
-      <div className="step-content">
+      <div className="step-content" ref={contentRef}>
         {cameFromResult ? (
           <header className="edit-header">編集中：{page.title}</header>
         ) : (
