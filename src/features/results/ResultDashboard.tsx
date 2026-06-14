@@ -43,6 +43,12 @@ export function ResultDashboard() {
   //   'stay'   → スクロールしない（クイック調整中。画面位置を保つ）
   //   それ以外 → 従来どおり上部から表示
   // calculatedAt は submit / submitContinue / nudge のたびに更新される。
+  //
+  // 既知問題（STEP11.26 / be33736 ロールバック後の現状）:
+  // WordPress iframe 内 iOS Safari で「結果画面に遷移すると真っ白」になる症状が出る。
+  // 原因は親ページのスクロールと iframe 内 body の scrollTop のズレ。WordPress 側の
+  // sticky wrapper だけでは iOS Safari の挙動安定化に届かないため、結果遷移時に
+  // 複数経路でスクロールリセットを試みる（どれかが効けば OK の防御）。
   const calculatedAt = result?.calculatedAt;
   useEffect(() => {
     if (resultReturnTarget === 'adjust' && editLinksRef.current) {
@@ -50,7 +56,25 @@ export function ResultDashboard() {
       // jsdom 等の環境では scrollIntoView が未実装なため optional chain で守る。
       editLinksRef.current.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
     } else if (resultReturnTarget !== 'stay') {
+      // 1. iframe 内 body を頂部へ（最低限の保証）
       window.scrollTo({ top: 0, behavior: 'auto' });
+      // 2. document.scrollingElement.scrollTop を直接 0 に（一部の iOS Safari で
+      //    window.scrollTo({top:0}) が無視されるケースの保険）
+      const se = document.scrollingElement as HTMLElement | null;
+      if (se) se.scrollTop = 0;
+      // 3. iframe element 自体を親 viewport の頂部へスクロール。cross-origin でも
+      //    多くのケースで親をスクロールしてくれる（scrollIntoView は通常許可される）。
+      try {
+        document.documentElement.scrollIntoView?.({ behavior: 'auto', block: 'start' });
+      } catch {
+        /* ignore: 想定外の cross-origin エラー */
+      }
+      // 4. same-origin であれば親 window も明示的に頂部へ
+      try {
+        window.parent?.scrollTo?.({ top: 0, behavior: 'auto' });
+      } catch {
+        /* ignore: cross-origin の場合は静かに失敗 */
+      }
     }
     if (resultReturnTarget) clearResultReturnTarget();
     // eslint-disable-next-line react-hooks/exhaustive-deps

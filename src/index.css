@@ -1075,8 +1075,12 @@ body {
   background: rgba(255, 253, 247, 0.96);
   backdrop-filter: blur(8px);
   border-top: 1px solid var(--border);
-  /* iPhone 幅(~375px) でも「次へ」が切れないよう左右 padding を 14 → 10 に縮める */
-  padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+  /* iPhone 幅(~375px) でも「次へ」が切れないよう左右 padding を 14 → 10 に縮める。
+     bottom 側は env(safe-area-inset-bottom) を最大 24px に頭打ち。WordPress iframe
+     内 iOS Safari で env() が必要以上に大きい値を返し、ナビ下にクリーム色の余白が
+     拡がって見える症状の暫定対処。home indicator (34px) には触れる可能性があるが、
+     ボタンの押下域は十分確保される。 */
+  padding: 10px 10px calc(10px + min(env(safe-area-inset-bottom), 24px));
 }
 .bottom-nav__inner {
   max-width: 720px;
