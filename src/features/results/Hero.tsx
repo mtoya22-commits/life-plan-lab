@@ -70,6 +70,9 @@ export function Hero({
           {score.byIndicator.map((it) => (
             <li key={String(it.key)} className="hero__judge-item">
               <span className="hero__judge-item-label">{it.label}</span>
+              {it.explainer && (
+                <span className="hero__judge-item-explainer">{it.explainer}</span>
+              )}
               <span className="hero__judge-item-note">{it.note}</span>
             </li>
           ))}
@@ -77,7 +80,9 @@ export function Hero({
       </details>
 
       {fireType !== 'none' && (
-        <p className="hero__foot muted">FIRE準備率（目安）{formatPct(indicators.fireAchievementRate)}</p>
+        <p className="hero__foot muted">
+          FIRE準備率（目安）{formatPct(indicators.fireAchievementRate)}（4%ルールベース）
+        </p>
       )}
     </div>
   );
