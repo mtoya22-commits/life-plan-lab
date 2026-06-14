@@ -511,24 +511,32 @@ body {
   line-height: 1.5;
 }
 
-/* 入力画面の外殻。iframe 中身は document（body）スクロールに一本化し、sticky ナビが
-   viewport 下端に張り付く。100svh を先に書き、対応ブラウザは 100dvh で上書き
-   （古い iOS Safari のフォールバック）。 */
+/* 入力画面の外殻。
+   STEP11.5 → STEP11.18 で document-scroll に一本化 → ふたたび inner-scroll に復活。
+   WordPress 側 sticky wrapper（README/STEP11.20）が iframe element を viewport 高に
+   pin している前提で、iframe 内のスクロールを `.step-content` の **内側 1 つだけ** に
+   する。これで「質問部分」と「次への部分」の二重スクロールを排除し、次へが常に
+   viewport 下端に張り付く。
+   100svh を先に書き、対応ブラウザは 100dvh で上書き（古い iOS Safari のフォールバック）。 */
 .step-layout {
   display: flex;
   flex-direction: column;
-  min-height: calc(100svh - var(--app-pad-top));
-  min-height: calc(100dvh - var(--app-pad-top));
+  height: calc(100svh - var(--app-pad-top));
+  height: calc(100dvh - var(--app-pad-top));
+  overflow: hidden;
 }
-/* 内側コンテンツ領域。flex:1 でナビを下端に押し下げる役割は残すが、内部スクロールは持たない。
+/* 内側スクロール領域。flex:1 でナビを下端に押し、内部だけ縦スクロールする。
    min-height:0 は flex 子要素で overflow を効かせる定番イディオム。 */
 .step-content {
   flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  /* 最終入力欄が sticky ナビと視覚的に重ならないための余白 */
-  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  /* 最終入力欄が下部ナビと視覚的に重ならないための余白 */
+  padding-bottom: calc(16px + min(env(safe-area-inset-bottom), 24px));
 }
 .step-layout .question-card {
   padding: 14px 16px;
