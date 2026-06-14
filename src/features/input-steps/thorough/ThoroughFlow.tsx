@@ -43,9 +43,7 @@ export function ThoroughFlow() {
   const [attempted, setAttempted] = useState(false);
 
   // ステップが変わったら質問画面の先頭へスクロール。
-  // STEP11.26: スクロール container は .app（html/body は overflow:hidden）。
   useEffect(() => {
-    document.querySelector<HTMLElement>('.app')?.scrollTo?.({ top: 0, behavior: 'auto' });
     window.scrollTo({ top: 0, behavior: 'auto' });
     setAttempted(false);
   }, [thoroughPageId, cameFromResult]);
