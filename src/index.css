@@ -42,6 +42,13 @@
   box-sizing: border-box;
 }
 
+/* iframe 埋め込み時、内側 document スクロールが上下端で親 WordPress ページに
+   チェイン（連鎖）して「二重スクロール感」を作るのを止める。
+   iOS Safari の慣性スクロールやバウンスも iframe 内で吸収させる。 */
+html {
+  overscroll-behavior: contain;
+}
+
 body {
   margin: 0;
   background-color: var(--bg);
@@ -53,6 +60,7 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', 'Segoe UI', sans-serif;
   line-height: 1.7;
   -webkit-font-smoothing: antialiased;
+  overscroll-behavior: contain;
 }
 
 .app {
