@@ -270,7 +270,7 @@ export function runSimulation(input: SimulationInput): SimulationResult {
     monthlyInvestKnown ? monthlyInvestAnnual : 0,
   );
   const score = judge(indicators, input.fire.type.value);
-  const suggestions = buildSuggestions(indicators, score);
+  const suggestions = buildSuggestions(indicators, score, input.fire.type.value);
 
   return {
     rows,
