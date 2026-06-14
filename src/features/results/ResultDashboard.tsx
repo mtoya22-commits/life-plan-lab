@@ -19,7 +19,6 @@ import { buildLifeEvents, summaryEvents } from './lifeEvents';
 import { EducationDetail } from './EducationDetail';
 import { MortgageDetail } from './MortgageDetail';
 import { AssumptionSummary } from './AssumptionSummary';
-import { Suggestions } from './Suggestions';
 import { QuickAdjust } from './QuickAdjust';
 import { PreviousDelta } from './PreviousDelta';
 
@@ -214,17 +213,8 @@ export function ResultDashboard() {
       {/* 3) 慎重条件（補助・参考・muted）。標準結果は変えない。 */}
       <CautiousScenario input={input} result={result} />
 
-      {/* 見直しのヒント（折りたたみ） */}
-      {result.suggestions.length > 0 && (
-        <details className="collapsible">
-          <summary>
-            {ja.result.suggestionsToggle}（{result.suggestions.length}件）
-          </summary>
-          <div className="collapsible__body">
-            <Suggestions suggestions={result.suggestions} />
-          </div>
-        </details>
-      )}
+      {/* 「見直しのヒント」は 「見直しポイント」 セクションに統合済み（riskFactors.ts で
+          rule-based + score-based fallback を 1 セクションにまとめる）。 */}
 
       {/* 今回の試算条件（折りたたみ・下部） */}
       <details className="collapsible">

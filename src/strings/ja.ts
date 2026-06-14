@@ -103,8 +103,6 @@ export const ja = {
     summaryHeading: '今回のポイント',
     assumptionsHeading: '今回の試算条件',
     assumptionsToggle: '今回の試算条件を見る',
-    suggestionsHeading: '見直しのヒント',
-    suggestionsToggle: '見直しのヒントを見る',
     riskFactorsToggle: '見直しポイントを見る',
     cautiousToggle: '慎重条件で見る',
     cautiousLead: '長期の利回りを低めに、物価上昇をやや高めに見た場合の目安です。将来を予測するものではなく、前提を変えた確認用です。',

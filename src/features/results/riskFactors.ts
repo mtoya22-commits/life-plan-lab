@@ -1,13 +1,28 @@
 import type { SimulationInput, SimulationResult } from '../../schema/types';
 
-// 資産が不足しやすい要因（見直しが効きやすいポイント）を最大5つ抽出する。
+// 資産が不足しやすい要因（見直しが効きやすいポイント）を抽出する。
 // 「悪化要因」を煽らず、各ポイントを「原因 / 時期 / どこを変えると効くか」に分解して伝える。
+//
+// 2 系統のソースを 1 セクションに統合:
+// 1. rule-based: シミュ結果の特定条件で発火（既存ロジック、リッチな 3 行構成）
+// 2. score-based fallback: 5 判定指標のうち points < 2 で、かつ rule-based で
+//    拾えていないトピックだけ補完する（1 行構成、suggestions の本文を流用）
 export interface RiskFactor {
   /** 見出し（短く）。 */
   title: string;
-  /** 原因・時期・見直しレバーを1行ずつ（最大3行）。 */
+  /** 原因・時期・見直しレバーを1行ずつ（rule-based は最大3行、fallback は1行）。 */
   points: string[];
 }
+
+// rule-based の title が、判定指標のどの key を「すでにカバーしているか」を逆引きする。
+// fallback ロジックでこれに該当する指標は二重表示しない。
+const COVERS: Record<string, string> = {
+  資産寿命: 'assetLongevityAge',
+  教育費ピーク: 'eduPeakResilience',
+  住宅ローン: 'mortgageBurden',
+  'FIRE後の収支': 'fireAchievementRate',
+  老後の収支: 'fireAchievementRate',
+};
 
 export function buildRiskFactors(result: SimulationResult, input: SimulationInput): RiskFactor[] {
   const out: RiskFactor[] = [];
@@ -123,5 +138,20 @@ export function buildRiskFactors(result: SimulationResult, input: SimulationInpu
     });
   }
 
-  return out.slice(0, 5);
+  // score-based fallback: weak 指標で rule-based に拾えていないものを補完。
+  // suggestions の本文をそのまま 1 行 bullet として表示する。
+  const covered = new Set<string>();
+  for (const item of out) {
+    const k = COVERS[item.title];
+    if (k) covered.add(k);
+  }
+  for (const it of result.score.byIndicator) {
+    if (it.points >= 2) continue;
+    if (covered.has(String(it.key))) continue;
+    const s = result.suggestions.find((x) => x.relatedIndicator === String(it.key));
+    if (!s) continue;
+    out.push({ title: it.label, points: [s.body] });
+  }
+
+  return out.slice(0, 6);
 }
