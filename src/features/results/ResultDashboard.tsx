@@ -50,6 +50,8 @@ export function ResultDashboard() {
       // jsdom 等の環境では scrollIntoView が未実装なため optional chain で守る。
       editLinksRef.current.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
     } else if (resultReturnTarget !== 'stay') {
+      // STEP11.26: スクロール container は .app（html/body は overflow:hidden）。
+      document.querySelector<HTMLElement>('.app')?.scrollTo?.({ top: 0, behavior: 'auto' });
       window.scrollTo({ top: 0, behavior: 'auto' });
     }
     if (resultReturnTarget) clearResultReturnTarget();
