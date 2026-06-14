@@ -415,7 +415,7 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  margin-top: 8px;
+  margin-top: 0;
 }
 .step-actions__right {
   display: flex;
@@ -517,12 +517,15 @@ body {
    pin している前提で、iframe 内のスクロールを `.step-content` の **内側 1 つだけ** に
    する。これで「質問部分」と「次への部分」の二重スクロールを排除し、次へが常に
    viewport 下端に張り付く。
-   100svh を先に書き、対応ブラウザは 100dvh で上書き（古い iOS Safari のフォールバック）。 */
+   高さ単位は `100svh` で固定（dvh ではない）。iOS Safari iframe 内で dvh は URL bar
+   状態と一致しないことがあり、その場合 .step-layout が実視認領域より大きくなって
+   下部 nav が URL bar overlay の下に隠れる。svh は URL bar 出現時の小さい方なので
+   常に visible 領域に収まる。URL bar が消えた直後に下に ~50px の小さい gap が
+   出るが、nav 隠れよりは許容する。 */
 .step-layout {
   display: flex;
   flex-direction: column;
   height: calc(100svh - var(--app-pad-top));
-  height: calc(100dvh - var(--app-pad-top));
   overflow: hidden;
 }
 /* 内側スクロール領域。flex:1 でナビを下端に押し、内部だけ縦スクロールする。
@@ -818,9 +821,10 @@ body {
   margin: 6px 0 0;
   font-size: 0.78rem;
 }
-/* 結果画面はセクション間を広めにして「積み木」より「流れ」に寄せる（カード内paddingは維持） */
+/* 結果画面はセクション間を広めにして「積み木」より「流れ」に寄せる（カード内paddingは維持）。
+   22 → 16 で全体の縦密度を上げ、最下段の「勿体無い余白」感を減らす。 */
 .result {
-  gap: 22px;
+  gap: 16px;
 }
 
 /* ---- 結果: 見出し（自分専用感） ---- */
