@@ -68,7 +68,7 @@ export function QuickAdjust() {
   }
 
   return (
-    <section className="quick-adjust" aria-label={ja.result.quickAdjustHeading}>
+    <section id="quick-adjust" className="quick-adjust" aria-label={ja.result.quickAdjustHeading}>
       <h2 className="section-heading">{ja.result.quickAdjustHeading}</h2>
       {knobs.map((k) => (
         <div className="quick-adjust__row" key={k.knob}>

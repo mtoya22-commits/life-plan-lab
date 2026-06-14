@@ -148,10 +148,10 @@ export const ja = {
     events: 'ライフイベントを修正',
   },
   band: {
-    stable: '安定寄り',
-    realistic: 'おおむね現実的',
-    needs_adjust: '要調整',
-    tough: 'やや注意（条件調整で改善の余地あり）',
+    stable: '安定',
+    realistic: '現実的',
+    needs_adjust: '調整余地あり',
+    tough: '見直し推奨',
   },
   source: {
     user_input: '入力値',
