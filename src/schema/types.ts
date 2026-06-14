@@ -330,6 +330,8 @@ export interface ScoreItem {
   label: string;
   points: number; // 0..3
   note: string;
+  /** この指標が何を測っているかを 1 行で説明（判定の根拠展開で表示）。 */
+  explainer?: string;
 }
 
 export interface Score {

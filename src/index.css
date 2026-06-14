@@ -753,6 +753,14 @@ body {
   font-weight: 600;
   color: var(--text);
 }
+/* 指標の意味を 1 行で添える説明。label と note の間に挟み、ラベルより
+   さらに小さい muted フォントで「これは何を測っているか」を示す。 */
+.hero__judge-item-explainer {
+  font-size: 0.74rem;
+  color: var(--muted);
+  line-height: 1.4;
+  margin-top: 1px;
+}
 .hero__judge-item-note {
   color: var(--muted);
 }

@@ -9,15 +9,26 @@ import { JUDGE } from './constants';
 
 // 現役継続（fireType === 'none'）では「FIRE達成率」という呼び方が不自然なため、
 // 同じ指標（4%ルール準備率）を「老後資金準備率」と表示する。配点ロジックは共通。
-function scoreFireRate(rate: number, fireType: FireType): ScoreItem {
+// longevityAge を受け取り、達成圏（100%以上）でも資産寿命が短い場合は note を
+// 「4%ルール上は達成、ただし教育費・住宅費等で寿命が短い」に差し替えて乖離を直接示す。
+function scoreFireRate(rate: number, fireType: FireType, longevityAge: number | null): ScoreItem {
   const t = JUDGE.fireRate;
   let points = 0;
   let note = '50%未満：厳しめ';
   if (rate >= t.full) ((points = 3), (note = '100%以上：達成圏'));
   else if (rate >= t.close) ((points = 2), (note = '80〜99%：あと少し'));
   else if (rate >= t.adjust) ((points = 1), (note = '50〜79%：要調整'));
+  if (points === 3 && longevityAge !== null && longevityAge < 95) {
+    note = '4%ルール上は100%以上（教育費・住宅費等で資産寿命は短い）';
+  }
   const label = fireType === 'none' ? '老後資金準備率' : 'FIRE達成率';
-  return { key: 'fireAchievementRate', label, points, note };
+  return {
+    key: 'fireAchievementRate',
+    label,
+    points,
+    note,
+    explainer: '4%ルール: FIRE後生活費×25 を満たすか。教育費・住宅費は別計算',
+  };
 }
 
 function scoreLongevity(age: number | null): ScoreItem {
@@ -27,7 +38,13 @@ function scoreLongevity(age: number | null): ScoreItem {
   if (age === null || age >= t.stable) ((points = 3), (note = '95歳以上まで資産あり：安定'));
   else if (age >= t.caution) ((points = 2), (note = '85〜94歳で枯渇：やや注意'));
   else if (age >= t.improve) ((points = 1), (note = '75〜84歳で枯渇：要改善'));
-  return { key: 'assetLongevityAge', label: '資産寿命', points, note };
+  return {
+    key: 'assetLongevityAge',
+    label: '資産寿命',
+    points,
+    note,
+    explainer: '年次シミュ全体の収支を反映した、資産が0になる年齢',
+  };
 }
 
 function scoreAssetsAt95(assets: number): ScoreItem {
@@ -37,7 +54,13 @@ function scoreAssetsAt95(assets: number): ScoreItem {
   if (assets >= t.ample) ((points = 3), (note = '3000万円以上：かなり安定寄り'));
   else if (assets >= t.stable) ((points = 2), (note = '1000〜3000万円：安定'));
   else if (assets >= t.caution) ((points = 1), (note = '0〜1000万円：やや注意'));
-  return { key: 'assetsAt95', label: '95歳時点残資産', points, note };
+  return {
+    key: 'assetsAt95',
+    label: '95歳時点残資産',
+    points,
+    note,
+    explainer: '現役期・老後を通した収支を反映した、95歳時点の残資産',
+  };
 }
 
 function scoreEduPeak(pctOfAssets: number, netCashFlow: number): ScoreItem {
@@ -47,7 +70,13 @@ function scoreEduPeak(pctOfAssets: number, netCashFlow: number): ScoreItem {
   if (netCashFlow >= 0) ((points = 3), (note = '黒字：問題少なめ'));
   else if (pctOfAssets <= t.allow) ((points = 2), (note = '赤字だが資産の5%以内：許容範囲'));
   else if (pctOfAssets <= t.caution) ((points = 1), (note = '赤字が資産の5〜10%：注意'));
-  return { key: 'eduPeakResilience', label: '教育費ピーク耐性', points, note };
+  return {
+    key: 'eduPeakResilience',
+    label: '教育費ピーク耐性',
+    points,
+    note,
+    explainer: '教育費が最大になる年の家計収支と当時の資産との比',
+  };
 }
 
 function scoreMortgageBurden(burden: number): ScoreItem {
@@ -57,7 +86,13 @@ function scoreMortgageBurden(burden: number): ScoreItem {
   if (burden < t.light) ((points = 3), (note = '20%未満：軽め'));
   else if (burden < t.standard) ((points = 2), (note = '20〜30%：標準'));
   else if (burden < t.heavy) ((points = 1), (note = '30〜40%：重め'));
-  return { key: 'mortgageBurden', label: 'ローン負担', points, note };
+  return {
+    key: 'mortgageBurden',
+    label: 'ローン負担',
+    points,
+    note,
+    explainer: '年間返済額 ÷ 手取り収入',
+  };
 }
 
 function bandForTotal(total: number): ScoreBand {
@@ -70,7 +105,7 @@ function bandForTotal(total: number): ScoreBand {
 
 export function judge(indicators: Indicators, fireType: FireType = 'side'): Score {
   const byIndicator: ScoreItem[] = [
-    scoreFireRate(indicators.fireAchievementRate, fireType),
+    scoreFireRate(indicators.fireAchievementRate, fireType, indicators.assetLongevityAge),
     scoreLongevity(indicators.assetLongevityAge),
     scoreAssetsAt95(indicators.assetsAt95),
     scoreEduPeak(indicators.eduPeakResilience.pctOfAssets, indicators.eduPeakResilience.netCashFlow),
