@@ -59,16 +59,38 @@ describe('Hero 再設計: スコア表記を消す + 帯ラベルを短く', () 
     store().reset();
     store().loadThoroughSample(true);
     const { container } = render(<App />);
-    const label = container.querySelector('.hero__band-label')!.textContent ?? '';
+    const label = container.querySelector('.hero__band')!.textContent ?? '';
     expect(['安定', '現実的', '調整余地あり', '見直し推奨']).toContain(label.trim());
   });
 
-  it('帯バッジは <details><summary> 構造で、判定の根拠が 5 項目展開される', () => {
+  it('バッジ自体は <details> ではなく静的な div で、押せる要素ではない', () => {
     store().reset();
     store().loadThoroughSample(true);
     const { container } = render(<App />);
-    const judgeBlock = container.querySelector('.hero__judge');
-    expect(judgeBlock?.tagName).toBe('DETAILS');
+    const band = container.querySelector('.hero__band');
+    expect(band?.tagName).toBe('DIV');
+    expect(band?.closest('summary')).toBeNull();
+    expect(band?.closest('details')).toBeNull();
+  });
+
+  it('判定の根拠の展開トグルは独立した行に明示されている（チェブロン＋テキスト）', () => {
+    store().reset();
+    store().loadThoroughSample(true);
+    const { container } = render(<App />);
+    const judge = container.querySelector('.hero__judge');
+    expect(judge?.tagName).toBe('DETAILS');
+    const summary = judge!.querySelector('.hero__judge-summary');
+    expect(summary?.tagName).toBe('SUMMARY');
+    expect(summary?.textContent).toContain('判定の根拠を見る');
+    const chevron = summary!.querySelector('.hero__judge-chevron');
+    expect(chevron).not.toBeNull();
+    expect(chevron!.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('判定の根拠（5 項目）が展開リストに含まれる', () => {
+    store().reset();
+    store().loadThoroughSample(true);
+    const { container } = render(<App />);
     const items = container.querySelectorAll('.hero__judge-item');
     expect(items.length).toBe(5);
   });
