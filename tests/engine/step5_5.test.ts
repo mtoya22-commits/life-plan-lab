@@ -131,7 +131,8 @@ describe('STEP5.5 risk factors (見直しが効きやすいポイント)', () =>
     const factors = buildRiskFactors(r, applyRecommendedValues(caseInput()));
     const text = (f: { title: string; points: string[] }) => [f.title, ...f.points].join(' ');
     expect(factors.length).toBeGreaterThan(0);
-    expect(factors.length).toBeLessThanOrEqual(5);
+    // 旧 5 件上限 → suggestions 統合で 6 件上限に拡張（rule-based + score-based fallback）。
+    expect(factors.length).toBeLessThanOrEqual(6);
     expect(factors.some((f) => text(f).includes('尽きる'))).toBe(true);
     expect(factors.some((f) => text(f).includes('教育費'))).toBe(true);
   });
