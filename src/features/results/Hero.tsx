@@ -33,20 +33,9 @@ export function Hero({
 
   return (
     <div className="hero">
-      <details className="hero__judge">
-        <summary className="hero__band" data-band={score.band}>
-          <span className="hero__band-label">{ja.band[score.band]}</span>
-          <span className="hero__judge-toggle">判定の根拠</span>
-        </summary>
-        <ul className="hero__judge-list">
-          {score.byIndicator.map((it) => (
-            <li key={String(it.key)} className="hero__judge-item">
-              <span className="hero__judge-item-label">{it.label}</span>
-              <span className="hero__judge-item-note">{it.note}</span>
-            </li>
-          ))}
-        </ul>
-      </details>
+      <div className="hero__band" data-band={score.band}>
+        {ja.band[score.band]}
+      </div>
 
       {leadIn && <p className="hero__lead muted">{leadIn}</p>}
 
@@ -69,6 +58,23 @@ export function Hero({
           </a>
         </p>
       )}
+
+      {/* 判定の根拠の展開トグル。バッジ内に隠さず、独立した行として置くことで
+          タップ可能であることを明示する。チェブロンは open 時に 180deg 回転。 */}
+      <details className="hero__judge">
+        <summary className="hero__judge-summary">
+          <span className="hero__judge-chevron" aria-hidden="true">▾</span>
+          <span className="hero__judge-summary-text">判定の根拠を見る</span>
+        </summary>
+        <ul className="hero__judge-list">
+          {score.byIndicator.map((it) => (
+            <li key={String(it.key)} className="hero__judge-item">
+              <span className="hero__judge-item-label">{it.label}</span>
+              <span className="hero__judge-item-note">{it.note}</span>
+            </li>
+          ))}
+        </ul>
+      </details>
 
       {fireType !== 'none' && (
         <p className="hero__foot muted">FIRE準備率（目安）{formatPct(indicators.fireAchievementRate)}</p>

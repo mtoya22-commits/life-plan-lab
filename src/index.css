@@ -687,26 +687,40 @@ body {
   font-size: 0.85rem;
   font-weight: 500;
 }
-/* 帯バッジは <details><summary> 構造。ネイティブ三角は隠してラベルだけ見せる。
-   開くと判定の根拠（5 項目の状況）が下に表示される。 */
-.hero__judge > summary {
-  list-style: none;
-  cursor: pointer;
+/* 判定の根拠の展開トグル。バッジとは別行に置き、チェブロンで明示。
+   summary のネイティブ三角は隠してチェブロンを正とする。 */
+.hero__judge {
+  margin: 14px 0 0;
 }
-.hero__judge > summary::-webkit-details-marker {
+.hero__judge-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: var(--muted);
+  list-style: none;
+  padding: 4px 0;
+  user-select: none;
+}
+.hero__judge-summary::-webkit-details-marker {
   display: none;
 }
-.hero__judge-toggle {
-  font-size: 0.74rem;
-  font-weight: 500;
-  color: var(--muted);
-  opacity: 0.85;
+.hero__judge-summary:hover,
+.hero__judge[open] .hero__judge-summary {
+  color: var(--text);
 }
-.hero__judge[open] .hero__judge-toggle {
-  opacity: 1;
+.hero__judge-chevron {
+  display: inline-block;
+  font-size: 0.78rem;
+  line-height: 1;
+  transition: transform 0.18s ease;
+}
+.hero__judge[open] .hero__judge-chevron {
+  transform: rotate(180deg);
 }
 .hero__judge-list {
-  margin: 12px 0 0;
+  margin: 8px 0 0;
   padding: 0;
   list-style: none;
   display: flex;
