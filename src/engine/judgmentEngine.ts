@@ -96,6 +96,19 @@ function capBandByLongevity(band: ScoreBand, longevityAge: number | null): Score
 }
 
 /**
+ * Hero の「動かすと変わりやすい項目」用に、最も点数が低い項目を 1 つ返す。
+ * band が 'stable' のときは課題提示しないので null。
+ * 同点最弱が複数あるときは byIndicator の並び順（FIRE率→寿命→残資産→教育→ローン）先頭を採用。
+ */
+export function weakestFactor(score: Score): ScoreItem | null {
+  if (score.band === 'stable') return null;
+  return score.byIndicator.reduce<ScoreItem | null>((min, it) => {
+    if (!min) return it;
+    return it.points < min.points ? it : min;
+  }, null);
+}
+
+/**
  * 弱い指標に応じた改善提案を返す。
  * TODO(実装): 引き継ぎ資料30章の提案文を各指標ごとに拡充する。
  */

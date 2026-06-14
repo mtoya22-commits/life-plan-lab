@@ -81,7 +81,7 @@ export function ResultDashboard() {
       </div>
 
       {/* 結論（常時表示） */}
-      <Hero result={result} fireType={input.fire.type.value} />
+      <Hero result={result} input={input} fireType={input.fire.type.value} />
 
       {/* 前回の条件との差分（再計算・クイック調整の直後だけ出る） */}
       <PreviousDelta />
@@ -271,7 +271,7 @@ const EditLinks = forwardRef<HTMLDetailsElement>(function EditLinks(_, ref) {
   );
 
   return (
-    <details className="collapsible collapsible--card" ref={ref}>
+    <details id="edit-links" className="collapsible collapsible--card" ref={ref}>
       <summary>{ja.result.editHeading}</summary>
       <div className="collapsible__body">
         <p className="muted">{ja.result.editLead}</p>

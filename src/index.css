@@ -687,6 +687,74 @@ body {
   font-size: 0.85rem;
   font-weight: 500;
 }
+/* 帯バッジは <details><summary> 構造。ネイティブ三角は隠してラベルだけ見せる。
+   開くと判定の根拠（5 項目の状況）が下に表示される。 */
+.hero__judge > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.hero__judge > summary::-webkit-details-marker {
+  display: none;
+}
+.hero__judge-toggle {
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--muted);
+  opacity: 0.85;
+}
+.hero__judge[open] .hero__judge-toggle {
+  opacity: 1;
+}
+.hero__judge-list {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+.hero__judge-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.hero__judge-item-label {
+  font-weight: 600;
+  color: var(--text);
+}
+.hero__judge-item-note {
+  color: var(--muted);
+}
+/* 主見出しの前提（モード別 1 行）。muted 同調、主見出しと密に。 */
+.hero__lead {
+  margin: 14px 0 0;
+  font-size: 0.82rem;
+}
+/* 「動かすと変わりやすい項目」プロンプト。主見出しとは離して落ち着いた色で。
+   仰々しいバナーではなく、文章 1 行＋細いリンクの組み合わせ。 */
+.hero__nextstep {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  background: var(--accent-soft);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+.hero__nextstep strong {
+  font-weight: 600;
+}
+.hero__nextstep-link {
+  margin-left: 10px;
+  color: var(--accent);
+  text-decoration: underline;
+  font-weight: 500;
+}
 .hero__primary {
   margin-top: 16px;
   display: flex;
