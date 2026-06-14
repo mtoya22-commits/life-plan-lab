@@ -42,8 +42,18 @@
   box-sizing: border-box;
 }
 
+/* STEP11.26: iframe document を viewport いっぱいに完全固定する。
+   親 WordPress ページがどうスクロールしても、iframe 中身の描画範囲は常に画面サイズ。
+   スクロール対象は内側の .app だけにして、二重スクロール感を完全に排除する。 */
+html {
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   margin: 0;
+  height: 100%;
+  overflow: hidden;
   background-color: var(--bg);
   /* ごく薄い深緑のモヤ（森の気配）。派手にしない。
      iframe/iOS での描画を安定させるため background-attachment は使わない。 */
@@ -58,6 +68,11 @@ body {
 .app {
   max-width: 720px;
   margin: 0 auto;
+  /* iframe 内で単一スクロールを実現。
+     html/body は overflow:hidden で固定、.app だけが縦スクロールする。 */
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   /* ステータスバー/ノッチに詰まらないよう上部に safe-area を確保。
      下部の余白は、入力画面の sticky ナビ自体が下端を担うため不要。
      値は .step-layout の高さ計算と共有するため :root の --app-pad-top に集約。 */
@@ -504,15 +519,15 @@ body {
 }
 
 /* 入力画面の外殻。
-   STEP11.18 で 2 重スクロール構造を廃止し、スクロール対象を iframe document に一本化。
-   - min-height で「コンテンツが短いときも viewport いっぱい」（sticky ナビが下端）を担保
-   - コンテンツが長いときは body の自然なスクロールで対応（内部スクロールは持たない）
-   - sticky ナビはスクロール祖先が body になっても下端に張り付く */
+   STEP11.26: スクロール container は .app（html/body は overflow:hidden 固定）。
+   .step-layout は .app の内側で 100% min-height を確保し、短いステップでも sticky ナビが
+   .app の viewport 下端に張り付くようにする。
+   - 短いステップ: .step-layout が 100% で sticky ナビが下端
+   - 長いステップ: .app 内部スクロールでコンテンツが流れ、sticky ナビは下端追従 */
 .step-layout {
   display: flex;
   flex-direction: column;
-  min-height: calc(100svh - var(--app-pad-top));
-  min-height: calc(100dvh - var(--app-pad-top));
+  min-height: 100%;
 }
 /* 内側コンテンツ領域。flex:1 でナビを下端に押し下げる役割は残すが、内部スクロールは持たない。
    min-height:0 は flex 子要素で overflow を効かせる定番イディオム。 */

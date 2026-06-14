@@ -34,9 +34,10 @@ export function RoughFlow() {
   const [attempted, setAttempted] = useState(false);
 
   // ステップが変わったら質問画面の先頭へスクロール（前ステップの位置を引き継がない）。
-  // STEP11.18 で内部スクロールを廃止し、スクロール対象は iframe document に一本化。
-  // ページ切替時に「未入力確認パネル」状態もリセットする。
+  // STEP11.26: スクロール container は .app（html/body は overflow:hidden）。
+  // window.scrollTo は no-op になるが、互換のため残す。
   useEffect(() => {
+    document.querySelector<HTMLElement>('.app')?.scrollTo?.({ top: 0, behavior: 'auto' });
     window.scrollTo({ top: 0, behavior: 'auto' });
     setAttempted(false);
   }, [roughPage, cameFromResult]);
