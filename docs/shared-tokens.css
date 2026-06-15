@@ -1,0 +1,275 @@
+/* =========================================================================
+   shared-tokens.css — life-plan-lab の見た目を新シミュレーターへ移植するための
+   コピペ用デザイントークン + 共通クラス。
+
+   使い方:
+   1. 新シミュレーターの CSS 先頭にこのファイルの :root を貼る。
+   2. 必要な共通クラス（.btn 系 / .choice / .collapsible / レイアウト）をコピー。
+   3. 値は src/index.css の現行値と一致（2026-06 時点）。変更したら両方を揃えること。
+
+   世界観: 静かで上質（Quiet Luxury / Quiet Trust）。深緑を主軸に、ウォーム
+   アイボリーの背景、温かい白のカード。森の中の落ち着いた相談室。
+   赤は使わず、注意系はブラス/ブラウンで落ち着かせる。ゴールドは細い差し色のみ。
+   ========================================================================= */
+
+:root {
+  /* ---- 面・テキスト ---- */
+  --bg: #f4f1ea;            /* ウォームアイボリー背景 */
+  --surface: #fffdf7;       /* 温かい白〜薄アイボリーのカード面 */
+  --text: #2a2c27;          /* 深い墨色（わずかに温かい） */
+  --muted: #6e736a;         /* 読みやすいグレー（やや緑寄り）。補足・小注記 */
+  --border: #eee9e0;        /* 控えめな境界（カード色とのコントラストを下げる） */
+
+  /* ---- アクセント（深緑が主軸） ---- */
+  --accent: #2d4a3e;        /* メイン CTA: 青みを含んだ深緑（フォレスト） */
+  --accent-strong: #233f33; /* 押下・濃いめ */
+  --accent-soft: #e7ede8;   /* セージ系の淡い面（おすすめボタン背景等） */
+  --link: #3c5a52;          /* リンク: 深緑寄りのブルーグレー */
+  --brass: #a98b5d;         /* サテンブラス（細い差し色限定。面では使わない） */
+
+  /* ---- 判定バンド（赤は使わない。注意系はブラス/ブラウン） ---- */
+  --band-stable: #3f6b54;    /* 安定: 深緑〜セージ */
+  --band-realistic: #4c6b62; /* 現実的: くすんだ青緑グレー */
+  --band-needs: #8f7344;     /* 調整余地あり: くすんだブラス */
+  --band-tough: #8a6749;     /* 見直し推奨: 落ち着いたブラウン */
+
+  /* ---- source タグ（Field<T>.source の塗り分け。控えめ） ---- */
+  --tag-user: #2d4a3e;        /* user_input */
+  --tag-recommended: #577a61; /* recommended_value */
+  --tag-default: #9b988d;     /* default_value */
+  --tag-skipped: #a98b5d;     /* skipped */
+
+  /* ---- カード・影 ---- */
+  --radius: 14px;
+  --shadow: 0 1px 2px rgba(35, 50, 42, 0.03); /* 常時は気配程度 */
+  --shadow-raised: 0 1px 2px rgba(35, 50, 42, 0.04), 0 10px 26px rgba(35, 50, 42, 0.06); /* hover の浮き */
+
+  /* ---- safe-area ----
+     .app の上部余白。入力画面の viewport 高計算（100svh - これ）と共有する。 */
+  --app-pad-top: calc(24px + env(safe-area-inset-top, 0px));
+}
+
+/* =========================================================================
+   ベース（タイポ・リセット・iframe 対策）
+   ========================================================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+/* iframe 内のスクロールが親ページに連鎖する「二重スクロール感」を遮断。 */
+html {
+  overscroll-behavior: contain;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', 'Segoe UI', sans-serif;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: contain;
+}
+
+/* アプリの外殻。max-width で中央寄せ、上部に safe-area。下部 padding は持たない
+   （入力画面は sticky ナビが下端を担う）。 */
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--app-pad-top) 18px 0;
+}
+
+/* 画面共通の縦並び。セクション間 gap は入力 14px / 結果 16px を目安に。 */
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.section-heading {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 8px 0;
+}
+.muted {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* =========================================================================
+   ボタン
+   ========================================================================= */
+
+.btn {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+}
+.btn:hover {
+  border-color: var(--accent);
+}
+.btn--primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.btn--primary:hover {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+.btn--recommended {
+  background: var(--accent-soft);
+  border-color: var(--accent-soft);
+  color: var(--accent);
+}
+.btn--skip {
+  color: var(--muted);
+}
+.btn.is-active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn:disabled,
+.btn[disabled] {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* =========================================================================
+   選択肢（choice）
+   ========================================================================= */
+
+.choice-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.choice {
+  flex: 1 1 auto;
+  min-width: 96px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+.choice:hover {
+  border-color: var(--accent);
+}
+.choice--selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* =========================================================================
+   折りたたみ（collapsible）— モーダルを使わず <details> で展開する。
+   iframe 内の position:fixed 問題を構造的に避けるための基本パターン。
+   ========================================================================= */
+
+.collapsible {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 4px 18px;
+}
+.collapsible > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 14px 0;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.collapsible > summary::-webkit-details-marker {
+  display: none;
+}
+.collapsible > summary::after {
+  content: '▾';
+  color: var(--muted);
+  transition: transform 0.15s ease;
+}
+.collapsible[open] > summary::after {
+  transform: rotate(180deg);
+}
+.collapsible__body {
+  padding-bottom: 14px;
+}
+/* weight の出し分け: 最重要 / 操作カード / 補助 */
+.collapsible--primary > summary,
+.collapsible--primary > summary::after {
+  color: var(--accent);
+}
+.collapsible--muted > summary {
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+/* =========================================================================
+   入力画面のスクロール構造（重要）
+   WordPress 親に sticky wrapper（position:sticky; top:0; height:100dvh）がある
+   前提で、iframe 内のスクロールを .step-content の「1 本」に限定する。
+   これで「次へ」が常に viewport 下端に固定され、二重スクロールを排除。
+   高さ単位は 100svh（URL bar 出現時の小さい方）で固定するのが iOS Safari に堅牢。
+   ========================================================================= */
+
+.step-layout {
+  display: flex;
+  flex-direction: column;
+  height: calc(100svh - var(--app-pad-top));
+  overflow: hidden;
+}
+.step-content {
+  flex: 1 1 auto;
+  min-height: 0; /* flex 子で overflow を効かせる定番イディオム */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: calc(16px + min(env(safe-area-inset-bottom), 24px));
+}
+.bottom-nav {
+  position: sticky;
+  bottom: 0;
+  z-index: 40;
+  background: rgba(255, 253, 247, 0.96);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--border);
+  /* iframe 内 iOS Safari で env() が過大に返るのを 24px で頭打ち。 */
+  padding: 10px 10px calc(10px + min(env(safe-area-inset-bottom), 24px));
+}
+
+/* =========================================================================
+   アニメーション（prefers-reduced-motion を尊重）
+   ========================================================================= */
+
+@keyframes fade-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  /* 例: 結果カードの軽い登場。新シミュレーターの主要カードに付ける。 */
+  .fade-rise {
+    animation: fade-rise 0.32s ease both;
+  }
+}
