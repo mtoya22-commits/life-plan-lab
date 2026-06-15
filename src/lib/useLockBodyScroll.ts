@@ -7,8 +7,7 @@ import { useEffect } from 'react';
  * 古典的な「position: fixed + top: -scrollY」パターンでスナップショット → 復元する。
  * 閉じたあとは `window.scrollTo(0, scrollY)` で元の位置に正確に戻す。
  *
- * 同時に複数のモーダルが開いた場合の競合は想定外（このアプリでは BottomSheet と
- * ResumePrompt が同時に出ることはない）。
+ * 現状の使用箇所: ResumePrompt のみ。複数モーダル同時表示は想定していない。
  */
 export function useLockBodyScroll(active: boolean): void {
   useEffect(() => {

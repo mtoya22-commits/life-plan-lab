@@ -1378,7 +1378,7 @@ body {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  /* 背面ページへのスクロール連鎖を遮断（BottomSheet と同じパターン） */
+  /* 背面ページへのスクロール連鎖を遮断（overlay modal の標準パターン） */
   overscroll-behavior: contain;
   touch-action: none;
 }
@@ -1410,7 +1410,7 @@ body {
 }
 
 /* =========================================================================
-   STEP3: 結果ダッシュボード（概要常時表示 + 詳細は Bottom Sheet / 折りたたみ）
+   STEP3: 結果ダッシュボード（概要常時表示 + 詳細は inline <details> 展開）
    ========================================================================= */
 
 /* コンパクトな詳細カード */
@@ -1737,101 +1737,10 @@ body {
   min-width: 7em;
 }
 
-/* Bottom Sheet */
-.sheet {
-  position: fixed;
-  inset: 0;
-  z-index: 70;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  /* 背景 backdrop 上でのタッチが背面ページのスクロール連鎖を起こさないよう抑止。 */
-  overscroll-behavior: contain;
-  touch-action: none;
-}
-/* タッチアクションは backdrop でだけ無効化したい。パネル本体は通常のジェスチャーを許可。 */
-.sheet__panel {
-  touch-action: auto;
-}
-.sheet__backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(20, 20, 20, 0.28); /* 暗くしすぎない */
-}
-.sheet__panel {
-  position: relative;
-  width: 100%;
-  max-width: 720px;
-  max-height: 85vh;
-  /* iOS の動的ビューポート単位にも対応（ノッチ/URL バー考慮） */
-  max-height: 85dvh;
-  display: flex;
-  flex-direction: column;
-  /* flex 子の overflow をパネルの max-height 内に閉じ込めるため必須 */
-  min-height: 0;
-  background: var(--surface);
-  border-radius: 18px 18px 0 0;
-  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.12);
-  animation: sheet-up 0.22s ease;
-}
-@keyframes sheet-up {
-  from {
-    transform: translateY(14px);
-    opacity: 0.6;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-.sheet__header {
-  /* パネル内で固定。スクロール領域に含めない（× ボタンが見えなくならないように） */
-  flex: 0 0 auto;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 14px 48px;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface);
-}
-.sheet__handle {
-  position: absolute;
-  top: 7px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 40px;
-  height: 4px;
-  border-radius: 999px;
-  background: var(--border);
-}
-.sheet__title {
-  font-weight: 700;
-}
-.sheet__close {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  font-size: 1.2rem;
-  line-height: 1;
-  cursor: pointer;
-}
-.sheet__body {
-  /* パネル内の残り空間を占有し、ここだけが縦スクロールする。
-     ヘッダー（× を含む）は固定で常に見える。 */
-  flex: 1 1 auto;
-  min-height: 0;
-  padding: 16px 18px calc(20px + env(safe-area-inset-bottom));
-  overflow-y: auto;
-  overscroll-behavior: contain; /* 背面ページへのスクロール連鎖を防ぐ */
-  -webkit-overflow-scrolling: touch;
-}
+/* Bottom Sheet was removed in STEP11.21 (replaced by inline <details> expansions
+   in DetailCard / ResultDashboard). Component, CSS, and references have been
+   cleaned up. The supporting helpers (useLockBodyScroll, notifyModalToParent)
+   are kept because ResumePrompt still uses them. */
 
 /* 開発用サンプル導線（DEV時のみ・控えめに折りたたみ） */
 .dev-menu {
@@ -1899,8 +1808,7 @@ body {
       transform: translateY(0);
     }
   }
-  /* 結果カードの登場（一度きりの軽いフェード）。
-     position:fixed のボトムシート（.sheet）には適用しない（含有ブロックの誤生成を避ける）。 */
+  /* 結果カードの登場（一度きりの軽いフェード）。 */
   .result > .result-head,
   .result > .hero,
   .result > .outlook,
