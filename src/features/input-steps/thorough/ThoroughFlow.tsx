@@ -8,6 +8,7 @@ import { ProgressHeader } from '../ProgressHeader';
 import { ThoroughQuestionView, ThoroughFieldRow } from './ThoroughQuestionView';
 import { FamilyStep } from './FamilyStep';
 import { EventsStep } from './EventsStep';
+import { ImportedLivingCostBanner } from '../../imported-living-cost/ImportedLivingCostBanner';
 import type { Field, SimulationInput } from '../../../schema/types';
 import type { ThoroughPage, ThoroughQuestion } from '../../../schema/thoroughSteps';
 
@@ -114,6 +115,12 @@ export function ThoroughFlow() {
         </div>
 
         <StepOverview page={page} input={thoroughInput} />
+
+        {/* 生活費見直しシミュレーター からの取り込み告知は、expense.monthlyLiving を含むページでだけ出す。 */}
+        {page.kind === 'fields' &&
+          (page.questions ?? []).some((q) => q.path === 'expense.monthlyLiving') && (
+            <ImportedLivingCostBanner variant="inputPage" />
+          )}
 
         {!cameFromResult && idx === 0 && <p className="step-reassure">{ja.nav.reassure}</p>}
 

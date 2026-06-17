@@ -1,5 +1,6 @@
 import { useInputStore } from '../../store/inputStore';
 import { ja } from '../../strings/ja';
+import { ImportedLivingCostBanner } from '../imported-living-cost/ImportedLivingCostBanner';
 
 // モード選択画面（入口）。ざっくり/しっかりを選んで入力フローへ進む。
 // 世界観: 結果・入力画面と同じ深緑ベースの Quiet Luxury。単なる計算フォームに見せない。
@@ -18,6 +19,8 @@ export function ModeSelect() {
         <h1 className="top-hero__title">{ja.app.title}</h1>
         <p className="top-hero__lead">{ja.app.subtitle}</p>
       </header>
+
+      <ImportedLivingCostBanner variant="modeSelect" />
 
       <h2 className="section-heading mode-select__heading">{m.heading}</h2>
       <div className="mode-cards">

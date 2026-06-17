@@ -6,6 +6,7 @@ import type { RoughCell } from '../../../schema/types';
 import { ProgressHeader } from '../ProgressHeader';
 import { QuestionCard } from '../QuestionCard';
 import { NumberField } from '../NumberField';
+import { ImportedLivingCostBanner } from '../../imported-living-cost/ImportedLivingCostBanner';
 
 // =============================================================================
 // ざっくり診断のステップフロー本体。
@@ -105,6 +106,11 @@ export function RoughFlow() {
         </div>
 
         {!cameFromResult && roughPage === 0 && <p className="step-reassure">{ja.nav.reassure}</p>}
+
+        {/* 生活費見直しシミュレーター からの取り込み告知は、monthlyLiving 質問が含まれるページでだけ出す。 */}
+        {visible.some((q) => q.id === 'monthlyLiving') && (
+          <ImportedLivingCostBanner variant="inputPage" />
+        )}
 
         {visible.map((q) => (
           <div id={`q-${q.id}`} key={q.id}>

@@ -12,6 +12,11 @@ import {
 } from '../schema/thoroughSteps';
 import { getFieldByPath, hasUserInput, setFieldByPath } from '../schema/fieldPath';
 import { field, withResolved } from '../schema/field';
+import {
+  monthlyYenToMan,
+  readImportedLivingCost,
+  type ImportedLivingCost,
+} from '../lib/importedLivingCost';
 import type {
   LifeEvent,
   Mode,
@@ -86,6 +91,23 @@ interface SavedSession {
   roughDraft: RoughDraft;
   thoroughInput: SimulationInput | null;
   thoroughPageId: string | null;
+  // 生活費見直しシミュレーター からの取り込みメタ。古い保存に存在しないことがある。
+  importedLivingCost?: ImportedLivingCost | null;
+  livingCostManuallyEdited?: boolean;
+}
+
+// 生活費見直しシミュレーター からの取り込み値を、ざっくり/しっかりそれぞれの入力に反映する。
+// 反映後の source は 'user_input'（他アプリでユーザーが下した判断を尊重し、既存の
+// recommendedValues 連動などを壊さないため）。
+function applyImportedToRoughDraft(draft: RoughDraft, monthlyMan: number): RoughDraft {
+  return { ...draft, monthlyLiving: { value: monthlyMan, source: 'user_input' } };
+}
+function applyImportedToThoroughInput(ti: SimulationInput, monthlyMan: number): SimulationInput {
+  const f = ti.expense.monthlyLiving;
+  const next = withResolved(f, monthlyMan, 'user_input', {
+    user: `生活費見直しシミュレーターから${monthlyMan}万円/月を反映しています。`,
+  });
+  return setFieldByPath(ti, 'expense.monthlyLiving', next);
 }
 
 function loadSession(): SavedSession | null {
@@ -154,9 +176,18 @@ interface InputState {
     assetsAt95PresentValue: number;
     assetLongevityAge: number | null;
   } | null;
+  /** 生活費見直しシミュレーター（別アプリ）から取り込んだ月額生活費のメタ。
+   *  URL パラメータまたは localStorage で受け取り、起動時に 1 回だけ反映する。
+   *  バナー表示・反映元ラベルの判定にも使う。 */
+  importedLivingCost: ImportedLivingCost | null;
+  /** 生活費入力欄をユーザーが総合版上で手動編集したら true。
+   *  以降、URL パラメータが新たに来ない限り、localStorage からの自動上書きを抑止する。 */
+  livingCostManuallyEdited: boolean;
 
   setMode: (mode: Mode) => void;
   reset: () => void;
+  /** 起動時に 1 回だけ呼ぶ。URL → localStorage の順で取り込み、適用判定を行う。 */
+  initializeImportedLivingCost: () => void;
 
   // ざっくり診断
   setRoughValue: (id: RoughFieldId, value: string | number) => void;
@@ -315,10 +346,20 @@ export const useInputStore = create<InputState>((set, get) => ({
   cameFromResult: false,
   resultReturnTarget: null,
   previousIndicators: null,
+  importedLivingCost: saved?.importedLivingCost ?? null,
+  livingCostManuallyEdited: saved?.livingCostManuallyEdited ?? false,
 
   setMode: (mode) => {
+    // 起動時に取り込んだ生活費があり、まだ手動編集されていなければ、新規モードの初期値に反映する。
+    const { importedLivingCost, livingCostManuallyEdited } = get();
+    const monthlyMan =
+      importedLivingCost && !livingCostManuallyEdited
+        ? monthlyYenToMan(importedLivingCost.monthlyYen)
+        : null;
+
     if (mode === 'thorough') {
-      const ti = freshThoroughInput();
+      let ti = freshThoroughInput();
+      if (monthlyMan !== null) ti = applyImportedToThoroughInput(ti, monthlyMan);
       set({
         mode,
         phase: 'input',
@@ -329,11 +370,13 @@ export const useInputStore = create<InputState>((set, get) => ({
         previousIndicators: null,
       });
     } else {
+      let draft = emptyRoughDraft();
+      if (monthlyMan !== null) draft = applyImportedToRoughDraft(draft, monthlyMan);
       set({
         mode,
         phase: 'input',
         roughPage: 0,
-        roughDraft: emptyRoughDraft(),
+        roughDraft: draft,
         cameFromResult: false,
         resumePrompt: false,
         previousIndicators: null,
@@ -355,20 +398,58 @@ export const useInputStore = create<InputState>((set, get) => ({
       cameFromResult: false,
       resumePrompt: false,
       previousIndicators: null,
+      // 再スタートでは手動編集履歴をリセットする（importedLivingCost は保持し、モード再選択で再適用される）。
+      livingCostManuallyEdited: false,
     });
+  },
+
+  initializeImportedLivingCost: () => {
+    const imported = readImportedLivingCost();
+    if (!imported) return;
+
+    const { livingCostManuallyEdited, roughDraft, thoroughInput } = get();
+    const isUrl = imported.origin === 'url';
+
+    // localStorage 由来で、すでに手動編集済みなら自動上書きしない（バナー表示用に importedLivingCost は保持）。
+    if (!isUrl && livingCostManuallyEdited) {
+      set({ importedLivingCost: imported });
+      return;
+    }
+
+    // URL は明示的な反映指示として手動編集履歴をリセットして強制適用する。
+    const monthlyMan = monthlyYenToMan(imported.monthlyYen);
+    const updates: Partial<InputState> = {
+      importedLivingCost: imported,
+      livingCostManuallyEdited: false,
+      roughDraft: applyImportedToRoughDraft(roughDraft, monthlyMan),
+    };
+    if (thoroughInput) {
+      updates.thoroughInput = applyImportedToThoroughInput(thoroughInput, monthlyMan);
+    }
+    set(updates);
   },
 
   // ---- ざっくり診断 ----
   setRoughValue: (id, value) => {
     const empty = value === '' || value === null;
     const cell: RoughCell = empty ? { value: null, source: 'default_value' } : { value, source: 'user_input' };
-    set((s) => setCell(s, id, cell));
+    set((s) => ({
+      ...setCell(s, id, cell),
+      ...(id === 'monthlyLiving' ? { livingCostManuallyEdited: true } : {}),
+    }));
   },
   useRoughRecommended: (id) => {
     const rec = recommendedById.get(id) ?? null;
-    set((s) => setCell(s, id, { value: rec, source: 'recommended_value' }));
+    set((s) => ({
+      ...setCell(s, id, { value: rec, source: 'recommended_value' }),
+      ...(id === 'monthlyLiving' ? { livingCostManuallyEdited: true } : {}),
+    }));
   },
-  skipRough: (id) => set((s) => setCell(s, id, { value: null, source: 'skipped' })),
+  skipRough: (id) =>
+    set((s) => ({
+      ...setCell(s, id, { value: null, source: 'skipped' }),
+      ...(id === 'monthlyLiving' ? { livingCostManuallyEdited: true } : {}),
+    })),
   nextRoughPage: () => {
     const { roughPage } = get();
     if (roughPage < ROUGH_PAGES.length - 1) set({ roughPage: roughPage + 1 });
@@ -424,7 +505,10 @@ export const useInputStore = create<InputState>((set, get) => ({
     const next = setFieldByPath(ti, path, nf);
     const m = path.match(/^children\.(\d+)\.currentAge$/);
     if (m && !empty) next.children[Number(m[1])].ageAssumed = false;
-    set({ thoroughInput: next });
+    set({
+      thoroughInput: next,
+      ...(path === 'expense.monthlyLiving' ? { livingCostManuallyEdited: true } : {}),
+    });
   },
   useThoroughRecommended: (path, value) => {
     const ti = get().thoroughInput;
@@ -434,14 +518,20 @@ export const useInputStore = create<InputState>((set, get) => ({
     // 質問定義の recommendedValue は月額（postFireLiving/retirementLiving の場合）。
     // setThoroughValue と同じく ×12 してフィールドに格納する。
     const storedValue = isMonthlyInputPath(path) && typeof value === 'number' ? value * 12 : value;
-    set({ thoroughInput: setFieldByPath(ti, path, withResolved(f, storedValue, 'recommended_value')) });
+    set({
+      thoroughInput: setFieldByPath(ti, path, withResolved(f, storedValue, 'recommended_value')),
+      ...(path === 'expense.monthlyLiving' ? { livingCostManuallyEdited: true } : {}),
+    });
   },
   skipThorough: (path) => {
     const ti = get().thoroughInput;
     if (!ti) return;
     const f = getFieldByPath(ti, path);
     if (!f) return;
-    set({ thoroughInput: setFieldByPath(ti, path, withResolved(f, null, 'skipped')) });
+    set({
+      thoroughInput: setFieldByPath(ti, path, withResolved(f, null, 'skipped')),
+      ...(path === 'expense.monthlyLiving' ? { livingCostManuallyEdited: true } : {}),
+    });
   },
   setThoroughChildrenCount: (count) => {
     const ti = get().thoroughInput;
@@ -677,5 +767,7 @@ useInputStore.subscribe((state) => {
     roughDraft: state.roughDraft,
     thoroughInput: state.thoroughInput,
     thoroughPageId: state.thoroughPageId,
+    importedLivingCost: state.importedLivingCost,
+    livingCostManuallyEdited: state.livingCostManuallyEdited,
   });
 });
