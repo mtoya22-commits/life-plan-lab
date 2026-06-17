@@ -157,4 +157,20 @@ export const ja = {
     default_value: '標準値',
     skipped: '未入力',
   },
+  // 別アプリ「生活費見直しシミュレーター」からの取り込み告知。
+  // モード選択／入力ページ／結果画面の 3 か所に控えめなバナーで出す。
+  livingCostImport: {
+    sourceLabels: {
+      breakdownTotal: '内訳合計',
+      quickAdjust: 'ざっくり調整後',
+      categoryScenario: 'カテゴリ別見直し後',
+      unknown: '生活費見直しシミュレーター',
+    },
+    modeSelectTitle: '生活費見直しシミュレーターの結果を読み込みました',
+    modeSelectValue: (man: string) => `反映予定の生活費：${man}/月`,
+    inputPage: (man: string) =>
+      `生活費見直しシミュレーターから ${man}/月 を読み込み済みです。この画面で手動変更できます。`,
+    resultValue: (man: string) => `反映された生活費：${man}/月`,
+    resultSource: (label: string) => `反映元：${label}`,
+  },
 } as const;

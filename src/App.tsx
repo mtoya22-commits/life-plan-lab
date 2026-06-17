@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useInputStore } from './store/inputStore';
 import { ModeSelect } from './features/mode-select/ModeSelect';
 import { StepLayout } from './features/input-steps/StepLayout';
@@ -9,6 +10,12 @@ import { ResumePrompt } from './features/resume/ResumePrompt';
 export default function App() {
   const phase = useInputStore((s) => s.phase);
   const resumePrompt = useInputStore((s) => s.resumePrompt);
+
+  // 別アプリ「生活費見直しシミュレーター」からの取り込み値を起動時に 1 回だけ読む。
+  // URL パラメータ → localStorage の順に確認し、適用判定はストア側で行う。
+  useEffect(() => {
+    useInputStore.getState().initializeImportedLivingCost();
+  }, []);
 
   return (
     <main className="app">
