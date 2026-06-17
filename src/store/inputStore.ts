@@ -17,7 +17,15 @@ import {
   readImportedLivingCost,
   type ImportedLivingCost,
 } from '../lib/importedLivingCost';
+import {
+  monthlyYenToMan as mortgageMonthlyYenToMan,
+  balanceYenToMan,
+  bonusYenToMan,
+  readImportedMortgage,
+  type ImportedMortgage,
+} from '../lib/importedMortgage';
 import type {
+  Field,
   LifeEvent,
   Mode,
   RoughCell,
@@ -94,6 +102,9 @@ interface SavedSession {
   // 生活費見直しシミュレーター からの取り込みメタ。古い保存に存在しないことがある。
   importedLivingCost?: ImportedLivingCost | null;
   livingCostManuallyEdited?: boolean;
+  // 住宅ローンシミュレーター からの取り込みメタ。同じく古い保存に存在しないことがある。
+  importedMortgage?: ImportedMortgage | null;
+  mortgageManuallyEdited?: boolean;
 }
 
 // 生活費見直しシミュレーター からの取り込み値を、ざっくり/しっかりそれぞれの入力に反映する。
@@ -108,6 +119,89 @@ function applyImportedToThoroughInput(ti: SimulationInput, monthlyMan: number): 
     user: `生活費見直しシミュレーターから${monthlyMan}万円/月を反映しています。`,
   });
   return setFieldByPath(ti, 'expense.monthlyLiving', next);
+}
+
+// 住宅ローンシミュレーター 取り込み: ざっくり側に反映できるのは housing.type / monthlyHousing / loanYears のみ。
+// 残高・金利・ボーナス・返済方式・金利タイプはざっくりでは表現できないので、しっかり側でのみ書き込む。
+// 住宅ローン情報が来た時点で「持ち家」と扱い、housing.type='own' を強制する。
+const MORTGAGE_ROUGH_IDS: ReadonlySet<RoughFieldId> = new Set<RoughFieldId>([
+  'housing',
+  'monthlyHousing',
+  'loanYears',
+]);
+function isMortgageThoroughPath(path: string): boolean {
+  return path.startsWith('housing.');
+}
+function applyImportedMortgageToRoughDraft(draft: RoughDraft, imported: ImportedMortgage): RoughDraft {
+  const next: RoughDraft = { ...draft };
+  next.housing = { value: 'own', source: 'user_input' };
+  if (imported.monthlyPaymentYen !== undefined) {
+    next.monthlyHousing = {
+      value: mortgageMonthlyYenToMan(imported.monthlyPaymentYen),
+      source: 'user_input',
+    };
+  }
+  if (imported.remainingYears !== undefined) {
+    next.loanYears = { value: imported.remainingYears, source: 'user_input' };
+  }
+  return next;
+}
+function applyImportedMortgageToThoroughInput(
+  ti: SimulationInput,
+  imported: ImportedMortgage,
+): SimulationInput {
+  let next = ti;
+  // 住宅ローンが来た = 持ち家として扱う。
+  next = setFieldByPath(
+    next,
+    'housing.type',
+    withResolved(next.housing.type, 'own', 'user_input', {
+      user: '住宅ローンシミュレーターからの取り込みにより持ち家として試算しています。',
+    }),
+  );
+  const writeNumber = (path: string, value: number) => {
+    const f = getFieldByPath(next, path);
+    if (!f) return;
+    next = setFieldByPath(next, path, withResolved(f, value, 'user_input', {
+      user: `住宅ローンシミュレーターから${value}${f.unit ?? ''}を反映しています。`,
+    }));
+  };
+  const writeChoice = <T>(path: string, value: T) => {
+    const f = getFieldByPath(next, path);
+    if (!f) return;
+    next = setFieldByPath(next, path, withResolved(f as Field<T>, value, 'user_input', {
+      user: `住宅ローンシミュレーターから反映しています。`,
+    }) as Field<unknown>);
+  };
+  if (imported.monthlyPaymentYen !== undefined) {
+    writeNumber('housing.monthlyPayment', mortgageMonthlyYenToMan(imported.monthlyPaymentYen));
+  }
+  if (imported.balanceYen !== undefined) {
+    writeNumber('housing.balance', balanceYenToMan(imported.balanceYen));
+  }
+  if (imported.interestRate !== undefined) {
+    writeNumber('housing.rate', imported.interestRate);
+  }
+  if (imported.remainingYears !== undefined) {
+    writeNumber('housing.remainingYears', imported.remainingYears);
+  }
+  if (imported.bonusAnnualYen !== undefined) {
+    writeNumber('housing.bonusAnnual', bonusYenToMan(imported.bonusAnnualYen));
+  }
+  if (imported.repaymentMethod !== undefined) {
+    writeChoice<'equal_payment' | 'equal_principal'>(
+      'housing.repayMethod',
+      imported.repaymentMethod === 'equalPrincipal' ? 'equal_principal' : 'equal_payment',
+    );
+  }
+  if (imported.rateType !== undefined) {
+    // fixedPeriod は総合版に型がないため fixed として扱う。
+    writeChoice<'fixed' | 'variable'>(
+      'housing.rateType',
+      imported.rateType === 'variable' ? 'variable' : 'fixed',
+    );
+  }
+  return next;
 }
 
 function loadSession(): SavedSession | null {
@@ -183,11 +277,20 @@ interface InputState {
   /** 生活費入力欄をユーザーが総合版上で手動編集したら true。
    *  以降、URL パラメータが新たに来ない限り、localStorage からの自動上書きを抑止する。 */
   livingCostManuallyEdited: boolean;
+  /** 住宅ローンシミュレーター（別アプリ）から取り込んだ住宅ローン情報のメタ。
+   *  URL パラメータまたは localStorage で受け取り、起動時に 1 回だけ反映する。
+   *  バナー表示・反映元ラベルの判定にも使う。 */
+  importedMortgage: ImportedMortgage | null;
+  /** 住宅ローン関連項目をユーザーが総合版上で手動編集したら true。
+   *  以降、URL パラメータが新たに来ない限り、localStorage からの自動上書きを抑止する。 */
+  mortgageManuallyEdited: boolean;
 
   setMode: (mode: Mode) => void;
   reset: () => void;
   /** 起動時に 1 回だけ呼ぶ。URL → localStorage の順で取り込み、適用判定を行う。 */
   initializeImportedLivingCost: () => void;
+  /** 起動時に 1 回だけ呼ぶ。住宅ローン取り込みの URL → localStorage 読込と適用。 */
+  initializeImportedMortgage: () => void;
 
   // ざっくり診断
   setRoughValue: (id: RoughFieldId, value: string | number) => void;
@@ -348,18 +451,22 @@ export const useInputStore = create<InputState>((set, get) => ({
   previousIndicators: null,
   importedLivingCost: saved?.importedLivingCost ?? null,
   livingCostManuallyEdited: saved?.livingCostManuallyEdited ?? false,
+  importedMortgage: saved?.importedMortgage ?? null,
+  mortgageManuallyEdited: saved?.mortgageManuallyEdited ?? false,
 
   setMode: (mode) => {
-    // 起動時に取り込んだ生活費があり、まだ手動編集されていなければ、新規モードの初期値に反映する。
-    const { importedLivingCost, livingCostManuallyEdited } = get();
+    // 起動時に取り込んだ生活費／住宅ローンがあり、まだ手動編集されていなければ、新規モードの初期値に反映する。
+    const { importedLivingCost, livingCostManuallyEdited, importedMortgage, mortgageManuallyEdited } = get();
     const monthlyMan =
       importedLivingCost && !livingCostManuallyEdited
         ? monthlyYenToMan(importedLivingCost.monthlyYen)
         : null;
+    const mortgageToApply = importedMortgage && !mortgageManuallyEdited ? importedMortgage : null;
 
     if (mode === 'thorough') {
       let ti = freshThoroughInput();
       if (monthlyMan !== null) ti = applyImportedToThoroughInput(ti, monthlyMan);
+      if (mortgageToApply) ti = applyImportedMortgageToThoroughInput(ti, mortgageToApply);
       set({
         mode,
         phase: 'input',
@@ -372,6 +479,7 @@ export const useInputStore = create<InputState>((set, get) => ({
     } else {
       let draft = emptyRoughDraft();
       if (monthlyMan !== null) draft = applyImportedToRoughDraft(draft, monthlyMan);
+      if (mortgageToApply) draft = applyImportedMortgageToRoughDraft(draft, mortgageToApply);
       set({
         mode,
         phase: 'input',
@@ -398,8 +506,12 @@ export const useInputStore = create<InputState>((set, get) => ({
       cameFromResult: false,
       resumePrompt: false,
       previousIndicators: null,
-      // 再スタートでは手動編集履歴をリセットする（importedLivingCost は保持し、モード再選択で再適用される）。
+      // 「最初からやり直す」「最初から始める」は完全な新規スタートとして扱う。
+      // 取り込み値・取り込みバナーも完全クリアする（再反映したい場合はリロードで対応）。
       livingCostManuallyEdited: false,
+      importedLivingCost: null,
+      mortgageManuallyEdited: false,
+      importedMortgage: null,
     });
   },
 
@@ -429,6 +541,29 @@ export const useInputStore = create<InputState>((set, get) => ({
     set(updates);
   },
 
+  initializeImportedMortgage: () => {
+    const imported = readImportedMortgage();
+    if (!imported) return;
+
+    const { mortgageManuallyEdited, roughDraft, thoroughInput } = get();
+    const isUrl = imported.origin === 'url';
+
+    if (!isUrl && mortgageManuallyEdited) {
+      set({ importedMortgage: imported });
+      return;
+    }
+
+    const updates: Partial<InputState> = {
+      importedMortgage: imported,
+      mortgageManuallyEdited: false,
+      roughDraft: applyImportedMortgageToRoughDraft(roughDraft, imported),
+    };
+    if (thoroughInput) {
+      updates.thoroughInput = applyImportedMortgageToThoroughInput(thoroughInput, imported);
+    }
+    set(updates);
+  },
+
   // ---- ざっくり診断 ----
   setRoughValue: (id, value) => {
     const empty = value === '' || value === null;
@@ -436,6 +571,7 @@ export const useInputStore = create<InputState>((set, get) => ({
     set((s) => ({
       ...setCell(s, id, cell),
       ...(id === 'monthlyLiving' ? { livingCostManuallyEdited: true } : {}),
+      ...(MORTGAGE_ROUGH_IDS.has(id) ? { mortgageManuallyEdited: true } : {}),
     }));
   },
   useRoughRecommended: (id) => {
@@ -443,12 +579,14 @@ export const useInputStore = create<InputState>((set, get) => ({
     set((s) => ({
       ...setCell(s, id, { value: rec, source: 'recommended_value' }),
       ...(id === 'monthlyLiving' ? { livingCostManuallyEdited: true } : {}),
+      ...(MORTGAGE_ROUGH_IDS.has(id) ? { mortgageManuallyEdited: true } : {}),
     }));
   },
   skipRough: (id) =>
     set((s) => ({
       ...setCell(s, id, { value: null, source: 'skipped' }),
       ...(id === 'monthlyLiving' ? { livingCostManuallyEdited: true } : {}),
+      ...(MORTGAGE_ROUGH_IDS.has(id) ? { mortgageManuallyEdited: true } : {}),
     })),
   nextRoughPage: () => {
     const { roughPage } = get();
@@ -508,6 +646,7 @@ export const useInputStore = create<InputState>((set, get) => ({
     set({
       thoroughInput: next,
       ...(path === 'expense.monthlyLiving' ? { livingCostManuallyEdited: true } : {}),
+      ...(isMortgageThoroughPath(path) ? { mortgageManuallyEdited: true } : {}),
     });
   },
   useThoroughRecommended: (path, value) => {
@@ -521,6 +660,7 @@ export const useInputStore = create<InputState>((set, get) => ({
     set({
       thoroughInput: setFieldByPath(ti, path, withResolved(f, storedValue, 'recommended_value')),
       ...(path === 'expense.monthlyLiving' ? { livingCostManuallyEdited: true } : {}),
+      ...(isMortgageThoroughPath(path) ? { mortgageManuallyEdited: true } : {}),
     });
   },
   skipThorough: (path) => {
@@ -531,6 +671,7 @@ export const useInputStore = create<InputState>((set, get) => ({
     set({
       thoroughInput: setFieldByPath(ti, path, withResolved(f, null, 'skipped')),
       ...(path === 'expense.monthlyLiving' ? { livingCostManuallyEdited: true } : {}),
+      ...(isMortgageThoroughPath(path) ? { mortgageManuallyEdited: true } : {}),
     });
   },
   setThoroughChildrenCount: (count) => {
@@ -690,8 +831,14 @@ export const useInputStore = create<InputState>((set, get) => ({
   backToResult: () => set({ phase: 'result', cameFromResult: false }),
   deepenToThorough: () => {
     const src = get().input;
-    const ti = src ? structuredClone(src) : freshThoroughInput();
+    let ti = src ? structuredClone(src) : freshThoroughInput();
     ti.meta = { ...ti.meta, mode: 'thorough' };
+    // ざっくり→深掘り遷移で取り込み済みの住宅ローン詳細（balance/rate/bonus 等）を再適用する。
+    // ざっくり側では monthlyHousing/loanYears/housing.type しか持てないため、深掘り時に補完する。
+    const { importedMortgage, mortgageManuallyEdited } = get();
+    if (importedMortgage && !mortgageManuallyEdited) {
+      ti = applyImportedMortgageToThoroughInput(ti, importedMortgage);
+    }
     set({ mode: 'thorough', phase: 'input', thoroughInput: ti, thoroughPageId: firstThoroughPageId(ti), cameFromResult: false });
   },
 
@@ -769,5 +916,7 @@ useInputStore.subscribe((state) => {
     thoroughPageId: state.thoroughPageId,
     importedLivingCost: state.importedLivingCost,
     livingCostManuallyEdited: state.livingCostManuallyEdited,
+    importedMortgage: state.importedMortgage,
+    mortgageManuallyEdited: state.mortgageManuallyEdited,
   });
 });

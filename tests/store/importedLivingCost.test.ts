@@ -139,7 +139,7 @@ describe('imported living-cost integration', () => {
     expect(store().roughDraft.monthlyLiving.value).toBe(29.7);
   });
 
-  it('reset clears livingCostManuallyEdited but keeps importedLivingCost so re-pick reapplies', () => {
+  it('reset is a full fresh start: clears livingCostManuallyEdited AND importedLivingCost', () => {
     setUrl('livingCostMonthly=297000');
     store().initializeImportedLivingCost();
     store().setMode('rough');
@@ -148,11 +148,11 @@ describe('imported living-cost integration', () => {
 
     store().reset();
     expect(store().livingCostManuallyEdited).toBe(false);
-    expect(store().importedLivingCost?.monthlyYen).toBe(297000);
+    expect(store().importedLivingCost).toBeNull();
 
-    // モード再選択で再適用される。
+    // reset 後の setMode では imported は無いので、roughDraft の monthlyLiving は default のまま。
     store().setMode('rough');
-    expect(store().roughDraft.monthlyLiving.value).toBe(29.7);
+    expect(store().roughDraft.monthlyLiving.source).toBe('default_value');
   });
 
   it('nudgeCondition("living", ...) on a fresh imported value flips the manualEdited flag (rough)', () => {
