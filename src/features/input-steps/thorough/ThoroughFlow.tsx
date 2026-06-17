@@ -9,6 +9,7 @@ import { ThoroughQuestionView, ThoroughFieldRow } from './ThoroughQuestionView';
 import { FamilyStep } from './FamilyStep';
 import { EventsStep } from './EventsStep';
 import { ImportedLivingCostBanner } from '../../imported-living-cost/ImportedLivingCostBanner';
+import { ImportedMortgageBanner } from '../../imported-mortgage/ImportedMortgageBanner';
 import type { Field, SimulationInput } from '../../../schema/types';
 import type { ThoroughPage, ThoroughQuestion } from '../../../schema/thoroughSteps';
 
@@ -120,6 +121,11 @@ export function ThoroughFlow() {
         {page.kind === 'fields' &&
           (page.questions ?? []).some((q) => q.path === 'expense.monthlyLiving') && (
             <ImportedLivingCostBanner variant="inputPage" />
+          )}
+        {/* 住宅ローンシミュレーター からの取り込み告知は、housing.* を含むページでだけ出す。 */}
+        {page.kind === 'fields' &&
+          (page.questions ?? []).some((q) => q.path.startsWith('housing.')) && (
+            <ImportedMortgageBanner variant="inputPage" />
           )}
 
         {!cameFromResult && idx === 0 && <p className="step-reassure">{ja.nav.reassure}</p>}

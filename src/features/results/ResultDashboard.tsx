@@ -22,6 +22,7 @@ import { AssumptionSummary } from './AssumptionSummary';
 import { QuickAdjust } from './QuickAdjust';
 import { PreviousDelta } from './PreviousDelta';
 import { ImportedLivingCostBanner } from '../imported-living-cost/ImportedLivingCostBanner';
+import { ImportedMortgageBanner } from '../imported-mortgage/ImportedMortgageBanner';
 
 // 結果ダッシュボード。
 // 常時表示: 総合結果(Hero) / 今回のポイント / 主な節目の要約 / 条件変更導線（結論は隠さない）。
@@ -217,9 +218,10 @@ export function ResultDashboard() {
       {/* 「見直しのヒント」は 「見直しポイント」 セクションに統合済み（riskFactors.ts で
           rule-based + score-based fallback を 1 セクションにまとめる）。 */}
 
-      {/* 生活費見直しシミュレーター からの取り込みを試算条件の直前で控えめに告知。
-          手動編集された場合は ImportedLivingCostBanner 側で非表示になる。 */}
+      {/* 生活費見直しシミュレーター・住宅ローンシミュレーター からの取り込みを試算条件の直前で控えめに告知。
+          手動編集された場合は各バナー側で非表示になる。 */}
       <ImportedLivingCostBanner variant="result" />
+      <ImportedMortgageBanner variant="result" />
 
       {/* 今回の試算条件（折りたたみ・下部） */}
       <details className="collapsible">

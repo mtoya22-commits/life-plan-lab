@@ -173,4 +173,26 @@ export const ja = {
     resultValue: (man: string) => `反映された生活費：${man}/月`,
     resultSource: (label: string) => `反映元：${label}`,
   },
+  // 別アプリ「住宅ローンシミュレーター」からの取り込み告知。
+  // 月額・残高のどちらか一方しか来ないケースもあるため、文言は呼び出し側でパーツを組み立てる。
+  mortgageImport: {
+    sourceLabels: {
+      currentPlan: '現在の返済条件',
+      rateAdjusted: '金利変更シナリオ',
+      fixedPeriodScenario: '固定期間終了後シナリオ',
+      unknown: '住宅ローンシミュレーター',
+    },
+    modeSelectTitle: '住宅ローンシミュレーターの結果を読み込みました',
+    modeSelectMonthly: (monthly: string) => `反映予定の毎月返済額：${monthly}/月`,
+    modeSelectBalance: (balance: string) => `反映予定のローン残高：${balance}`,
+    inputPageBoth: (monthly: string, balance: string) =>
+      `住宅ローンシミュレーターから、毎月返済額 ${monthly}/月・残高 ${balance} を読み込み済みです。この画面で手動変更できます。`,
+    inputPageMonthlyOnly: (monthly: string) =>
+      `住宅ローンシミュレーターから 毎月返済額 ${monthly}/月 を読み込み済みです。この画面で手動変更できます。`,
+    inputPageBalanceOnly: (balance: string) =>
+      `住宅ローンシミュレーターから ローン残高 ${balance} を読み込み済みです。この画面で手動変更できます。`,
+    resultMonthly: (monthly: string) => `反映された住宅ローン：毎月${monthly}/月`,
+    resultBalance: (balance: string) => `残高：${balance}`,
+    resultSource: (label: string) => `反映元：${label}`,
+  },
 } as const;

@@ -11,10 +11,12 @@ export default function App() {
   const phase = useInputStore((s) => s.phase);
   const resumePrompt = useInputStore((s) => s.resumePrompt);
 
-  // 別アプリ「生活費見直しシミュレーター」からの取り込み値を起動時に 1 回だけ読む。
+  // 別アプリ（生活費見直しシミュレーター・住宅ローンシミュレーター）からの取り込み値を起動時に 1 回だけ読む。
   // URL パラメータ → localStorage の順に確認し、適用判定はストア側で行う。
   useEffect(() => {
-    useInputStore.getState().initializeImportedLivingCost();
+    const s = useInputStore.getState();
+    s.initializeImportedLivingCost();
+    s.initializeImportedMortgage();
   }, []);
 
   return (

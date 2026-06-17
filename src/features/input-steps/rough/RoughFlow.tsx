@@ -7,6 +7,7 @@ import { ProgressHeader } from '../ProgressHeader';
 import { QuestionCard } from '../QuestionCard';
 import { NumberField } from '../NumberField';
 import { ImportedLivingCostBanner } from '../../imported-living-cost/ImportedLivingCostBanner';
+import { ImportedMortgageBanner } from '../../imported-mortgage/ImportedMortgageBanner';
 
 // =============================================================================
 // ざっくり診断のステップフロー本体。
@@ -110,6 +111,10 @@ export function RoughFlow() {
         {/* 生活費見直しシミュレーター からの取り込み告知は、monthlyLiving 質問が含まれるページでだけ出す。 */}
         {visible.some((q) => q.id === 'monthlyLiving') && (
           <ImportedLivingCostBanner variant="inputPage" />
+        )}
+        {/* 住宅ローンシミュレーター からの取り込み告知は、housing/monthlyHousing/loanYears のいずれかが含まれるページで出す。 */}
+        {visible.some((q) => q.id === 'housing' || q.id === 'monthlyHousing' || q.id === 'loanYears') && (
+          <ImportedMortgageBanner variant="inputPage" />
         )}
 
         {visible.map((q) => (

@@ -1,6 +1,7 @@
 import { useInputStore } from '../../store/inputStore';
 import { ja } from '../../strings/ja';
 import { ImportedLivingCostBanner } from '../imported-living-cost/ImportedLivingCostBanner';
+import { ImportedMortgageBanner } from '../imported-mortgage/ImportedMortgageBanner';
 
 // モード選択画面（入口）。ざっくり/しっかりを選んで入力フローへ進む。
 // 世界観: 結果・入力画面と同じ深緑ベースの Quiet Luxury。単なる計算フォームに見せない。
@@ -21,6 +22,7 @@ export function ModeSelect() {
       </header>
 
       <ImportedLivingCostBanner variant="modeSelect" />
+      <ImportedMortgageBanner variant="modeSelect" />
 
       <h2 className="section-heading mode-select__heading">{m.heading}</h2>
       <div className="mode-cards">
