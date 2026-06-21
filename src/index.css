@@ -1852,3 +1852,49 @@ body {
     transform: translateY(1px);
   }
 }
+
+/* =========================================================================
+   WordPress 等の親ページに iframe で埋め込まれた場合のスクロール一本化。
+   src/main.tsx で <html> に is-embedded クラスが付くと、ここの上書きが有効になる。
+   既存ルールは編集せず、特異性で上書きすることで単独表示時の sticky inner-scroll
+   UX を完全に維持する。実コンテンツ高さは src/lib/embed.ts の postMessage で親へ
+   通知し、親が iframe.style.height を追従させる前提。
+   ========================================================================= */
+html.is-embedded,
+html.is-embedded body {
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+  overscroll-behavior: auto;
+}
+html.is-embedded .app {
+  /* 親 WordPress 側で safe-area を扱うため、内側で上余白を確保する必要はない。 */
+  padding-top: 12px;
+}
+html.is-embedded .step-layout {
+  /* flex + 100svh + overflow:hidden の inner-scroll パターンを解除し、
+     コンテンツ高さに合わせて自然に伸びるようにする。 */
+  display: block;
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+}
+html.is-embedded .step-content {
+  flex: none;
+  min-height: 0;
+  overflow: visible;
+  -webkit-overflow-scrolling: auto;
+  padding-bottom: 12px;
+}
+html.is-embedded .bottom-nav {
+  /* 下部ナビを sticky から通常配置へ。コンテンツ末尾に並ぶ。
+     上 border は残してコンテンツとの区切りを保つ。 */
+  position: static;
+  bottom: auto;
+  z-index: auto;
+  backdrop-filter: none;
+  background: transparent;
+}
+html.is-embedded .bottom-nav-spacer {
+  display: none;
+}

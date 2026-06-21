@@ -23,6 +23,7 @@ import { QuickAdjust } from './QuickAdjust';
 import { PreviousDelta } from './PreviousDelta';
 import { ImportedLivingCostBanner } from '../imported-living-cost/ImportedLivingCostBanner';
 import { ImportedMortgageBanner } from '../imported-mortgage/ImportedMortgageBanner';
+import { postEmbeddedScrollTop } from '../../lib/embed';
 
 // 結果ダッシュボード。
 // 常時表示: 総合結果(Hero) / 今回のポイント / 主な節目の要約 / 条件変更導線（結論は隠さない）。
@@ -76,6 +77,10 @@ export function ResultDashboard() {
       } catch {
         /* ignore: cross-origin の場合は静かに失敗 */
       }
+      // 5. cross-origin でも届く postMessage 経由の依頼。
+      //    親 WordPress 側に lifeplanlab:scrollTop の listener を仕込んでいる場合、
+      //    親ページを iframe 先頭へスムーススクロールしてくれる。
+      postEmbeddedScrollTop();
     }
     if (resultReturnTarget) clearResultReturnTarget();
     // eslint-disable-next-line react-hooks/exhaustive-deps
