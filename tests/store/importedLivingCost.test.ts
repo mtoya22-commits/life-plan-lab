@@ -89,15 +89,36 @@ describe('imported living-cost integration', () => {
     expect(store().roughDraft.monthlyLiving.value).toBe(30);
   });
 
-  it('flips livingCostManuallyEdited via useRoughRecommended / skipRough on monthlyLiving', () => {
+  it('does NOT flip livingCostManuallyEdited via useRoughRecommended / skipRough on monthlyLiving (spec: only direct value entry counts as manual edit)', () => {
     store().setMode('rough');
 
     store().useRoughRecommended('monthlyLiving');
-    expect(store().livingCostManuallyEdited).toBe(true);
+    expect(store().livingCostManuallyEdited).toBe(false);
 
     clearImportState();
     store().skipRough('monthlyLiving');
+    expect(store().livingCostManuallyEdited).toBe(false);
+  });
+
+  it('does NOT flip livingCostManuallyEdited via useThoroughRecommended / skipThorough on expense.monthlyLiving', () => {
+    store().setMode('thorough');
+
+    store().useThoroughRecommended('expense.monthlyLiving', 28);
+    expect(store().livingCostManuallyEdited).toBe(false);
+
+    clearImportState();
+    store().skipThorough('expense.monthlyLiving');
+    expect(store().livingCostManuallyEdited).toBe(false);
+  });
+
+  it('does NOT flip livingCostManuallyEdited when clearing monthlyLiving back to empty', () => {
+    store().setMode('rough');
+    store().setRoughValue('monthlyLiving', 28);
     expect(store().livingCostManuallyEdited).toBe(true);
+
+    clearImportState();
+    store().setRoughValue('monthlyLiving', '');
+    expect(store().livingCostManuallyEdited).toBe(false);
   });
 
   it('flips livingCostManuallyEdited when user edits expense.monthlyLiving in thorough mode', () => {
@@ -114,20 +135,43 @@ describe('imported living-cost integration', () => {
     expect(store().livingCostManuallyEdited).toBe(false);
   });
 
-  it('localStorage import is skipped when livingCostManuallyEdited is true (but importedLivingCost is still set for the banner)', () => {
-    // ユーザーが先に手動編集していたシナリオ。
-    useInputStore.setState({ livingCostManuallyEdited: true });
+  it('localStorage import is skipped when livingCostManuallyEdited is true AND the field actually has user_input', () => {
+    // ユーザーが先に総合版で 28 万円を手動入力していたシナリオ。
+    store().setMode('rough');
+    store().setRoughValue('monthlyLiving', 28);
+    expect(store().livingCostManuallyEdited).toBe(true);
+    expect(store().roughDraft.monthlyLiving.source).toBe('user_input');
 
     localStorage.setItem(
       'lifePlanLab:livingCost',
       JSON.stringify({ selectedMonthlyTotal: 280000, selectedMonthlySource: 'breakdownTotal' }),
     );
-    const beforeMonthlyLiving = store().roughDraft.monthlyLiving;
+    const before = store().roughDraft.monthlyLiving;
     store().initializeImportedLivingCost();
 
+    // バナー表示用に importedLivingCost は立つが、フィールド値は手動入力のまま維持。
     expect(store().importedLivingCost?.monthlyYen).toBe(280000);
-    expect(store().livingCostManuallyEdited).toBe(true); // 維持される
-    expect(store().roughDraft.monthlyLiving).toEqual(beforeMonthlyLiving); // 上書きされない
+    expect(store().livingCostManuallyEdited).toBe(true);
+    expect(store().roughDraft.monthlyLiving).toEqual(before);
+  });
+
+  it('STALE FLAG RESCUE: localStorage import applies when flag is stale (true) but the actual field is empty', () => {
+    // 過去のセッションで flag=true が残っているが、現在のフィールドは初期空欄（default_value）のケース。
+    // 旧実装ではここで反映が止まっていた。新実装ではフィールド状態を見て rescue する。
+    useInputStore.setState({ livingCostManuallyEdited: true });
+    expect(store().roughDraft.monthlyLiving.source).toBe('default_value');
+
+    localStorage.setItem(
+      'lifePlanLab:livingCost',
+      JSON.stringify({ selectedMonthlyTotal: 297000, selectedMonthlySource: 'breakdownTotal' }),
+    );
+    store().initializeImportedLivingCost();
+    store().setMode('rough');
+
+    expect(store().roughDraft.monthlyLiving.value).toBe(29.7);
+    expect(store().roughDraft.monthlyLiving.source).toBe('user_input');
+    // 反映処理が走ったので flag はリセットされる。
+    expect(store().livingCostManuallyEdited).toBe(false);
   });
 
   it('URL import resets livingCostManuallyEdited and forces apply', () => {

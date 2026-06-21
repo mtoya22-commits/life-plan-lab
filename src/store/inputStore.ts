@@ -528,8 +528,13 @@ export const useInputStore = create<InputState>((set, get) => ({
     const { livingCostManuallyEdited, roughDraft, thoroughInput } = get();
     const isUrl = imported.origin === 'url';
 
-    // localStorage 由来で、すでに手動編集済みなら自動上書きしない（バナー表示用に importedLivingCost は保持）。
-    if (!isUrl && livingCostManuallyEdited) {
+    // localStorage 由来で、すでに手動編集済み「かつフィールドに実際に user_input がある」なら自動上書きしない。
+    // flag だけ古いセッションから残っているケース（フィールドは空欄の default_value）では rescue として反映する。
+    // 「未入力で進む」「標準例を使う」「モード選択遷移」などは flag を立てないため、ここに引っかからない。
+    const fieldHasUserInput =
+      roughDraft.monthlyLiving.source === 'user_input' ||
+      thoroughInput?.expense.monthlyLiving.source === 'user_input';
+    if (!isUrl && livingCostManuallyEdited && fieldHasUserInput) {
       set({ importedLivingCost: imported });
       return;
     }
@@ -574,9 +579,13 @@ export const useInputStore = create<InputState>((set, get) => ({
   setRoughValue: (id, value) => {
     const empty = value === '' || value === null;
     const cell: RoughCell = empty ? { value: null, source: 'default_value' } : { value, source: 'user_input' };
+    // 「実際に値を変更した」場合だけ livingCostManuallyEdited を立てる。
+    // 空文字に戻すケース（クリア）や「未入力で進む」「標準例を使う」では flag を変えない。
+    // これにより取り込み再適用のゲートを誤って閉じない。
+    const isLivingEdit = id === 'monthlyLiving' && !empty;
     set((s) => ({
       ...setCell(s, id, cell),
-      ...(id === 'monthlyLiving' ? { livingCostManuallyEdited: true } : {}),
+      ...(isLivingEdit ? { livingCostManuallyEdited: true } : {}),
       ...(MORTGAGE_ROUGH_IDS.has(id) ? { mortgageManuallyEdited: true } : {}),
     }));
   },
@@ -584,14 +593,14 @@ export const useInputStore = create<InputState>((set, get) => ({
     const rec = recommendedById.get(id) ?? null;
     set((s) => ({
       ...setCell(s, id, { value: rec, source: 'recommended_value' }),
-      ...(id === 'monthlyLiving' ? { livingCostManuallyEdited: true } : {}),
+      // 「標準例を使う」はユーザーが直接値を入力する操作ではないため、生活費 flag は立てない。
       ...(MORTGAGE_ROUGH_IDS.has(id) ? { mortgageManuallyEdited: true } : {}),
     }));
   },
   skipRough: (id) =>
     set((s) => ({
       ...setCell(s, id, { value: null, source: 'skipped' }),
-      ...(id === 'monthlyLiving' ? { livingCostManuallyEdited: true } : {}),
+      // 「未入力で進む」は値変更ではなくスキップ操作。生活費 flag は立てない。
       ...(MORTGAGE_ROUGH_IDS.has(id) ? { mortgageManuallyEdited: true } : {}),
     })),
   nextRoughPage: () => {
@@ -649,9 +658,11 @@ export const useInputStore = create<InputState>((set, get) => ({
     const next = setFieldByPath(ti, path, nf);
     const m = path.match(/^children\.(\d+)\.currentAge$/);
     if (m && !empty) next.children[Number(m[1])].ageAssumed = false;
+    // 「実際に値を変更した」場合だけ livingCostManuallyEdited を立てる。空入力（skipped 化）では立てない。
+    const isLivingEdit = path === 'expense.monthlyLiving' && !empty;
     set({
       thoroughInput: next,
-      ...(path === 'expense.monthlyLiving' ? { livingCostManuallyEdited: true } : {}),
+      ...(isLivingEdit ? { livingCostManuallyEdited: true } : {}),
       ...(isMortgageThoroughPath(path) ? { mortgageManuallyEdited: true } : {}),
     });
   },
@@ -665,7 +676,7 @@ export const useInputStore = create<InputState>((set, get) => ({
     const storedValue = isMonthlyInputPath(path) && typeof value === 'number' ? value * 12 : value;
     set({
       thoroughInput: setFieldByPath(ti, path, withResolved(f, storedValue, 'recommended_value')),
-      ...(path === 'expense.monthlyLiving' ? { livingCostManuallyEdited: true } : {}),
+      // 「標準例を使う」は値変更ではなく提案受け入れ。生活費 flag は立てない。
       ...(isMortgageThoroughPath(path) ? { mortgageManuallyEdited: true } : {}),
     });
   },
@@ -676,7 +687,7 @@ export const useInputStore = create<InputState>((set, get) => ({
     if (!f) return;
     set({
       thoroughInput: setFieldByPath(ti, path, withResolved(f, null, 'skipped')),
-      ...(path === 'expense.monthlyLiving' ? { livingCostManuallyEdited: true } : {}),
+      // 「未入力で進む」は値変更ではないため、生活費 flag は立てない。
       ...(isMortgageThoroughPath(path) ? { mortgageManuallyEdited: true } : {}),
     });
   },
