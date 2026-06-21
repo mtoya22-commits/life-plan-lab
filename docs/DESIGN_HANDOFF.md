@@ -88,9 +88,11 @@ bottom-nav
 - **任意入力が前提**: 各項目にスキップ・おすすめ値・「未入力で進む」を用意。
 - **未回答ガードはソフト**: 「次へ」で未入力があってもモーダルで止めない。確認パネルを出し、
   「未入力項目を見る」で最初の該当項目へ `scrollIntoView({ block: 'center' })`。ユーザー主動にする。
-- **スクロール構造（重要）**: `shared-tokens.css` の `.step-layout / .step-content / .bottom-nav` を参照。
-  WordPress 親 sticky wrapper 前提で **inner-scroll 1 本**にし、「次へ」を常時 viewport 下端に固定する。
-  高さは `100svh`（URL bar 出現時の小さい方）で固定するのが iOS Safari に堅牢。
+- **スクロール構造（2 モード対応）**: `shared-tokens.css` の `.step-layout / .step-content / .bottom-nav` を参照。
+  DOM 構造（`.step-layout > .step-content + .bottom-nav` の siblings）はどちらのモードでも同じ。
+  CSS は起動時に検出した埋め込み状態（§6 参照）で切り替わる:
+  - **単独表示モード**: inner-scroll 1 本（`.step-layout` `100svh` + `.step-content` `overflow-y: auto` + `.bottom-nav` `sticky`）。「次へ」を常時 viewport 下端に固定する。`100svh`（URL bar 出現時の小さい方）で iOS Safari に堅牢。
+  - **埋め込みモード**: `html.is-embedded` で上記の固定 viewport 高さと inner-scroll を release。`.bottom-nav` は `static`。スクロールは親 WordPress ページに集約される。
 
 ヘルプ: `HelpTooltip`（？アイコン）。タップで開き、外側タップ/Escape で閉じる。長文は max-height + scroll。
 **用語解説ではなく「どこを見れば入力できるか」の案内**にする。
@@ -144,12 +146,74 @@ localStorage 自動保存（キー例 `fire-lifeplan-lab.v2.session.v1`）＋「
   `main` への push。GitHub Pages へ配置。フィーチャーブランチの push ではデプロイしない（事故防止）。
 - **テスト**: vitest。`tests/engine`（計算・golden・シナリオ）/ `tests/store` / `tests/render` / `tests/debug`。
   計算系を厚めに、代表ケースは固定値テストで信頼性を担保。TypeScript は `strict`。
-- **iframe 規約**:
-  - WordPress 親に **sticky wrapper**（`position: sticky; top: 0; height: 100dvh` で iframe をラップ）を入れる前提。
-  - `src/lib/notifyModalToParent.ts` の postMessage でモーダル開閉を親へ通知し、親側でスクロールを止められる。
-  - `html, body { overscroll-behavior: contain }` でスクロール連鎖を遮断。
-  - `.step-layout` を `100svh` 固定して iOS Safari の URL bar 問題を回避。
-  - 残る制約: URL bar overlay（半透明）が下端を覆うのは OS 由来で消せない。content 密度で吸収する。
+- **iframe 規約（2 モード）**:
+  - アプリは起動時に `window.self !== window.top` で iframe 埋め込みを判定し、`<html>` に
+    `data-embedded="true"` と `class="is-embedded"` を付ける（`src/main.tsx`）。付かない側
+    （GitHub Pages 直リンク等）は単独表示モードのまま動く。
+
+  - **単独表示モード（GitHub Pages・dev）**:
+    `.step-layout { height: calc(100svh - --app-pad-top); overflow: hidden }` +
+    `.step-content { overflow-y: auto }` + `.bottom-nav { position: sticky }` の **inner-scroll 1 本**。
+    スマホ単独で「次へ」を viewport 下端に固定するのに堅牢。`100svh`（URL bar 出現時の小さい方）で iOS Safari 安定。
+
+  - **埋め込みモード（WordPress iframe）**:
+    `html.is-embedded` で上記 inner-scroll パターンを release。`.step-layout` は
+    `display: block / height: auto`、`.bottom-nav` は `position: static`。これにより PC で発生していた
+    **アプリ内部スクロール + iframe 内スクロール + WordPress ページスクロールの 3 重** を
+    **WordPress 親ページの 1 本** に統一する。
+
+  - **高さの自動追従**: `src/lib/embed.ts` の `postEmbeddedHeight()` を `src/App.tsx` が `#root` の
+    `ResizeObserver` で発火し、`lifeplanlab:resize` を親に送る。親側は `Math.max(min, Math.min(max, h))`
+    で clamp して `iframe.style.height` を更新。自己増殖防止のため送信側で 2px 未満の振動は無視。
+
+  - **画面遷移時のスクロール**: phase 変化（mode → input → result）と結果再計算で
+    `postEmbeddedScrollTop()` が `lifeplanlab:scrollTop` を送る。親側は
+    `iframe.getBoundingClientRect().top + window.pageYOffset` までスムーススクロール。
+
+  - **親 → 子の URL params パススルー**: 生活費見直し・住宅ローンシミュレーターは親 WordPress ページの
+    URL に `?livingCostMonthly=...` 等を付与する。iframe の `window.location.search` は親と別 URL を
+    見ているため自動では届かない。親側スクリプトで `src/lib/embedParentParams.ts` と同じアルゴリズム
+    （許可リスト 11 項目を抜き、`frame.src` に append）を実行して持ち越す。
+
+  - **モーダル開閉通知**: 既存の `src/lib/notifyModalToParent.ts`（`lifeplan-lab:modal` namespace）は
+    引き続き有効。ResumePrompt 開閉中に親スクロールを止めたい場合に併用。
+
+  - **親側の最小実装**: [`docs/EMBED.md`](./EMBED.md) に貼り付け済みコードを掲載
+    （iframe + URL passthrough + resize listener + scrollTop listener）。**WordPress に貼る唯一の
+    実装資料はこれ**。本書はそこへの設計原則の入口として扱う。
+
+  - **旧 sticky wrapper パターンについて**: 過去の WordPress 埋め込みでは、親側で iframe を
+    `position: sticky` と `100vh / 100dvh` に固定する方式を使用していた。ただし、この方式は
+    iframe 高さの自動追従、画面遷移時の親ページ先頭スクロール、親ページへのスクロール集約と
+    相性が悪い。**新規ページおよび既存ページの更新では、WordPress 親側で iframe を
+    `position: sticky`、`height: 100vh`、`height: 100dvh` に固定しない**。必ず
+    [`docs/EMBED.md`](./EMBED.md) の最新スニペットを使用し、URL params パススルー、
+    `lifeplanlab:resize`、`lifeplanlab:scrollTop` を含む埋め込み方式へ統一する。
+
+### 新規小型シミュレーターの必須要件
+
+WordPress iframe 埋め込みを前提とする新規シミュレーターでは、以下を MVP 完了条件とする。
+
+**iframe 埋め込み要件**
+
+- iframe 埋め込み判定と単独表示／埋め込み表示の自動切替
+- 埋め込み時のアプリ内スクロール解除と、親ページスクロールへの集約
+- `lifeplanlab:resize` による親 iframe 高さ自動追従
+- `lifeplanlab:scrollTop` による画面遷移時の親ページ先頭スクロール
+- [`docs/EMBED.md`](./EMBED.md) の親側スニペット更新
+- 総合版へ渡す URL パラメータがある場合、親 WordPress ページから iframe への許可リスト付きパススルー
+- 複数 iframe 配置時にも、送信元 iframe を識別して誤作動しないこと（メッセージに `source: '<simulator>'` を必ず付ける）
+
+**総合版への引き継ぎ契約**
+
+個別シミュレーターで入力・試算した条件を総合版へ戻し、人生全体で確認できる仕組みも必須方針。
+
+- 新規小型シミュレーターは、個別で入力・試算した条件を総合版へ引き継げることを MVP 完了条件とする。
+- 下書き保存と、総合版へ渡す確定保存を分離すること。
+- 確定データは `lifePlanLab:<simulator>` 形式の localStorage キーに保存し、URL パラメータは親ページ遷移用の補助手段として扱うこと。
+- 総合版側では、受け取り値を実際に画面・計算で使う既存の正しい入力フィールドへ反映すること。
+- 総合版でユーザーが手動編集した後は、その値を優先し、外部シミュレーターの値で勝手に上書きしないこと。
+- 取り込み中の条件と反映元を、控えめなバナー等で確認できること。
 
 ---
 
@@ -165,10 +229,15 @@ localStorage 自動保存（キー例 `fire-lifeplan-lab.v2.session.v1`）＋「
 | `src/features/input-steps/ProgressHeader.tsx` | ProgressHeader | 進捗 + ETA |
 | `src/features/results/DetailCard.tsx` | DetailCard | 値 + caption + inline 展開 |
 | `src/features/results/QuickAdjust.tsx` | QuickAdjust | What-if ステッパー（指標に合わせて要適応） |
-| `src/lib/notifyModalToParent.ts` / `useLockBodyScroll.ts` / `format.ts` | lib | iframe 通信 / 背面ロック / 数値整形 |
+| `src/lib/notifyModalToParent.ts` / `useLockBodyScroll.ts` / `format.ts` | lib | iframe 通信（モーダル）/ 背面ロック / 数値整形 |
+| `src/lib/embed.ts` | `isEmbedded` / `postEmbeddedHeight` / `postEmbeddedScrollTop` / `measureContentHeight` | iframe 検出・高さ通知・先頭スクロール依頼 |
+| `src/lib/embedParentParams.ts` | `appendAllowedParamsToIframeSrc` / `ALLOWED_PARENT_PARAMS` | 親→子 URL パススルーの TS リファレンス（[`docs/EMBED.md`](./EMBED.md) と同一アルゴリズム） |
 
 > 注: `src/components/` は現在空（旧 BottomSheet は inline `<details>` 化で削除済み）。
 > 共通部品は実質 `features/` と `lib/` にある。
+>
+> iframe 埋め込みの詳細スニペット（高さ自動追従・先頭スクロール・URL パススルー）は
+> [`docs/EMBED.md`](./EMBED.md) を参照。本書は思想と全体像に絞り、コピペ用コードは EMBED.md 側に集約している。
 
 ---
 
