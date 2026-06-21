@@ -171,3 +171,168 @@ describe('imported living-cost integration', () => {
     expect(store().livingCostManuallyEdited).toBe(false);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 「反映先は『現在生活費』(expense.monthlyLiving) である」ことを担保するテスト群。
+// ユーザー要件で指定された R1〜R7 と、submit を経由する end-to-end 経路 2 件をカバーする。
+// 老後生活費・FIRE 後生活費・住宅ローンなど別フィールドに混ざらないことを明示する。
+// ─────────────────────────────────────────────────────────────────────────────
+
+function fillRoughMinimum(): void {
+  store().setRoughValue('age', 38);
+  store().setRoughValue('householdIncome', 850);
+  store().setRoughValue('currentAssets', 1200);
+  store().setRoughValue('housing', 'rent');
+  store().setRoughValue('childrenCount', '0');
+  store().setRoughValue('educationPolicy', 'public');
+  store().setRoughValue('workStyle', 'work_a_little');
+  store().setRoughValue('reduceWorkAge', 55);
+  store().setRoughValue('investmentStyle', 'balanced');
+}
+
+describe('imported living-cost target: current monthly expenses (expense.monthlyLiving)', () => {
+  beforeEach(() => {
+    setUrl('');
+    localStorage.clear();
+    store().reset();
+    useInputStore.setState({
+      importedLivingCost: null,
+      livingCostManuallyEdited: false,
+      importedMortgage: null,
+      mortgageManuallyEdited: false,
+    });
+  });
+  afterEach(() => {
+    setUrl('');
+    localStorage.clear();
+  });
+
+  it('R1: URL livingCostMonthly=297000 → expense.monthlyLiving が 29.7 (万円/月)', () => {
+    setUrl('livingCostMonthly=297000&livingCostSource=categoryScenario');
+    store().initializeImportedLivingCost();
+    store().setMode('thorough');
+    const ti = store().thoroughInput!;
+    expect(ti.expense.monthlyLiving.value).toBe(29.7);
+    expect(ti.expense.monthlyLiving.source).toBe('user_input');
+  });
+
+  it('R2: localStorage selectedMonthlyTotal=297000 → 手動編集前なら expense.monthlyLiving=29.7', () => {
+    localStorage.setItem(
+      'lifePlanLab:livingCost',
+      JSON.stringify({ selectedMonthlyTotal: 297000, selectedMonthlySource: 'breakdownTotal' }),
+    );
+    store().initializeImportedLivingCost();
+    store().setMode('thorough');
+    expect(store().thoroughInput!.expense.monthlyLiving.value).toBe(29.7);
+  });
+
+  it('R3: 取り込みは expense.monthlyLiving だけに user_input を立て、postFireLiving/retirementLiving の source は user_input にしない', () => {
+    setUrl('livingCostMonthly=297000');
+    store().initializeImportedLivingCost();
+    store().setMode('thorough');
+    const ti = store().thoroughInput!;
+    expect(ti.expense.monthlyLiving.source).toBe('user_input');
+    // FIRE後生活費・老後生活費は派生値（recommendedValues.ts が submit 時に補完）なので、
+    // 取り込み時点では user_input にならない。
+    expect(ti.fire.postFireLiving.source).not.toBe('user_input');
+    expect(ti.retirement.retirementLiving.source).not.toBe('user_input');
+    // 他の支出系も触らない。
+    expect(ti.expense.annualSpecial.source).not.toBe('user_input');
+    expect(ti.expense.insuranceCost.source).not.toBe('user_input');
+    expect(ti.expense.carCost.source).not.toBe('user_input');
+    expect(ti.expense.travelCost.source).not.toBe('user_input');
+  });
+
+  it('R4: ざっくり→深掘り遷移後も expense.monthlyLiving=29.7 が引き継がれる', () => {
+    setUrl('livingCostMonthly=297000');
+    store().initializeImportedLivingCost();
+    store().setMode('rough');
+    fillRoughMinimum();
+    store().submitRough();
+    // ざっくり結果に 29.7 が含まれていること
+    expect(store().input!.expense.monthlyLiving.value).toBe(29.7);
+    expect(store().input!.expense.monthlyLiving.source).toBe('user_input');
+
+    // 深掘りへ遷移しても引き継がれる
+    store().deepenToThorough();
+    expect(store().thoroughInput!.expense.monthlyLiving.value).toBe(29.7);
+    expect(store().thoroughInput!.expense.monthlyLiving.source).toBe('user_input');
+  });
+
+  it('R5: 手動編集後、URL なし再起動では localStorage で expense.monthlyLiving を上書きしない', () => {
+    // ユーザーが先に手動編集していたシナリオ。
+    useInputStore.setState({ livingCostManuallyEdited: true });
+    store().setMode('thorough');
+    // 手動値（28 万円）を立てる
+    store().setThoroughValue('expense.monthlyLiving', 28);
+    expect(store().thoroughInput!.expense.monthlyLiving.value).toBe(28);
+
+    // URL なしで localStorage を仕込んでも、手動値が優先される
+    localStorage.setItem(
+      'lifePlanLab:livingCost',
+      JSON.stringify({ selectedMonthlyTotal: 297000, selectedMonthlySource: 'breakdownTotal' }),
+    );
+    store().initializeImportedLivingCost();
+    // 手動値は維持される（再適用されない）
+    expect(store().thoroughInput!.expense.monthlyLiving.value).toBe(28);
+    expect(store().livingCostManuallyEdited).toBe(true);
+  });
+
+  it('R6: URL 付きで再起動すると手動編集履歴をリセットして expense.monthlyLiving を上書き、バナー復活', () => {
+    // 手動編集済みの状態
+    useInputStore.setState({ livingCostManuallyEdited: true });
+
+    setUrl('livingCostMonthly=297000&livingCostSource=categoryScenario');
+    store().initializeImportedLivingCost();
+    store().setMode('thorough');
+
+    expect(store().thoroughInput!.expense.monthlyLiving.value).toBe(29.7);
+    expect(store().livingCostManuallyEdited).toBe(false);
+    // バナー表示用の importedLivingCost が立つ
+    expect(store().importedLivingCost?.monthlyYen).toBe(297000);
+    expect(store().importedLivingCost?.source).toBe('categoryScenario');
+  });
+
+  it('R7: 生活費取り込みは住宅ローン・基本情報・収入・投資 state を変更しない', () => {
+    setUrl('livingCostMonthly=297000');
+    const beforeMortgage = store().importedMortgage;
+    const beforeMortgageFlag = store().mortgageManuallyEdited;
+    store().initializeImportedLivingCost();
+    store().setMode('thorough');
+    const ti = store().thoroughInput!;
+
+    expect(store().importedMortgage).toBe(beforeMortgage);
+    expect(store().mortgageManuallyEdited).toBe(beforeMortgageFlag);
+
+    // 住宅 / 基本 / 収入 / 投資 / 老後 系の各 source は user_input にならない（取り込まれていない）
+    expect(ti.housing.monthlyPayment.source).not.toBe('user_input');
+    expect(ti.housing.balance.source).not.toBe('user_input');
+    expect(ti.housing.rate.source).not.toBe('user_input');
+    expect(ti.basic.householdIncome.source).not.toBe('user_input');
+    expect(ti.income.selfIncome.source).not.toBe('user_input');
+    expect(ti.investment.monthlyInvestment.source).not.toBe('user_input');
+    expect(ti.retirement.pension.source).not.toBe('user_input');
+  });
+
+  it('end-to-end rough flow: URL → setMode rough → submitRough → result.input.expense.monthlyLiving === 29.7', () => {
+    setUrl('livingCostMonthly=297000');
+    store().initializeImportedLivingCost();
+    store().setMode('rough');
+    fillRoughMinimum();
+    store().submitRough();
+    expect(store().input!.expense.monthlyLiving.value).toBe(29.7);
+    expect(store().input!.expense.monthlyLiving.source).toBe('user_input');
+    // 結果が生成されていること（計算経路全体で破綻していない）
+    expect(store().result).not.toBeNull();
+  });
+
+  it('end-to-end thorough flow: URL → setMode thorough → submitThorough → result.input.expense.monthlyLiving === 29.7', () => {
+    setUrl('livingCostMonthly=297000');
+    store().initializeImportedLivingCost();
+    store().setMode('thorough');
+    store().submitThorough();
+    expect(store().input!.expense.monthlyLiving.value).toBe(29.7);
+    expect(store().input!.expense.monthlyLiving.source).toBe('user_input');
+    expect(store().result).not.toBeNull();
+  });
+});
