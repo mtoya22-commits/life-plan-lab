@@ -107,13 +107,19 @@ interface SavedSession {
   mortgageManuallyEdited?: boolean;
 }
 
-// 生活費見直しシミュレーター からの取り込み値を、ざっくり/しっかりそれぞれの入力に反映する。
-// 反映後の source は 'user_input'（他アプリでユーザーが下した判断を尊重し、既存の
-// recommendedValues 連動などを壊さないため）。
-function applyImportedToRoughDraft(draft: RoughDraft, monthlyMan: number): RoughDraft {
+// 生活費見直しシミュレーター からの取り込み値を、ざっくり/しっかりそれぞれの「現在生活費」
+// 入力欄に反映する。書き込み先はあくまで:
+//   ・ざっくり: roughDraft.monthlyLiving （applyRoughDraft 経由で SimulationInput.expense.monthlyLiving に合流）
+//   ・しっかり: SimulationInput.expense.monthlyLiving （path: 'expense.monthlyLiving'）
+// この 2 つだけが「現在の家計／毎月の生活費／現在生活費」として表示・計算で使われる
+// source of truth。fire.postFireLiving (FIRE後生活費) や retirement.retirementLiving (老後生活費)
+// は recommendedValues.ts が現在生活費から派生させる別フィールドで、ここでは直接書き換えない。
+// 反映後の source は 'user_input'（他アプリでユーザーが下した判断を尊重し、recommendedValues
+// 側の派生処理を壊さない）。
+function applyLivingCostToRoughDraft(draft: RoughDraft, monthlyMan: number): RoughDraft {
   return { ...draft, monthlyLiving: { value: monthlyMan, source: 'user_input' } };
 }
-function applyImportedToThoroughInput(ti: SimulationInput, monthlyMan: number): SimulationInput {
+function applyLivingCostToThoroughExpense(ti: SimulationInput, monthlyMan: number): SimulationInput {
   const f = ti.expense.monthlyLiving;
   const next = withResolved(f, monthlyMan, 'user_input', {
     user: `生活費見直しシミュレーターから${monthlyMan}万円/月を反映しています。`,
@@ -465,7 +471,7 @@ export const useInputStore = create<InputState>((set, get) => ({
 
     if (mode === 'thorough') {
       let ti = freshThoroughInput();
-      if (monthlyMan !== null) ti = applyImportedToThoroughInput(ti, monthlyMan);
+      if (monthlyMan !== null) ti = applyLivingCostToThoroughExpense(ti, monthlyMan);
       if (mortgageToApply) ti = applyImportedMortgageToThoroughInput(ti, mortgageToApply);
       set({
         mode,
@@ -478,7 +484,7 @@ export const useInputStore = create<InputState>((set, get) => ({
       });
     } else {
       let draft = emptyRoughDraft();
-      if (monthlyMan !== null) draft = applyImportedToRoughDraft(draft, monthlyMan);
+      if (monthlyMan !== null) draft = applyLivingCostToRoughDraft(draft, monthlyMan);
       if (mortgageToApply) draft = applyImportedMortgageToRoughDraft(draft, mortgageToApply);
       set({
         mode,
@@ -533,10 +539,10 @@ export const useInputStore = create<InputState>((set, get) => ({
     const updates: Partial<InputState> = {
       importedLivingCost: imported,
       livingCostManuallyEdited: false,
-      roughDraft: applyImportedToRoughDraft(roughDraft, monthlyMan),
+      roughDraft: applyLivingCostToRoughDraft(roughDraft, monthlyMan),
     };
     if (thoroughInput) {
-      updates.thoroughInput = applyImportedToThoroughInput(thoroughInput, monthlyMan);
+      updates.thoroughInput = applyLivingCostToThoroughExpense(thoroughInput, monthlyMan);
     }
     set(updates);
   },
@@ -833,9 +839,14 @@ export const useInputStore = create<InputState>((set, get) => ({
     const src = get().input;
     let ti = src ? structuredClone(src) : freshThoroughInput();
     ti.meta = { ...ti.meta, mode: 'thorough' };
-    // ざっくり→深掘り遷移で取り込み済みの住宅ローン詳細（balance/rate/bonus 等）を再適用する。
-    // ざっくり側では monthlyHousing/loanYears/housing.type しか持てないため、深掘り時に補完する。
-    const { importedMortgage, mortgageManuallyEdited } = get();
+    // ざっくり→深掘り遷移で取り込み済みの「現在生活費」を再適用する safety net。
+    // 通常は state.input.expense.monthlyLiving 経由で引き継がれるが、state.input が
+    // null のままで深掘りに遷移するエッジケース（dev 経路等）でも値を保つ。
+    // 住宅ローン詳細（balance/rate/bonus 等）はざっくり側で持てないので必ず再適用する。
+    const { importedLivingCost, livingCostManuallyEdited, importedMortgage, mortgageManuallyEdited } = get();
+    if (importedLivingCost && !livingCostManuallyEdited) {
+      ti = applyLivingCostToThoroughExpense(ti, monthlyYenToMan(importedLivingCost.monthlyYen));
+    }
     if (importedMortgage && !mortgageManuallyEdited) {
       ti = applyImportedMortgageToThoroughInput(ti, importedMortgage);
     }
