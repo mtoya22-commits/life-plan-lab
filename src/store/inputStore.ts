@@ -24,6 +24,13 @@ import {
   readImportedMortgage,
   type ImportedMortgage,
 } from '../lib/importedMortgage';
+import {
+  educationImportFingerprint,
+  hasEducationSourceCurrentPlan,
+  mapToChildInputs,
+  readImportedEducation,
+  type ImportedEducation,
+} from '../lib/importedEducation';
 import type {
   Field,
   LifeEvent,
@@ -105,6 +112,10 @@ interface SavedSession {
   // 住宅ローンシミュレーター からの取り込みメタ。同じく古い保存に存在しないことがある。
   importedMortgage?: ImportedMortgage | null;
   mortgageManuallyEdited?: boolean;
+  // 教育費ピークシミュレーター からの取り込みメタ。同じく古い保存に存在しないことがある。
+  importedEducation?: ImportedEducation | null;
+  educationManuallyEdited?: boolean;
+  appliedEducationImportFingerprint?: string | null;
 }
 
 // 生活費見直しシミュレーター からの取り込み値を、ざっくり/しっかりそれぞれの「現在生活費」
@@ -210,6 +221,116 @@ function applyImportedMortgageToThoroughInput(
   return next;
 }
 
+// 教育費ピークシミュレーター 取り込み（Stage 2・B案）:
+// 引き継ぐのは「条件」のみ。子どもの対応付けは入力順。Sim の金額（ピーク・総額）は
+// 計算へ注入せず、結果画面の参考表示だけに使う。下宿は uniLiving='away' で表現し
+// 追加イベントは作らない（総合版の大学年額に自宅外生活費が内包されているため）。
+//
+// pending 判定は fingerprint 方式:
+//   incoming = 現在 localStorage にある payload の教育条件 fingerprint
+//   applied  = 最後に総合版へ適用した fingerprint（appliedEducationImportFingerprint）
+//   incoming === applied のときは savedAt だけの再保存を含め「新しい条件なし」として扱い、
+//   手動編集の有無にかかわらず pending を出さない。
+const EDUCATION_ROUGH_IDS: ReadonlySet<RoughFieldId> = new Set<RoughFieldId>([
+  'childrenCount',
+  'educationPolicy',
+  'childAge1',
+  'childAge2',
+  'childAge3',
+  'childAge4',
+]);
+function isEducationThoroughPath(path: string): boolean {
+  return path.startsWith('children.');
+}
+
+const CHILD_AGE_ROUGH_IDS: RoughFieldId[] = ['childAge1', 'childAge2', 'childAge3', 'childAge4'];
+
+// ざっくり側には childrenCount と childAge1〜4 だけを反映する。
+// educationPolicy は取り込み条件の近似変換をせず触らない（詳細条件は結果ビルド時に
+// children を直接構成することで計算へ反映する。UI 側はロック表示で整合を取る）。
+function applyImportedEducationToRoughDraft(draft: RoughDraft, imported: ImportedEducation): RoughDraft {
+  const next: RoughDraft = { ...draft };
+  // childrenCount の選択肢は '0'〜'4' の文字列（roughQuestions）なので文字列で書く。
+  next.childrenCount = { value: String(imported.children.length), source: 'user_input' };
+  CHILD_AGE_ROUGH_IDS.forEach((id, i) => {
+    next[id] =
+      i < imported.children.length
+        ? { value: imported.children[i].currentAge, source: 'user_input' }
+        : { value: null, source: 'default_value' };
+  });
+  return next;
+}
+
+// 原子的適用の共通部。roughDraft / thoroughInput / applied fingerprint を 1 回の set() 分の
+// 更新として返す。通常入力 setter は経由しない（educationManuallyEdited を立てないため）。
+function buildEducationApplyUpdates(
+  imported: ImportedEducation,
+  roughDraft: RoughDraft,
+  thoroughInput: SimulationInput | null,
+): Partial<InputState> {
+  const updates: Partial<InputState> = {
+    roughDraft: applyImportedEducationToRoughDraft(roughDraft, imported),
+    appliedEducationImportFingerprint: educationImportFingerprint(imported),
+  };
+  if (thoroughInput) {
+    updates.thoroughInput = { ...thoroughInput, children: mapToChildInputs(imported) };
+  }
+  return updates;
+}
+
+type EducationImportSlice = Pick<
+  InputState,
+  'importedEducation' | 'appliedEducationImportFingerprint' | 'educationManuallyEdited'
+>;
+
+/** 取り込みが現に計算を支配している状態か（rough ロック・children 差し替えの共通判定）。 */
+export function educationImportIsActive(s: EducationImportSlice): boolean {
+  return (
+    !!s.importedEducation &&
+    !s.educationManuallyEdited &&
+    s.appliedEducationImportFingerprint === educationImportFingerprint(s.importedEducation)
+  );
+}
+
+/** バナー表示用の状態。
+ *  none    … 取り込みなし
+ *  active  … 取り込み条件が計算に使われている（通常バナー＋参考行）
+ *  pending … 新しい条件があるが自動上書きできない（「反映する」を優先表示。通常バナーは出さない）
+ *  edited  … 取り込み後に総合版で手動変更済み（控えめな注記のみ。参考行は出さない） */
+export type EducationImportStatus = 'none' | 'active' | 'pending' | 'edited';
+export function educationImportStatus(s: EducationImportSlice): EducationImportStatus {
+  if (!s.importedEducation) return 'none';
+  const incoming = educationImportFingerprint(s.importedEducation);
+  if (incoming !== s.appliedEducationImportFingerprint) return 'pending';
+  return s.educationManuallyEdited ? 'edited' : 'active';
+}
+
+// 初回取り込み前（applied fingerprint が無い）に存在する教育関連のローカル手入力。
+// 取り込み適用は source を user_input にするため、この判定は applied === null のときにしか使わない
+// （後続の新 payload 自動適用を取り込み由来の user_input が阻止しないようにする）。
+function hasExistingEducationUserInput(draft: RoughDraft, ti: SimulationInput | null): boolean {
+  for (const id of EDUCATION_ROUGH_IDS) {
+    if (draft[id]?.source === 'user_input') return true;
+  }
+  if (!ti) return false;
+  return ti.children.some(
+    (c) =>
+      c.currentAge.source === 'user_input' ||
+      c.elementarySchool.source === 'user_input' ||
+      c.middleSchool.source === 'user_input' ||
+      c.highSchool.source === 'user_input' ||
+      c.university.source === 'user_input' ||
+      c.uniLiving.source === 'user_input',
+  );
+}
+
+/** 取り込みがアクティブなら、計算入力の children を取り込み条件（入力順）で直接構成する。
+ *  ざっくり診断の POLICY_PATHS 近似を経由しないための、結果ビルド時の合流点。 */
+function withImportedEducationChildren(input: SimulationInput, s: EducationImportSlice): SimulationInput {
+  if (!educationImportIsActive(s)) return input;
+  return { ...input, children: mapToChildInputs(s.importedEducation!) };
+}
+
 function loadSession(): SavedSession | null {
   try {
     if (typeof localStorage === 'undefined') return null;
@@ -290,6 +411,16 @@ interface InputState {
   /** 住宅ローン関連項目をユーザーが総合版上で手動編集したら true。
    *  以降、URL パラメータが新たに来ない限り、localStorage からの自動上書きを抑止する。 */
   mortgageManuallyEdited: boolean;
+  /** 教育費ピークシミュレーター（別アプリ）から取り込んだ教育条件のメタ。
+   *  データは localStorage `lifePlanLab:education` のみ（URL は educationSource フラグだけ）。 */
+  importedEducation: ImportedEducation | null;
+  /** 教育関連項目（子ども人数・年齢・進学方針）を総合版上で手動編集したら true。
+   *  true の間は新しい payload が来ても自動上書きせず pending として保持する
+   *  （educationSource=currentPlan の明示遷移でも上書きしない）。 */
+  educationManuallyEdited: boolean;
+  /** 最後に総合版へ適用した教育条件の fingerprint。incoming と一致する限り
+   *  「新しい条件なし」として扱う（savedAt だけの再保存で pending を出さないため）。 */
+  appliedEducationImportFingerprint: string | null;
 
   setMode: (mode: Mode) => void;
   reset: () => void;
@@ -297,6 +428,13 @@ interface InputState {
   initializeImportedLivingCost: () => void;
   /** 起動時に 1 回だけ呼ぶ。住宅ローン取り込みの URL → localStorage 読込と適用。 */
   initializeImportedMortgage: () => void;
+  /** 起動時に 1 回だけ呼ぶ。教育費取り込みの読込と fingerprint 判定・適用。 */
+  initializeImportedEducation: () => void;
+  /** pending の「反映する」と、解除後の「条件を再適用する」の共通アクション。
+   *  原子的に適用し、educationManuallyEdited を false へ戻す。 */
+  applyImportedEducationNow: () => void;
+  /** rough ロックの「取り込みを解除して自分で入力する」。取り込みの計算支配を外す。 */
+  releaseImportedEducation: () => void;
 
   // ざっくり診断
   setRoughValue: (id: RoughFieldId, value: string | number) => void;
@@ -459,20 +597,36 @@ export const useInputStore = create<InputState>((set, get) => ({
   livingCostManuallyEdited: saved?.livingCostManuallyEdited ?? false,
   importedMortgage: saved?.importedMortgage ?? null,
   mortgageManuallyEdited: saved?.mortgageManuallyEdited ?? false,
+  importedEducation: saved?.importedEducation ?? null,
+  educationManuallyEdited: saved?.educationManuallyEdited ?? false,
+  appliedEducationImportFingerprint: saved?.appliedEducationImportFingerprint ?? null,
 
   setMode: (mode) => {
-    // 起動時に取り込んだ生活費／住宅ローンがあり、まだ手動編集されていなければ、新規モードの初期値に反映する。
-    const { importedLivingCost, livingCostManuallyEdited, importedMortgage, mortgageManuallyEdited } = get();
+    // 起動時に取り込んだ生活費／住宅ローン／教育費があり、まだ手動編集されていなければ、新規モードの初期値に反映する。
+    const {
+      importedLivingCost,
+      livingCostManuallyEdited,
+      importedMortgage,
+      mortgageManuallyEdited,
+      importedEducation,
+      educationManuallyEdited,
+    } = get();
     const monthlyMan =
       importedLivingCost && !livingCostManuallyEdited
         ? monthlyYenToMan(importedLivingCost.monthlyYen)
         : null;
     const mortgageToApply = importedMortgage && !mortgageManuallyEdited ? importedMortgage : null;
+    // 新規モード開始はまっさらな入力から始まるため、手動編集さえなければ取り込みを再適用してよい。
+    const educationToApply = importedEducation && !educationManuallyEdited ? importedEducation : null;
+    const eduFingerprint = educationToApply
+      ? { appliedEducationImportFingerprint: educationImportFingerprint(educationToApply) }
+      : {};
 
     if (mode === 'thorough') {
       let ti = freshThoroughInput();
       if (monthlyMan !== null) ti = applyLivingCostToThoroughExpense(ti, monthlyMan);
       if (mortgageToApply) ti = applyImportedMortgageToThoroughInput(ti, mortgageToApply);
+      if (educationToApply) ti = { ...ti, children: mapToChildInputs(educationToApply) };
       set({
         mode,
         phase: 'input',
@@ -481,11 +635,13 @@ export const useInputStore = create<InputState>((set, get) => ({
         cameFromResult: false,
         resumePrompt: false,
         previousIndicators: null,
+        ...eduFingerprint,
       });
     } else {
       let draft = emptyRoughDraft();
       if (monthlyMan !== null) draft = applyLivingCostToRoughDraft(draft, monthlyMan);
       if (mortgageToApply) draft = applyImportedMortgageToRoughDraft(draft, mortgageToApply);
+      if (educationToApply) draft = applyImportedEducationToRoughDraft(draft, educationToApply);
       set({
         mode,
         phase: 'input',
@@ -494,6 +650,7 @@ export const useInputStore = create<InputState>((set, get) => ({
         cameFromResult: false,
         resumePrompt: false,
         previousIndicators: null,
+        ...eduFingerprint,
       });
     }
   },
@@ -518,6 +675,9 @@ export const useInputStore = create<InputState>((set, get) => ({
       importedLivingCost: null,
       mortgageManuallyEdited: false,
       importedMortgage: null,
+      educationManuallyEdited: false,
+      importedEducation: null,
+      appliedEducationImportFingerprint: null,
     });
   },
 
@@ -575,6 +735,62 @@ export const useInputStore = create<InputState>((set, get) => ({
     set(updates);
   },
 
+  initializeImportedEducation: () => {
+    const imported = readImportedEducation();
+    if (!imported) return;
+
+    const incoming = educationImportFingerprint(imported);
+    const {
+      appliedEducationImportFingerprint: applied,
+      educationManuallyEdited,
+      roughDraft,
+      thoroughInput,
+    } = get();
+
+    // 同一条件の再読込（savedAt・peak・総額だけの再保存を含む）。
+    // メタ（保存日・参考値）だけ最新へ差し替え、再適用も pending もしない。
+    if (incoming === applied) {
+      set({ importedEducation: imported });
+      return;
+    }
+
+    // 取り込み後に総合版で手動編集済み。educationSource=currentPlan の明示遷移でも
+    // 自動上書きせず、pending として保持する（「反映する」の明示操作でのみ適用）。
+    if (educationManuallyEdited) {
+      set({ importedEducation: imported });
+      return;
+    }
+
+    // 初回取り込み前（applied が無い）に存在するローカル手入力の保護。
+    // 明示遷移（educationSource=currentPlan）のときは取り込む。
+    // 取り込み適用は source を user_input にするため、この保護は applied === null 限定
+    // （後続の新 payload は educationManuallyEdited を主判定として自動適用する）。
+    if (
+      applied === null &&
+      !hasEducationSourceCurrentPlan() &&
+      hasExistingEducationUserInput(roughDraft, thoroughInput)
+    ) {
+      set({ importedEducation: imported });
+      return;
+    }
+
+    set({
+      importedEducation: imported,
+      ...buildEducationApplyUpdates(imported, roughDraft, thoroughInput),
+    });
+  },
+
+  applyImportedEducationNow: () => {
+    const { importedEducation, roughDraft, thoroughInput } = get();
+    if (!importedEducation) return;
+    set({
+      educationManuallyEdited: false,
+      ...buildEducationApplyUpdates(importedEducation, roughDraft, thoroughInput),
+    });
+  },
+
+  releaseImportedEducation: () => set({ educationManuallyEdited: true }),
+
   // ---- ざっくり診断 ----
   setRoughValue: (id, value) => {
     const empty = value === '' || value === null;
@@ -587,6 +803,7 @@ export const useInputStore = create<InputState>((set, get) => ({
       ...setCell(s, id, cell),
       ...(isLivingEdit ? { livingCostManuallyEdited: true } : {}),
       ...(MORTGAGE_ROUGH_IDS.has(id) ? { mortgageManuallyEdited: true } : {}),
+      ...(EDUCATION_ROUGH_IDS.has(id) ? { educationManuallyEdited: true } : {}),
     }));
   },
   useRoughRecommended: (id) => {
@@ -595,6 +812,7 @@ export const useInputStore = create<InputState>((set, get) => ({
       ...setCell(s, id, { value: rec, source: 'recommended_value' }),
       // 「標準例を使う」はユーザーが直接値を入力する操作ではないため、生活費 flag は立てない。
       ...(MORTGAGE_ROUGH_IDS.has(id) ? { mortgageManuallyEdited: true } : {}),
+      ...(EDUCATION_ROUGH_IDS.has(id) ? { educationManuallyEdited: true } : {}),
     }));
   },
   skipRough: (id) =>
@@ -602,6 +820,7 @@ export const useInputStore = create<InputState>((set, get) => ({
       ...setCell(s, id, { value: null, source: 'skipped' }),
       // 「未入力で進む」は値変更ではなくスキップ操作。生活費 flag は立てない。
       ...(MORTGAGE_ROUGH_IDS.has(id) ? { mortgageManuallyEdited: true } : {}),
+      ...(EDUCATION_ROUGH_IDS.has(id) ? { educationManuallyEdited: true } : {}),
     })),
   nextRoughPage: () => {
     const { roughPage } = get();
@@ -615,7 +834,8 @@ export const useInputStore = create<InputState>((set, get) => ({
   },
   submitRough: () => {
     const prev = get().result;
-    const input = buildFullInputFromRough(get().roughDraft);
+    // 教育費取り込みがアクティブなら、POLICY_PATHS 近似ではなく取り込み条件で children を直接構成する。
+    const input = withImportedEducationChildren(buildFullInputFromRough(get().roughDraft), get());
     const result = runSimulation(input);
     // 通常の再計算 → 結果画面の上部へ戻る。差し替え前の結果は「前回比」用に保持。
     set({
@@ -631,7 +851,7 @@ export const useInputStore = create<InputState>((set, get) => ({
   // 「続けて変更」: 再計算後、結果画面の「条件を変えてみる」セクションへスクロールしてそこを開く。
   submitRoughAndContinue: () => {
     const prev = get().result;
-    const input = buildFullInputFromRough(get().roughDraft);
+    const input = withImportedEducationChildren(buildFullInputFromRough(get().roughDraft), get());
     const result = runSimulation(input);
     set({
       input,
@@ -664,6 +884,7 @@ export const useInputStore = create<InputState>((set, get) => ({
       thoroughInput: next,
       ...(isLivingEdit ? { livingCostManuallyEdited: true } : {}),
       ...(isMortgageThoroughPath(path) ? { mortgageManuallyEdited: true } : {}),
+      ...(isEducationThoroughPath(path) ? { educationManuallyEdited: true } : {}),
     });
   },
   useThoroughRecommended: (path, value) => {
@@ -678,6 +899,7 @@ export const useInputStore = create<InputState>((set, get) => ({
       thoroughInput: setFieldByPath(ti, path, withResolved(f, storedValue, 'recommended_value')),
       // 「標準例を使う」は値変更ではなく提案受け入れ。生活費 flag は立てない。
       ...(isMortgageThoroughPath(path) ? { mortgageManuallyEdited: true } : {}),
+      ...(isEducationThoroughPath(path) ? { educationManuallyEdited: true } : {}),
     });
   },
   skipThorough: (path) => {
@@ -689,16 +911,19 @@ export const useInputStore = create<InputState>((set, get) => ({
       thoroughInput: setFieldByPath(ti, path, withResolved(f, null, 'skipped')),
       // 「未入力で進む」は値変更ではないため、生活費 flag は立てない。
       ...(isMortgageThoroughPath(path) ? { mortgageManuallyEdited: true } : {}),
+      ...(isEducationThoroughPath(path) ? { educationManuallyEdited: true } : {}),
     });
   },
   setThoroughChildrenCount: (count) => {
     const ti = get().thoroughInput;
     if (!ti) return;
+    if (ti.children.length === count) return; // 変更なしなら flag も立てない
     const next = structuredClone(ti);
     const children = next.children;
     while (children.length < count) children.push(makeDetailedChild());
     if (children.length > count) next.children = children.slice(0, count);
-    set({ thoroughInput: next });
+    // 人数変更は教育条件の手動編集（取り込み値の自動上書きを止める）。
+    set({ thoroughInput: next, educationManuallyEdited: true });
   },
   upsertLifeEvent: (ev) => {
     const ti = get().thoroughInput;
@@ -801,7 +1026,7 @@ export const useInputStore = create<InputState>((set, get) => ({
       if (knob === 'return') return;
       const id: RoughFieldId = knob === 'living' ? 'monthlyLiving' : 'reduceWorkAge';
       get().setRoughValue(id, next);
-      const newInput = buildFullInputFromRough(get().roughDraft);
+      const newInput = withImportedEducationChildren(buildFullInputFromRough(get().roughDraft), get());
       const newResult = runSimulation(newInput);
       set({ input: newInput, result: newResult, previousIndicators: prev, resultReturnTarget: 'stay' });
     }
@@ -860,6 +1085,11 @@ export const useInputStore = create<InputState>((set, get) => ({
     }
     if (importedMortgage && !mortgageManuallyEdited) {
       ti = applyImportedMortgageToThoroughInput(ti, importedMortgage);
+    }
+    // 教育費取り込みがアクティブなら深掘り側の children も取り込み条件で構成する
+    // （state.input 経由でも引き継がれるが、input が null のエッジケースの safety net）。
+    if (educationImportIsActive(get())) {
+      ti = { ...ti, children: mapToChildInputs(get().importedEducation!) };
     }
     set({ mode: 'thorough', phase: 'input', thoroughInput: ti, thoroughPageId: firstThoroughPageId(ti), cameFromResult: false });
   },
@@ -940,5 +1170,8 @@ useInputStore.subscribe((state) => {
     livingCostManuallyEdited: state.livingCostManuallyEdited,
     importedMortgage: state.importedMortgage,
     mortgageManuallyEdited: state.mortgageManuallyEdited,
+    importedEducation: state.importedEducation,
+    educationManuallyEdited: state.educationManuallyEdited,
+    appliedEducationImportFingerprint: state.appliedEducationImportFingerprint,
   });
 });
