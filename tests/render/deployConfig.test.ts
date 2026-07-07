@@ -19,11 +19,16 @@ describe('STEP9 deploy/embed config', () => {
     expect(html).toContain('name="description"');
   });
 
-  it('README documents the iframe embed and base-path note', () => {
+  it('README points iframe embedding to the canonical embed docs and base-path note', () => {
     const readme = read('README.md');
-    expect(readme).toContain('<iframe');
-    expect(readme).toContain('min-height');
+    // 埋め込み実装の正典は docs/EMBED.md（README には実装例を置かない）
+    expect(readme).toContain('docs/EMBED.md');
+    expect(readme).toContain('docs/DESIGN_HANDOFF.md');
     expect(readme).toContain("base: './'");
+    // 旧方式（親側 sticky 固定・min-height 固定）のコピー可能なコード例を復活させない
+    expect(readme).not.toContain('<iframe');
+    expect(readme).not.toMatch(/position:\s*sticky;\s*top:\s*0/);
+    expect(readme).not.toMatch(/min-height:\s*1000px\s*;/);
   });
 
   it('ships a GitHub Pages workflow and an iframe embed-demo harness', () => {
