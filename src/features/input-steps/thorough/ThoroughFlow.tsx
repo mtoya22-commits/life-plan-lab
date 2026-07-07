@@ -10,6 +10,7 @@ import { FamilyStep } from './FamilyStep';
 import { EventsStep } from './EventsStep';
 import { ImportedLivingCostBanner } from '../../imported-living-cost/ImportedLivingCostBanner';
 import { ImportedMortgageBanner } from '../../imported-mortgage/ImportedMortgageBanner';
+import { ImportedEducationBanner } from '../../imported-education/ImportedEducationBanner';
 import type { Field, SimulationInput } from '../../../schema/types';
 import type { ThoroughPage, ThoroughQuestion } from '../../../schema/thoroughSteps';
 
@@ -130,6 +131,8 @@ export function ThoroughFlow() {
 
         {!cameFromResult && idx === 0 && <p className="step-reassure">{ja.nav.reassure}</p>}
 
+        {/* 教育費ピークシミュレーター からの取り込み告知は、家族ステップでだけ出す。 */}
+        {page.kind === 'family' && <ImportedEducationBanner variant="inputPageThorough" />}
         {page.kind === 'family' && <FamilyStep input={thoroughInput} />}
         {page.kind === 'events' && <EventsStep input={thoroughInput} />}
         {page.kind === 'fields' && renderFieldGroups(visibleQuestions(page, thoroughInput), thoroughInput)}

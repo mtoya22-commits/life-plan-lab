@@ -23,6 +23,7 @@ import { QuickAdjust } from './QuickAdjust';
 import { PreviousDelta } from './PreviousDelta';
 import { ImportedLivingCostBanner } from '../imported-living-cost/ImportedLivingCostBanner';
 import { ImportedMortgageBanner } from '../imported-mortgage/ImportedMortgageBanner';
+import { ImportedEducationBanner } from '../imported-education/ImportedEducationBanner';
 import { postEmbeddedScrollTop } from '../../lib/embed';
 
 // 結果ダッシュボード。
@@ -227,6 +228,7 @@ export function ResultDashboard() {
           手動編集された場合は各バナー側で非表示になる。 */}
       <ImportedLivingCostBanner variant="result" />
       <ImportedMortgageBanner variant="result" />
+      <ImportedEducationBanner variant="result" />
 
       {/* 今回の試算条件（折りたたみ・下部） */}
       <details className="collapsible">

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useInputStore } from '../../../store/inputStore';
+import { EDUCATION_ROUGH_IDS, educationImportStatus, useInputStore } from '../../../store/inputStore';
 import { ja } from '../../../strings/ja';
 import { ROUGH_PAGES, type RoughQuestion } from '../../../schema/roughQuestions';
 import type { RoughCell } from '../../../schema/types';
@@ -8,6 +8,7 @@ import { QuestionCard } from '../QuestionCard';
 import { NumberField } from '../NumberField';
 import { ImportedLivingCostBanner } from '../../imported-living-cost/ImportedLivingCostBanner';
 import { ImportedMortgageBanner } from '../../imported-mortgage/ImportedMortgageBanner';
+import { ImportedEducationBanner } from '../../imported-education/ImportedEducationBanner';
 
 // =============================================================================
 // ざっくり診断のステップフロー本体。
@@ -33,6 +34,11 @@ export function RoughFlow() {
   const submitRoughAndContinue = useInputStore((s) => s.submitRoughAndContinue);
   const backToResult = useInputStore((s) => s.backToResult);
 
+  // 教育費取り込みがアクティブな間、教育関連の設問（人数・年齢・教育方針）は
+  // ロック（非表示＋サマリバナー）にする。編集値が計算で無視される状態を作らないため。
+  const eduStatus = useInputStore((s) => educationImportStatus(s));
+  const eduLocked = eduStatus === 'active';
+
   const [attempted, setAttempted] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -46,15 +52,19 @@ export function RoughFlow() {
   }, [roughPage, cameFromResult]);
 
   const page = ROUGH_PAGES[roughPage];
-  const visible = page.questions.filter((q) => (q.showIf ? q.showIf(draft) : true));
+  const showsQuestion = (q: RoughQuestion) =>
+    (q.showIf ? q.showIf(draft) : true) && !(eduLocked && EDUCATION_ROUGH_IDS.has(q.id));
+  const visible = page.questions.filter(showsQuestion);
   const completedCount = visible.filter((q) => isComplete(draft[q.id])).length;
   const totalCount = visible.length;
   const pageComplete = totalCount === 0 || completedCount === totalCount;
   const isLast = roughPage === ROUGH_PAGES.length - 1;
+  // 教育費バナーは、教育設問を含むページで出す（ロック中は設問の代わりのサマリを兼ねる）。
+  const pageHasEducation = page.questions.some((q) => EDUCATION_ROUGH_IDS.has(q.id));
 
   // あと何問・あと何分（おおよそ）
   const laterQuestions = ROUGH_PAGES.slice(roughPage + 1).reduce(
-    (n, p) => n + p.questions.filter((q) => (q.showIf ? q.showIf(draft) : true)).length,
+    (n, p) => n + p.questions.filter(showsQuestion).length,
     0,
   );
   const remainingQuestions = laterQuestions + (totalCount - completedCount);
@@ -116,6 +126,9 @@ export function RoughFlow() {
         {visible.some((q) => q.id === 'housing' || q.id === 'monthlyHousing' || q.id === 'loanYears') && (
           <ImportedMortgageBanner variant="inputPage" />
         )}
+        {/* 教育費ピークシミュレーター: 教育設問を含むページで出す。取り込みアクティブ中は
+            教育設問がロック（非表示）になるため、このバナーが条件サマリと解除導線を担う。 */}
+        {pageHasEducation && <ImportedEducationBanner variant="inputPageRough" />}
 
         {visible.map((q) => (
           <div id={`q-${q.id}`} key={q.id}>

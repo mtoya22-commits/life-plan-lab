@@ -231,7 +231,7 @@ function applyImportedMortgageToThoroughInput(
 //   applied  = 最後に総合版へ適用した fingerprint（appliedEducationImportFingerprint）
 //   incoming === applied のときは savedAt だけの再保存を含め「新しい条件なし」として扱い、
 //   手動編集の有無にかかわらず pending を出さない。
-const EDUCATION_ROUGH_IDS: ReadonlySet<RoughFieldId> = new Set<RoughFieldId>([
+export const EDUCATION_ROUGH_IDS: ReadonlySet<RoughFieldId> = new Set<RoughFieldId>([
   'childrenCount',
   'educationPolicy',
   'childAge1',
