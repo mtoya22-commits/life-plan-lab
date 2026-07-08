@@ -49,10 +49,23 @@ function readFromLocalStorage(): ImportedLivingCost | null {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const payload = JSON.parse(raw) as Record<string, unknown>;
-    if (!validMonthlyYen(payload.selectedMonthlyTotal)) return null;
+    if (!payload || typeof payload !== 'object') return null;
+
+    // 現行契約（v1）: 生活費見直しシミュレーターは
+    //   { version, source, savedAt, livingCost: { selectedMonthlyTotal, selectedMonthlySource, … } }
+    // の**ネスト形**で保存する（契約フィクスチャ: tests/fixtures/contracts/livingCostPayload.v1.json）。
+    // livingCost がオブジェクトならネスト形として読み、そうでなければ
+    // 旧フラット形（トップレベル selectedMonthlyTotal。実在は未確認だが互換のため維持）へフォールバックする。
+    const nested = payload.livingCost;
+    const record =
+      nested && typeof nested === 'object' && !Array.isArray(nested)
+        ? (nested as Record<string, unknown>)
+        : payload;
+
+    if (!validMonthlyYen(record.selectedMonthlyTotal)) return null;
     return {
-      monthlyYen: payload.selectedMonthlyTotal,
-      source: normalizeSource(payload.selectedMonthlySource),
+      monthlyYen: record.selectedMonthlyTotal,
+      source: normalizeSource(record.selectedMonthlySource),
       origin: 'localStorage',
     };
   } catch {
