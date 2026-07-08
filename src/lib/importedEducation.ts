@@ -1,7 +1,8 @@
 // 別アプリ「教育費ピークシミュレーター」からの取り込み値を読むユーティリティ。
 // データ本体は localStorage `lifePlanLab:education` のみ（URL パラメータにはデータを載せない契約）。
-// URL の `educationSource=currentPlan` は「取り込みを試行してよい」ことを示す補助フラグで、
-// 手動編集保護を無効化しない（inputStore 側の判定を参照）。
+// URL の `educationSource=currentPlan` は「教育費Simから遷移してきた」ことを示す補助フラグ。
+// 手動編集保護・既存 user_input の rescue 保護のどちらも無効化しない
+//（保護の判定は inputStore 側。フラグは現状、判定に使用していない情報提供のみ）。
 //
 // 方針（Stage 2・B案）: 引き継ぐのは「条件」のみ。Sim の金額結果（ピーク・総額）は
 // 総合版の資産推移へ注入せず、結果画面の参考表示にだけ使う。
@@ -88,7 +89,8 @@ function validYear(raw: unknown): number | undefined {
   return y >= 1900 && y <= 3000 ? y : undefined;
 }
 
-/** URL の educationSource が 'currentPlan' と厳密一致するときだけ true（存在確認ではない）。 */
+/** URL の educationSource が 'currentPlan' と厳密一致するときだけ true（存在確認ではない）。
+ *  既存手入力・手動編集の保護を外す用途には使わないこと（Codex P1-2）。 */
 export function hasEducationSourceCurrentPlan(): boolean {
   if (typeof window === 'undefined') return false;
   const params = new URLSearchParams(window.location.search);

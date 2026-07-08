@@ -251,9 +251,37 @@ describe('imported education integration', () => {
     expect(store().input!.children).toHaveLength(1); // 計算も上書きされない
   });
 
-  // 必須12: 初回取り込み前の既存ローカル手入力は保護。educationSource=currentPlan の明示遷移では取り込む
-  it('protects pre-import local user input unless educationSource=currentPlan is present', () => {
-    // 古いセッション相当: 教育フィールドに user_input があるが flag は false
+  // 必須12（P1-2 改訂・最重要回帰）: 初回取り込み前の既存ローカル手入力は、
+  // educationSource=currentPlan があっても自動上書きしない。
+  // 旧セッション相当 = educationManuallyEdited=false・applied=null・教育 Field に user_input あり。
+  it('protects pre-import user_input even with educationSource=currentPlan (explicit apply only)', () => {
+    useInputStore.setState({
+      roughDraft: {
+        ...store().roughDraft,
+        childAge1: { value: 6, source: 'user_input' },
+      },
+      educationManuallyEdited: false,
+      appliedEducationImportFingerprint: null,
+    });
+    localStorage.setItem(EDUCATION_STORAGE_KEY, fixtureText);
+    setUrl('educationSource=currentPlan');
+
+    store().initializeImportedEducation();
+
+    // URL があっても自動上書きしない: pending・既存手入力そのまま・applied は null のまま
+    expect(status()).toBe('pending');
+    expect(store().roughDraft.childAge1).toEqual({ value: 6, source: 'user_input' });
+    expect(store().appliedEducationImportFingerprint).toBeNull();
+    expect(store().educationManuallyEdited).toBe(false);
+
+    // 「反映する」の明示操作でのみ上書きされる
+    store().applyImportedEducationNow();
+    expect(status()).toBe('active');
+    expect(store().roughDraft.childAge1).toEqual({ value: 8, source: 'user_input' });
+  });
+
+  // 必須12b: 同条件で URL なし → 同じく自動上書きせず pending
+  it('protects pre-import user_input without the URL flag the same way', () => {
     useInputStore.setState({
       roughDraft: {
         ...store().roughDraft,
@@ -265,13 +293,22 @@ describe('imported education integration', () => {
     localStorage.setItem(EDUCATION_STORAGE_KEY, fixtureText);
 
     store().initializeImportedEducation();
-    expect(status()).toBe('pending'); // 保持のみ（反映するボタンで適用可能）
-    expect(store().roughDraft.childAge1).toEqual({ value: 6, source: 'user_input' });
 
+    expect(status()).toBe('pending');
+    expect(store().roughDraft.childAge1).toEqual({ value: 6, source: 'user_input' });
+    expect(store().appliedEducationImportFingerprint).toBeNull();
+  });
+
+  // 必須12c: 既存手入力なし・educationSource=currentPlan あり → 初回自動適用
+  it('auto-applies on first import with educationSource=currentPlan when nothing was hand-entered', () => {
+    localStorage.setItem(EDUCATION_STORAGE_KEY, fixtureText);
     setUrl('educationSource=currentPlan');
+
     store().initializeImportedEducation();
-    expect(status()).toBe('active'); // 明示遷移では取り込む
+
+    expect(status()).toBe('active');
     expect(store().roughDraft.childAge1).toEqual({ value: 8, source: 'user_input' });
+    expect(store().educationManuallyEdited).toBe(false);
   });
 
   // 必須13: 初回取り込み後、未編集のまま Sim 側で条件を変えた新 payload → pending ではなく自動適用
@@ -292,8 +329,9 @@ describe('imported education integration', () => {
     );
   });
 
-  // URL フラグは厳密一致（store 経由の確認）
-  it('does not treat educationSource!=currentPlan as an explicit transition', () => {
+  // URL フラグの値にかかわらず、既存 user_input 保護は変わらない（P1-2 以降、
+  // educationSource は保護を外す判定に一切使われない。=other でも =currentPlan でも同じ）。
+  it('keeps the pre-import protection regardless of the educationSource value', () => {
     useInputStore.setState({
       roughDraft: {
         ...store().roughDraft,
@@ -305,6 +343,7 @@ describe('imported education integration', () => {
     localStorage.setItem(EDUCATION_STORAGE_KEY, fixtureText);
     setUrl('educationSource=other');
     store().initializeImportedEducation();
-    expect(status()).toBe('pending'); // 厳密一致しないので保護が生きる
+    expect(status()).toBe('pending');
+    expect(store().roughDraft.childAge1).toEqual({ value: 6, source: 'user_input' });
   });
 });

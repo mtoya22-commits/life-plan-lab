@@ -26,7 +26,6 @@ import {
 } from '../lib/importedMortgage';
 import {
   educationImportFingerprint,
-  hasEducationSourceCurrentPlan,
   mapToChildInputs,
   readImportedEducation,
   type ImportedEducation,
@@ -762,14 +761,13 @@ export const useInputStore = create<InputState>((set, get) => ({
     }
 
     // 初回取り込み前（applied が無い）に存在するローカル手入力の保護。
-    // 明示遷移（educationSource=currentPlan）のときは取り込む。
+    // educationSource=currentPlan の有無にかかわらず自動上書きしない（URL は
+    // 「取り込み候補を読み込んだ」ことを示すだけで、既存手入力の保護を外す権限を持たない）。
+    // applied は null のまま → incoming ≠ applied なので pending となり、
+    // 「反映する」（applyImportedEducationNow）の明示操作でのみ上書きされる。
     // 取り込み適用は source を user_input にするため、この保護は applied === null 限定
     // （後続の新 payload は educationManuallyEdited を主判定として自動適用する）。
-    if (
-      applied === null &&
-      !hasEducationSourceCurrentPlan() &&
-      hasExistingEducationUserInput(roughDraft, thoroughInput)
-    ) {
+    if (applied === null && hasExistingEducationUserInput(roughDraft, thoroughInput)) {
       set({ importedEducation: imported });
       return;
     }
