@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
-import { HelpTooltip } from '../../src/features/input-steps/HelpTooltip';
+import { HelpTooltip, bubbleShiftX } from '../../src/features/input-steps/HelpTooltip';
 
 // STEP11.24: 長文 help が下部ナビを覆い隠す症状の対策。
 // - CSS の .help__bubble に max-height / overflow-y / z-index 制限
@@ -79,5 +79,31 @@ describe('CSS smoke: .help__bubble has the safe-area constraints', () => {
     expect(bubble).toContain('z-index: 30');
     // .bottom-nav の z-index を別途確認（40 のまま）
     expect(css).toMatch(/\.bottom-nav\s*\{[^}]*z-index:\s*40/);
+  });
+});
+
+// モバイル375px契約: bubble を画面内へ収めるシフト量の純関数テスト。
+// 実レイアウト幅は jsdom で保証しない（375px は実機/ブラウザ確認）。
+describe('bubbleShiftX (viewport clamp)', () => {
+  it('returns 0 when the bubble fits', () => {
+    expect(bubbleShiftX(100, 340, 375)).toBe(0);
+  });
+
+  it('shifts left by the right-edge overflow', () => {
+    // right=400, viewport=375, margin=12 → 375-12-400 = -37
+    expect(bubbleShiftX(160, 400, 375)).toBe(-37);
+  });
+
+  it('shifts right when the left edge would go past the margin', () => {
+    expect(bubbleShiftX(-20, 220, 375)).toBe(32); // 12 - (-20)
+  });
+
+  it('prioritizes the left edge when the bubble is wider than the viewport', () => {
+    const dx = bubbleShiftX(0, 500, 375);
+    expect(0 + dx).toBe(12); // 左端は margin に固定（右は切れても左から読める）
+  });
+
+  it('respects a custom margin', () => {
+    expect(bubbleShiftX(0, 380, 375, 16)).toBe(16);
   });
 });
