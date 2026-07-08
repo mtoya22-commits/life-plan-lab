@@ -11,6 +11,7 @@ import { EventsStep } from './EventsStep';
 import { ImportedLivingCostBanner } from '../../imported-living-cost/ImportedLivingCostBanner';
 import { ImportedMortgageBanner } from '../../imported-mortgage/ImportedMortgageBanner';
 import { ImportedEducationBanner } from '../../imported-education/ImportedEducationBanner';
+import { postEmbeddedScrollTop } from '../../../lib/embed';
 import type { Field, SimulationInput } from '../../../schema/types';
 import type { ThoroughPage, ThoroughQuestion } from '../../../schema/thoroughSteps';
 
@@ -52,6 +53,10 @@ export function ThoroughFlow() {
   useEffect(() => {
     contentRef.current?.scrollTo?.({ top: 0, behavior: 'auto' });
     window.scrollTo({ top: 0, behavior: 'auto' });
+    // 埋め込み時はスクロールが親 WordPress ページ側にあるため、
+    // ページ送り（次へ・未入力で進む・戻る等）でも親へ先頭スクロールを依頼する。
+    // 単独表示では no-op（上の window.scrollTo が担当）。
+    postEmbeddedScrollTop();
     setAttempted(false);
   }, [thoroughPageId, cameFromResult]);
 
