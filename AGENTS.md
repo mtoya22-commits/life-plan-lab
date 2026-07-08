@@ -77,6 +77,7 @@ LIFE PLAN LAB 総合版（総合ライフプランシミュレーター v2）。
 - セッション保存キー: `fire-lifeplan-lab.v2.session.v1`（`src/store/inputStore.ts`）。optional フィールド + 読み込み時デフォルトの互換方式。リネーム禁止。
 - 受信キー: `lifePlanLab:livingCost`（`src/lib/importedLivingCost.ts`）／ `lifePlanLab:mortgage`（`src/lib/importedMortgage.ts`）／ `lifePlanLab:education`（`src/lib/importedEducation.ts`）。旧フィールド名フォールバック（正規化処理）を消さない。
 - URL パラメータ許可リスト: `src/lib/embedParentParams.ts` が実装上の正。`docs/EMBED.md` 内のスニペット（2 箇所）と常に一致させる（`tests/lib/embedParentParams.test.ts` が防波堤）。
+- 生活費契約フィクスチャ: `tests/fixtures/contracts/livingCostPayload.v1.json` は生活費見直しシミュレーター側の `tests/fixtures/livingCostPayload.v1.json` と**バイト単位で同一**に保つ（`sha256sum` で確認）。`lifePlanLab:livingCost` の現行契約は **`livingCost` ネスト形**で、旧フラット形はフォールバック（`v1-legacy-flat.json`・実在未確認）としてのみ維持する。フィクスチャを変更する場合は、送信側（Sim の生成テスト `tests/lib/contractFixture.test.ts`）・受信側（本リポの `tests/lib/livingCostContract.test.ts`）・両フィクスチャを同じ変更単位で更新する。
 - 教育費契約フィクスチャ: `tests/fixtures/contracts/educationPayload.v1.json` は教育費ピークシミュレーター側の `tests/fixtures/educationPayload.v1.json` と**バイト単位で同一**に保つ（`sha256sum` で確認）。変更する場合は、送信側（Sim の生成テスト）・受信側（本リポの parse テスト）・両フィクスチャを同じ変更単位で更新する。
 - 教育費取り込み方針（Stage 2・B案）: 引き継ぐのは条件のみで、Sim の金額（ピーク・総額）は計算へ注入せず参考表示に留める。下宿は `uniLiving='away'` で表現し、追加イベントを作らない（二重計上禁止）。新条件の検知は fingerprint 方式（`appliedEducationImportFingerprint`）。
 

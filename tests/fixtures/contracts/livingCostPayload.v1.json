@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "source": "living-cost-simulator",
+  "savedAt": "2026-07-07T00:00:00.000Z",
+  "livingCost": {
+    "monthlyTotal": 215000,
+    "quickAdjustedMonthlyTotal": 195000,
+    "selectedMonthlyTotal": 195000,
+    "selectedMonthlySource": "quickAdjust",
+    "annualTotal": 2580000,
+    "breakdownTotal": 215000,
+    "fixedCostTotal": 65000,
+    "variableCostTotal": 150000,
+    "householdSize": 3,
+    "householdReferenceMonthly": 324000,
+    "householdReferenceDiffMonthly": -109000,
+    "categories": {
+      "food": 65000,
+      "dailyGoods": 12000,
+      "utilities": 18000,
+      "communication": 9000,
+      "insurance": 15000,
+      "car": 20000,
+      "medical": 8000,
+      "children": 30000,
+      "leisure": 25000,
+      "subscription": 3000,
+      "other": 10000
+    }
+  }
+}
