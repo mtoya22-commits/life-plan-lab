@@ -319,8 +319,11 @@ describe('render smoke (jsdom)', () => {
     )!;
     expect(expansion).toBeDefined();
     expansion.open = true;
-    // Recharts は遅延読み込みのため、解決を待ってから内容を確認する
-    const note = await screen.findByText(/その年に表示される額面/);
+    // Recharts は遅延読み込み（lazy + Suspense, ResultDashboard.tsx）のため、解決を待ってから内容を確認する。
+    // このチャンクの解決は full suite の並列実行・コールドキャッシュ時に findByText の
+    // デフォルト 1000ms を超えることがある（実測 0.4〜1.7s の振れ）ため、この待ちだけ明示的に延長する。
+    // Vitest 全体・ファイル全体のタイムアウトは広げない。
+    const note = await screen.findByText(/その年に表示される額面/, undefined, { timeout: 10_000 });
     expect(expansion.querySelector('.asset-rc')).not.toBeNull();
     expect(note.textContent).toContain('将来額');
     expect(note.textContent).toContain('現在価値');
