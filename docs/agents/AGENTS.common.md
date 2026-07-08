@@ -1,4 +1,4 @@
-<!-- lifeplan-common-rules v1 / 2026-07-07 / 正本: life-plan-lab/docs/agents/AGENTS.common.md -->
+<!-- lifeplan-common-rules v2 / 2026-07-08 / 正本: life-plan-lab/docs/agents/AGENTS.common.md -->
 
 # LIFE PLAN LAB 共通ルール（全リポジトリ共通）
 
@@ -35,12 +35,15 @@
 - postMessage のメッセージ型・source・clamp 値・payload 等の契約の正典は総合版の `docs/EMBED.md`。共通ルールとしては「EMBED.md の契約を維持する」ことのみを課し、詳細値はここに固定しない。
 - 親側で iframe を `position: sticky` / `100vh` / `100dvh` 固定にしない（旧方式・禁止）。
 - 同一ページに複数 iframe を配置しても誤作動しないこと。
+- 質問・ステップ・結果・編集など「画面単位」が変わる操作では `lifeplanlab:scrollTop` を親へ送り、単独表示では `window.scrollTo` フォールバックで先頭へ戻す。入力値の変更・ツールチップ開閉・バリデーション表示など画面内の操作では勝手にスクロールしない。
 
 ## UX / デザイン
 
 - 375px 前後で主要 CTA、入力、ナビゲーションが欠けず、横スクロール・操作不能・意図しない重なりがないこと。
 - `shared-tokens.css` の共通デザイントークンを使用する。
 - 赤を主色や煽り表現として使わない。入力エラー・警告など状態を伝える必要がある箇所では適切な状態色を使用してよい。
+- モバイル 375px 契約: すべての画面・カード・ツールチップは 375px 幅で横スクロールを発生させない。`?` ヘルプ・popover・補足説明は必ず画面内に収め、右方向へ固定展開する absolute ツールチップを使わない。読めない・切れる補足説明は不具合として扱う（文字を極端に小さくして収める対応は不可）。
+- レイアウト実寸（375px の見た目）は jsdom で保証しようとしない。自動テストは関数呼び出し・postMessage payload・aria・表示切替を対象にし、375px の実機またはブラウザ確認をリリース完了条件に含める。
 
 ## 小型 Sim → 総合版 引き継ぎ契約（新規 Sim の MVP 完了条件）
 

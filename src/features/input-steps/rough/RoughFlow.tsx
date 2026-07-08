@@ -9,6 +9,7 @@ import { NumberField } from '../NumberField';
 import { ImportedLivingCostBanner } from '../../imported-living-cost/ImportedLivingCostBanner';
 import { ImportedMortgageBanner } from '../../imported-mortgage/ImportedMortgageBanner';
 import { ImportedEducationBanner } from '../../imported-education/ImportedEducationBanner';
+import { postEmbeddedScrollTop } from '../../../lib/embed';
 
 // =============================================================================
 // ざっくり診断のステップフロー本体。
@@ -48,6 +49,10 @@ export function RoughFlow() {
   useEffect(() => {
     contentRef.current?.scrollTo?.({ top: 0, behavior: 'auto' });
     window.scrollTo({ top: 0, behavior: 'auto' });
+    // 埋め込み時はスクロールが親 WordPress ページ側にあるため、
+    // ページ送り（次へ・未入力で進む・戻る等）でも親へ先頭スクロールを依頼する。
+    // 単独表示では no-op（上の window.scrollTo が担当）。
+    postEmbeddedScrollTop();
     setAttempted(false);
   }, [roughPage, cameFromResult]);
 
