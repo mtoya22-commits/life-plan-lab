@@ -1,0 +1,29 @@
+{
+  "source": "currentPlan",
+  "baselineYear": 2026,
+  "parentAge": 40,
+  "children": [
+    {
+      "id": "child-1",
+      "currentAge": 8,
+      "juniorHighHighSchoolPlan": "privateIntegrated",
+      "universityPlan": "private",
+      "livingArrangement": "away"
+    },
+    {
+      "id": "child-2",
+      "currentAge": 5,
+      "juniorHighHighSchoolPlan": "public",
+      "universityPlan": "nationalPublic",
+      "livingArrangement": "home"
+    }
+  ],
+  "peakYear": 2036,
+  "peakYearOffset": 10,
+  "peakParentAge": 50,
+  "peakAnnualCostYen": 2860501,
+  "totalFutureCostYen": 25681366,
+  "assumptionVersion": "2026.06.1",
+  "savedAt": "2026-07-07T00:00:00.000Z",
+  "version": 1
+}

@@ -195,4 +195,43 @@ export const ja = {
     resultBalance: (balance: string) => `残高：${balance}`,
     resultSource: (label: string) => `反映元：${label}`,
   },
+  // 別アプリ「教育費ピークシミュレーター」からの取り込み告知（Stage 2・B案）。
+  // 条件のみ引き継ぎ、金額は総合版の前提で再計算する。Sim の金額は参考表示に留める。
+  educationImport: {
+    modeSelectTitle: '教育費ピークシミュレーターの条件を読み込みました',
+    modeSelectValue: (count: number, peakYear?: number) =>
+      peakYear != null
+        ? `お子さま${count}人・教育費ピーク目安 ${peakYear}年`
+        : `お子さま${count}人の進学条件`,
+    // ざっくり診断: 教育設問は取り込み値で確定表示（ロック）し、この文言で状態を示す。
+    roughSummaryTitle: '教育費の条件は教育費ピークシミュレーターから引き継いでいます',
+    roughSummaryChildren: (ages: string) => `お子さま：${ages}`,
+    roughSummaryNote:
+      '進学方針の詳細（中高・大学・通学形態）もシミュレーターの条件を使って計算します。詳しく変更したい場合は、しっかり診断の家族ステップで編集できます。',
+    releaseButton: '取り込みを解除して自分で入力する',
+    inputPageThorough:
+      '教育費ピークシミュレーターから、お子さまの年齢と進学方針を読み込み済みです。この画面で手動変更できます（変更後は取り込み値で上書きしません）。',
+    // 取り込み後に総合版で手動変更した状態（edited）。
+    editedNote: '教育費の条件は、取り込み後にこの画面で手動変更されています。',
+    reapplyButton: '教育費シミュレーターの条件を再適用する',
+    // 新しい条件が来ているが自動上書きしない状態（pending）。
+    pendingText: '教育費シミュレーターの新しい条件があります。',
+    applyButton: '反映する',
+    // 結果画面。
+    resultTitle: (savedAtLabel?: string) =>
+      savedAtLabel
+        ? `教育費の条件は教育費ピークシミュレーター（保存日: ${savedAtLabel}）から取り込みました。`
+        : '教育費の条件は教育費ピークシミュレーターから取り込みました。',
+    resultRecalcNote:
+      '金額はこの総合版の前提（大学の生活費・未就学期の費用・インフレを含む）で計算し直しているため、シミュレーターの表示額とは一致しません。',
+    resultReference: (total?: string, peakYear?: number) => {
+      const parts: string[] = [];
+      if (total) parts.push(`今後の教育費総額 約${total}`);
+      if (peakYear != null) parts.push(`ピーク ${peakYear}年`);
+      return parts.length > 0
+        ? `シミュレーター試算（取り込み時の参考値）: ${parts.join('／')}`
+        : '';
+    },
+    staleNote: '保存から時間が経っています。条件をご確認ください。',
+  },
 } as const;

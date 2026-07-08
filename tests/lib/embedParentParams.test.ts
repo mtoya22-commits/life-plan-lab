@@ -79,11 +79,17 @@ describe('appendAllowedParamsToIframeSrc', () => {
     expect(idxMortgage).toBeLessThan(idxRateType);
   });
 
-  it('exposes a stable allowlist of 11 keys', () => {
+  it('passes through educationSource (education Sim transition flag)', () => {
+    const got = appendAllowedParamsToIframeSrc(BASE, '?educationSource=currentPlan&foo=bar');
+    expect(got).toBe('https://example.com/life-plan-lab/?educationSource=currentPlan');
+  });
+
+  it('exposes a stable allowlist of 12 keys', () => {
     expect(ALLOWED_PARENT_PARAMS).toContain('livingCostMonthly');
     expect(ALLOWED_PARENT_PARAMS).toContain('livingCostSource');
     expect(ALLOWED_PARENT_PARAMS).toContain('mortgageMonthlyPaymentYen');
     expect(ALLOWED_PARENT_PARAMS).toContain('mortgageRateType');
-    expect(ALLOWED_PARENT_PARAMS.length).toBe(11);
+    expect(ALLOWED_PARENT_PARAMS).toContain('educationSource');
+    expect(ALLOWED_PARENT_PARAMS.length).toBe(12);
   });
 });

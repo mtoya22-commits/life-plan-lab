@@ -19,6 +19,7 @@ export const ALLOWED_PARENT_PARAMS = [
   'mortgageBonusAnnualYen',
   'mortgageRepaymentMethod',
   'mortgageRateType',
+  'educationSource',
 ] as const;
 
 /** base URL に許可済みパラメータだけを ?/& で結合した URL を返す。
