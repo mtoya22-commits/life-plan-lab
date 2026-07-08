@@ -12,12 +12,15 @@ export default function App() {
   const phase = useInputStore((s) => s.phase);
   const resumePrompt = useInputStore((s) => s.resumePrompt);
 
-  // 別アプリ（生活費見直しシミュレーター・住宅ローンシミュレーター）からの取り込み値を起動時に 1 回だけ読む。
+  // 別アプリ（生活費見直し・住宅ローン・教育費ピークシミュレーター）からの取り込み値を起動時に 1 回だけ読む。
   // URL パラメータ → localStorage の順に確認し、適用判定はストア側で行う。
+  // 教育費は fingerprint 判定（incoming === applied なら何もしない）のため、
+  // StrictMode 等で effect が複数回走っても再適用・pending 誤表示は起きない。
   useEffect(() => {
     const s = useInputStore.getState();
     s.initializeImportedLivingCost();
     s.initializeImportedMortgage();
+    s.initializeImportedEducation();
   }, []);
 
   // 埋め込み時のみ: #root の実コンテンツ高さを親 WordPress ページに通知し、iframe.style.height を追従させる。
