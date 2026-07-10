@@ -309,6 +309,8 @@ describe('render smoke (jsdom)', () => {
     expect(items[0].querySelectorAll('.risk-factor__points li').length).toBeGreaterThan(0);
   });
 
+  // findByText 側の待ち（10s）がテスト既定 timeout（5s）より長いため、この 1 件だけ
+  // it の第 3 引数でテスト timeout を延長する。Vitest 全体・ファイル全体は変更しない。
   it('expands the asset chart inline (lazy-loaded) when "グラフを詳しく見る" is opened', async () => {
     fillAll();
     store().submitRough();
@@ -337,7 +339,7 @@ describe('render smoke (jsdom)', () => {
     expect(explainer.textContent).toContain('通帳');
     expect(explainer.textContent).toContain('658万円');
     expect(explainer.textContent).not.toContain('割り戻');
-  });
+  }, 15_000);
 
   it('toggles the timeline detail inline via details.open (no modal, no close button)', () => {
     fillAll();
